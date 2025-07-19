@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WalletStatusProvider } from '@/hooks/useWalletStatus';
 import { NotificationProvider } from '@/components/NotificationSystem';
 import { ThemeProvider } from 'next-themes';
+import { AptosWalletAdapterProvider } from '@aptos-labs/wallet-adapter-react';
 import '@rainbow-me/rainbowkit/styles.css';
 
 // Custom Chains
@@ -80,18 +81,20 @@ export default function Providers({ children }) {
   if (!mounted) return null;
 
   return (
-    <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider>
-          <NotificationProvider>
-            <WalletStatusProvider>
-              <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-                {children}
-              </ThemeProvider>
-            </WalletStatusProvider>
-          </NotificationProvider>
-        </RainbowKitProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
+    <AptosWalletAdapterProvider>
+      <WagmiProvider config={config}>
+        <QueryClientProvider client={queryClient}>
+          <RainbowKitProvider>
+            <NotificationProvider>
+              <WalletStatusProvider>
+                <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+                  {children}
+                </ThemeProvider>
+              </WalletStatusProvider>
+            </NotificationProvider>
+          </RainbowKitProvider>
+        </QueryClientProvider>
+      </WagmiProvider>
+    </AptosWalletAdapterProvider>
   );
 }

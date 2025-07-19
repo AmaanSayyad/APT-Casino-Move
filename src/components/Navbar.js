@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 import ConnectWalletButton from "./ConnectWalletButton";
+import AptosConnectWalletButton from "./AptosConnectWalletButton";
 import TokenBalance from './TokenBalance';
 import { useNotification } from './NotificationSystem';
 
@@ -481,6 +482,9 @@ export default function Navbar() {
           
           {/* Token Balance */}
           {isClient && !isDev && <TokenBalance />}
+          
+          {/* Aptos Wallet Button */}
+          <AptosConnectWalletButton />
           
           {/* Wallet Button */}
           <ConnectWalletButton />
