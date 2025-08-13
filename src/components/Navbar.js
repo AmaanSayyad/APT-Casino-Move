@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { useSelector, useDispatch } from 'react-redux';
-import { setBalance, setLoading } from '@/store/balanceSlice';
+import { setBalance, setLoading, loadBalanceFromStorage } from '@/store/balanceSlice';
 import AptosConnectWalletButton from "./AptosConnectWalletButton";
 
 import TokenBalance from './TokenBalance';
@@ -97,7 +97,15 @@ export default function Navbar() {
   // Load balance when wallet connects
   useEffect(() => {
     if (isWalletReady && address) {
-      loadUserBalance();
+      // First try to load from localStorage
+      const savedBalance = loadBalanceFromStorage();
+      if (savedBalance && savedBalance !== "0") {
+        console.log('Loading saved balance from localStorage:', savedBalance);
+        dispatch(setBalance(savedBalance));
+      } else {
+        // If no saved balance, load from blockchain
+        loadUserBalance();
+      }
     }
   }, [isWalletReady, address]);
 
@@ -193,18 +201,18 @@ export default function Navbar() {
       if (!payload || !payload.data || !payload.data.function) {
         throw new Error('Invalid deposit payload');
       }
-      
+
       console.log('Submitting deposit transaction...');
       const tx = await signAndSubmitTransaction(payload);
       console.log('Deposit transaction submitted:', tx);
 
-      // Optimistic UI update
-      notification.success(`Deposit of ${depositAmount} APT submitted! Balance will update shortly.`);
+      // Optimistic UI update - immediately update balance
+      const newBalance = parseInt(userBalance) + parseInt(amountOctas);
+      dispatch(setBalance(newBalance.toString()));
+      
+      notification.success(`Deposit of ${depositAmount} APT successful! Balance updated.`);
       setShowBalanceModal(false);
       setDepositAmount("0.1");
-      
-      // Start polling for balance update
-      pollForBalance(userBalance);
       
     } catch (error) {
       console.error('Deposit failed:', error);
@@ -227,37 +235,9 @@ export default function Navbar() {
       return;
     }
     
-    try {
-      dispatch(setLoading(true));
-      
-      console.log('=== WITHDRAW PROCESS ===');
-      console.log('Current balance (octas):', userBalance);
-      console.log('Current balance (APT):', currentBalance);
-      
-      const payload = UserBalanceSystem.withdraw(userBalance); // Withdraw all balance
-      console.log('Withdraw payload:', payload);
-
-      if (!payload || !payload.data || !payload.data.function) {
-        throw new Error('Invalid withdraw payload');
-      }
-      
-      console.log('Submitting withdraw transaction...');
-      const tx = await signAndSubmitTransaction(payload);
-      console.log('Withdraw transaction submitted:', tx);
-
-      // Optimistic UI update
-      notification.success(`Withdrawal of ${currentBalance.toFixed(8)} APT submitted! Balance will update shortly.`);
-      setShowBalanceModal(false);
-
-      // Start polling for balance update
-      pollForBalance(userBalance);
-      
-    } catch (error) {
-      console.error('Withdraw failed:', error);
-      notification.error(`Withdraw failed: ${error?.message || 'An unknown error occurred.'}`);
-    } finally {
-      dispatch(setLoading(false));
-    }
+    // Show "coming soon" message for withdrawals
+    notification.info('Withdraw functionality coming soon! Your APT is safe in the house account.');
+    setShowBalanceModal(false);
   };
 
   // Handle search input
@@ -790,13 +770,13 @@ export default function Navbar() {
             {/* Withdraw Section */}
             <div className="mb-4">
               <h4 className="text-sm font-medium text-white mb-2">Withdraw All APT</h4>
-                             <button
-                 onClick={handleWithdraw}
-                 disabled={!isWalletReady || isLoadingBalance || parseFloat(userBalance) <= 0}
-                 className="w-full px-4 py-2 bg-yellow-600 hover:bg-yellow-500 disabled:bg-gray-600 text-white rounded font-medium transition-colors disabled:cursor-not-allowed"
-               >
-                 {isLoadingBalance ? 'Processing...' : 'Withdraw All'}
-               </button>
+              <button
+                onClick={handleWithdraw}
+                disabled={!isWalletReady || isLoadingBalance || parseFloat(userBalance) <= 0}
+                className="w-full px-4 py-2 bg-yellow-600 hover:bg-yellow-500 disabled:bg-gray-600 text-white rounded font-medium transition-colors disabled:cursor-not-allowed"
+              >
+                Coming Soon
+              </button>
             </div>
             
             {/* Refresh Button */}
