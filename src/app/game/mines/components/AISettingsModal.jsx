@@ -254,7 +254,7 @@ const AISettingsModal = ({ isOpen, onClose, onSave, currentSettings }) => {
                   
                   <div className="space-y-3">
                     <div>
-                      <label className="text-xs text-white/70 block mb-1">Maximum Bet (APTC)</label>
+                      <label className="text-xs text-white/70 block mb-1">Maximum Bet (APT)</label>
                       <input
                         type="number"
                         name="maxBet"
@@ -265,7 +265,7 @@ const AISettingsModal = ({ isOpen, onClose, onSave, currentSettings }) => {
                     </div>
                     
                     <div>
-                      <label className="text-xs text-white/70 block mb-1">Stop Loss (APTC)</label>
+                      <label className="text-xs text-white/70 block mb-1">Stop Loss (APT)</label>
                       <input
                         type="number"
                         name="stopLoss"
@@ -276,7 +276,7 @@ const AISettingsModal = ({ isOpen, onClose, onSave, currentSettings }) => {
                     </div>
                     
                     <div>
-                      <label className="text-xs text-white/70 block mb-1">Target Profit (APTC)</label>
+                      <label className="text-xs text-white/70 block mb-1">Target Profit (APT)</label>
                       <input
                         type="number"
                         name="targetProfit"

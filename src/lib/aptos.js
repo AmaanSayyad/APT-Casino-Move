@@ -45,6 +45,10 @@ const aptosConfig = new AptosConfig({
 
 export const aptosClient = new Aptos(aptosConfig);
 
+// Debug log to verify network
+console.log("Aptos client configured for network:", DEFAULT_NETWORK);
+console.log("Network enum:", NETWORK_ENUM_MAP[DEFAULT_NETWORK]);
+
 // Module addresses for our casino contracts
 export const CASINO_MODULE_ADDRESS = process.env.NEXT_PUBLIC_CASINO_MODULE_ADDRESS || 
   "0x421055ba162a1f697532e79ea9a6852422d311f0993eb880c75110218d7f52c0";
@@ -124,22 +128,21 @@ export async function waitForTransaction(hash) {
   }
 }
 
-// Helper function to create entry function payload
-export function createEntryFunctionPayload(
-  moduleAddress,
-  moduleName,
-  functionName,
-  typeArgs = [],
-  args = []
-) {
-  return {
+// Create a transaction payload for an entry function (new SDK format)
+export const createEntryFunctionPayload = (moduleAddress, moduleName, functionName, typeArgs, args) => {
+  console.log("createEntryFunctionPayload called with:", { moduleAddress, moduleName, functionName, typeArgs, args });
+  
+  const payload = {
     data: {
       function: `${moduleAddress}::${moduleName}::${functionName}`,
-      typeArguments: typeArgs,
-      functionArguments: args,
+      typeArguments: typeArgs || [],
+      functionArguments: args || [],
     },
   };
-}
+  
+  console.log("createEntryFunctionPayload returning:", payload);
+  return payload;
+};
 
 // Helper function to create coin transfer payload
 export function createCoinTransferPayload(to, amount) {
@@ -184,6 +187,15 @@ export const CasinoGames = {
         "user_place_bet",
         [],
         [amountOctas, betKind, betValue]
+      );
+    },
+    userPlaceBetsMultiple: (amounts, kinds, values) => {
+      return createEntryFunctionPayload(
+        CASINO_MODULE_ADDRESS,
+        "roulette",
+        "user_place_bets_multiple",
+        [],
+        [amounts, kinds, values]
       );
     },
     housePlaceBet: (player, amount, betKind, betValue) => {
@@ -231,33 +243,13 @@ export const CasinoGames = {
       );
     },
     
-    startGame: (betAmount, minesCount, tilesToReveal) => {
+    userPlay: (amountOctas, pick) => {
       return createEntryFunctionPayload(
         CASINO_MODULE_ADDRESS,
         "mines", 
-        "start_game",
+        "user_play",
         [],
-        [betAmount, minesCount, tilesToReveal]
-      );
-    },
-
-    revealTile: (tileIndex) => {
-      return createEntryFunctionPayload(
-        CASINO_MODULE_ADDRESS,
-        "mines",
-        "reveal_tile", 
-        [],
-        [tileIndex]
-      );
-    },
-
-    cashout: () => {
-      return createEntryFunctionPayload(
-        CASINO_MODULE_ADDRESS,
-        "mines",
-        "cashout",
-        [],
-        []
+        [amountOctas, pick]
       );
     },
 
@@ -305,6 +297,41 @@ export const CasinoGames = {
         return resource.data;
       } catch (error) {
         console.error("Error getting wheel game state:", error);
+        return null;
+      }
+    }
+  },
+
+  // Roulette game functions
+  roulette: {
+    userPlaceBet: (amountOctas, betKind, betValue) => {
+      return createEntryFunctionPayload(
+        CASINO_MODULE_ADDRESS,
+        "roulette",
+        "user_place_bet",
+        [],
+        [amountOctas, betKind, betValue]
+      );
+    },
+    deposit: (amountOctas) => {
+      return createEntryFunctionPayload(
+        CASINO_MODULE_ADDRESS,
+        "wheel",
+        "deposit",
+        [],
+        [amountOctas, CASINO_MODULE_ADDRESS]
+      );
+    },
+
+    getGameState: async () => {
+      try {
+        const resource = await aptosClient.getAccountResource({
+          accountAddress: CASINO_MODULE_ADDRESS,
+          resourceType: `${CASINO_MODULE_ADDRESS}::roulette::GameState`
+        });
+        return resource.data;
+      } catch (error) {
+        console.error("Error getting roulette game state:", error);
         return null;
       }
     }

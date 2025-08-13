@@ -1,4 +1,4 @@
-Modül address (apt_casino): 0x421055ba162a1f697532e79ea9a6852422d311f0993eb880c75110218d7f52c0
+Module address (apt_casino): 0x421055ba162a1f697532e79ea9a6852422d311f0993eb880c75110218d7f52c0
 Roulette: 0x4210...f52c0::roulette
 Mines: 0x4210...f52c0::mines
 Wheel: 0x4210...f52c0::wheel
@@ -21,3 +21,5 @@ Wheel:
 0x...::wheel::admin_payout(admin: &signer, to: address, amount: u64)
 0x...::wheel::user_spin(user: &signer, amount: u64, sectors: u8)
 0x...::wheel::house_spin(admin: &signer, player: address, amount: u64, sectors: u8)
+User_Balance
+demo liquidity provider

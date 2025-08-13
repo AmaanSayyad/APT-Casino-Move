@@ -53,32 +53,54 @@ module apt_casino::mines {
     }
 
     #[randomness]
-    entry fun house_play(admin: &signer, player: address, amount: u64, pick: u8) acquires House, Balance {
+    entry fun house_play(admin: &signer, player: address, amount: u64, mines: u8) acquires House {
         assert!(signer::address_of(admin) == get_admin_addr(), error::permission_denied(E_NOT_ADMIN));
-        play_internal(player, amount, pick);
+        // For mines game, we don't need this function since users play directly
+        // This is kept for compatibility but not used
     }
 
     #[randomness]
-    entry fun user_play(user: &signer, amount: u64, pick: u8) acquires Balance {
-        let addr = signer::address_of(user);
-        play_internal(addr, amount, pick);
+    entry fun user_play(user: &signer, amount: u64, mines: u8) {
+        let user_addr = signer::address_of(user);
+        assert!(amount > 0, error::invalid_argument(E_INVALID_BET));
+        assert!(mines > 0 && mines < 25, error::invalid_argument(E_INVALID_BET));
+
+        // Transfer APT directly from user's wallet to casino
+        coin::transfer<AptosCoin>(user, @apt_casino, amount);
+
+        event::emit<MinesBetPlaced>(MinesBetPlaced { player: user_addr, amount, pick: mines });
+        
+        // For mines game, we don't need randomness here since it's client-side
+        // The game result is determined by the client, we just record the bet
+        let payout = 0; // Will be calculated client-side
+        
+        event::emit<MinesBetResult>(MinesBetResult { player: user_addr, win: false, mine: 0, payout });
     }
 
-    fun play_internal(player: address, amount: u64, pick: u8) acquires Balance {
-        assert!(exists<Balance>(player), error::not_found(E_INSUFFICIENT_ESCROW));
-        let b = borrow_global_mut<Balance>(player);
-        assert!(b.amount >= amount && amount > 0, error::invalid_argument(E_INVALID_BET));
-        assert!(pick < 25, error::invalid_argument(E_INVALID_BET));
+    // Cashout function for mines game
+    public entry fun cashout(user: &signer, payout: u64, multiplier: u64, revealed_count: u64) {
+        let user_addr = signer::address_of(user);
+        assert!(payout > 0, error::invalid_argument(E_INVALID_BET));
+        assert!(multiplier > 0, error::invalid_argument(E_INVALID_BET));
+        assert!(revealed_count > 0, error::invalid_argument(E_INVALID_BET));
 
-        event::emit<MinesBetPlaced>(MinesBetPlaced { player, amount, pick });
-        b.amount = b.amount - amount;
-        let mine: u8 = (randomness::u64_range(0, 25u64) as u8);
-        let win = (pick != mine);
-        let payout = if (win) amount * 2 else 0;
-        if (win && payout > 0) { b.amount = b.amount + payout; };
-        event::emit<MinesBetResult>(MinesBetResult { player, win, mine, payout });
+        // For now, we'll just emit the cashout event
+        // In a real implementation, this would need admin signature for payout
+        // The payout will be handled by the admin manually
+        
+        event::emit<MinesBetResult>(MinesBetResult { 
+            player: user_addr, 
+            win: true, 
+            mine: 0, 
+            payout 
+        });
     }
+
+    // Remove the old play_internal function since it's not needed anymore
+    // The mines game logic is handled client-side
 
     public fun get_balance(addr: address): u64 acquires Balance { if (exists<Balance>(addr)) borrow_global<Balance>(addr).amount else 0 }
     public fun get_admin_addr(): address acquires House { borrow_global<House>(@apt_casino).admin }
+    
+
 }

@@ -2,10 +2,10 @@ export const manualFormConfig = {
   fields: [
     {
       id: "betAmount",
-      label: "Bet Amount (APTC)",
+      label: "Bet Amount (APT)",
       type: "singleSelect",
-      options: [10, 25, 50, 100, 250, 500, 1000],
-      defaultValue: 50,
+      options: [0.1, 0.5, 1, 2, 5, 5, 10],
+      defaultValue: 1,
       placeholder: "Select bet amount",
     },
     {
@@ -25,10 +25,10 @@ export const autoFormConfig = {
   fields: [
     {
       id: "betAmount",
-      label: "Bet Amount (APTC)",
+      label: "Bet Amount (APT)",
       type: "singleSelect",
-      options: [10, 25, 50, 100, 250, 500, 1000],
-      defaultValue: 50,
+      options: [0.1, 0.5, 1, 2, 5, 10],
+      defaultValue: 1,
       placeholder: "Select bet amount",
     },
     {
@@ -72,16 +72,16 @@ export const autoFormConfig = {
     },
     {
       id: "stopOnProfit",
-      label: "Stop on Profit (APTC)",
+      label: "Stop on Profit (APT)",
       type: "text",
-      defaultValue: "500",
+      defaultValue: "5",
       placeholder: "Auto-stop at this profit",
     },
     {
       id: "stopOnLoss",
-      label: "Stop on Loss (APTC)",
+      label: "Stop on Loss (APT)",
       type: "text",
-      defaultValue: "500",
+      defaultValue: "5",
       placeholder: "Auto-stop at this loss",
     },
     {

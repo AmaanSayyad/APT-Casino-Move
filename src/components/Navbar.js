@@ -52,7 +52,6 @@ export default function Navbar() {
 
   // User balance management
   const [showBalanceModal, setShowBalanceModal] = useState(false);
-  const [depositAmount, setDepositAmount] = useState("0.1");
   const [withdrawAmount, setWithdrawAmount] = useState("0");
 
   // Wallet connection
@@ -173,71 +172,9 @@ export default function Navbar() {
     dispatch(setLoading(false));
   };
 
-  // Handle deposit to house account
-  const handleDeposit = async () => {
-    if (!isWalletReady) {
-      notification.error('Wallet not ready. Please connect your wallet first.');
-      return;
-    }
-    
-    if (!depositAmount || parseFloat(depositAmount) <= 0) {
-      notification.error('Please enter a valid amount');
-      return;
-    }
-    
-    try {
-      dispatch(setLoading(true));
-      
-      console.log('=== DEPOSIT PROCESS ===');
-      console.log('Deposit amount (APT):', depositAmount);
-      
-      const amountOctas = parseAptAmount(depositAmount);
-      console.log('Amount in octas:', amountOctas);
-      console.log('CASINO_MODULE_ADDRESS:', CASINO_MODULE_ADDRESS);
-      
-      const payload = UserBalanceSystem.deposit(amountOctas);
-      console.log('Deposit payload:', payload);
-
-      if (!payload || !payload.data || !payload.data.function) {
-        throw new Error('Invalid deposit payload');
-      }
-
-      console.log('Submitting deposit transaction...');
-      const tx = await signAndSubmitTransaction(payload);
-      console.log('Deposit transaction submitted:', tx);
-
-      // Optimistic UI update - immediately update balance
-      const newBalance = parseInt(userBalance) + parseInt(amountOctas);
-      dispatch(setBalance(newBalance.toString()));
-      
-      notification.success(`Deposit of ${depositAmount} APT successful! Balance updated.`);
-      setShowBalanceModal(false);
-      setDepositAmount("0.1");
-      
-    } catch (error) {
-      console.error('Deposit failed:', error);
-      notification.error(`Deposit failed: ${error?.message || 'An unknown error occurred.'}`);
-    } finally {
-      dispatch(setLoading(false));
-    }
-  };
-
   // Handle withdraw from house account
   const handleWithdraw = async () => {
-    if (!isWalletReady) {
-      notification.error('Wallet not ready. Please connect your wallet first.');
-      return;
-    }
-    
-    const currentBalance = parseFloat(userBalance) / 100000000; // Convert from octas to APT
-    if (currentBalance <= 0) {
-      notification.error('No balance to withdraw');
-      return;
-    }
-    
-    // Show "coming soon" message for withdrawals
     notification.info('Withdraw functionality coming soon! Your APT is safe in the house account.');
-    setShowBalanceModal(false);
   };
 
   // Handle search input
@@ -726,13 +663,15 @@ export default function Navbar() {
             role="dialog"
             aria-modal="true"
           >
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-white">Manage House Balance</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white">House Balance</h3>
               <button
                 onClick={() => setShowBalanceModal(false)}
-                className="text-white/50 hover:text-white"
+                className="text-gray-400 hover:text-white transition-colors"
               >
-                ✕
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
             
@@ -744,49 +683,33 @@ export default function Navbar() {
               </div>
             </div>
             
-            {/* Deposit Section */}
-            <div className="mb-4">
-              <h4 className="text-sm font-medium text-white mb-2">Deposit APT</h4>
-              <div className="flex space-x-2">
-                <input
-                  type="number"
-                  value={depositAmount}
-                  onChange={(e) => setDepositAmount(e.target.value)}
-                  placeholder="0.1"
-                  step="0.1"
-                  min="0.1"
-                  className="flex-1 bg-[#1A0018] border border-purple-500/30 rounded px-3 py-2 text-white placeholder-white/50"
-                />
-                                 <button
-                   onClick={handleDeposit}
-                   disabled={!isWalletReady || isLoadingBalance}
-                   className="px-4 py-2 bg-green-600 hover:bg-green-500 disabled:bg-gray-600 text-white rounded font-medium transition-colors disabled:cursor-not-allowed"
-                 >
-                   {isLoadingBalance ? 'Processing...' : 'Deposit'}
-                 </button>
-              </div>
-            </div>
-            
             {/* Withdraw Section */}
             <div className="mb-4">
               <h4 className="text-sm font-medium text-white mb-2">Withdraw All APT</h4>
               <button
                 onClick={handleWithdraw}
-                disabled={!isWalletReady || isLoadingBalance || parseFloat(userBalance) <= 0}
-                className="w-full px-4 py-2 bg-yellow-600 hover:bg-yellow-500 disabled:bg-gray-600 text-white rounded font-medium transition-colors disabled:cursor-not-allowed"
+                className="w-full px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded font-medium transition-colors"
               >
                 Coming Soon
               </button>
             </div>
             
-            {/* Refresh Button */}
-            <div className="text-center">
+            {/* Refresh Balance */}
+            <div className="mt-6">
               <button
-                onClick={loadUserBalance}
-                disabled={isLoadingBalance}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-600 text-white rounded font-medium transition-colors disabled:cursor-not-allowed"
+                onClick={() => {
+                  // Only refresh from localStorage, don't try blockchain
+                  const savedBalance = loadBalanceFromStorage();
+                  if (savedBalance && savedBalance !== "0") {
+                    console.log('Refreshing balance from localStorage:', savedBalance);
+                    dispatch(setBalance(savedBalance));
+                  } else {
+                    console.log('No saved balance in localStorage');
+                  }
+                }}
+                className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded font-medium transition-colors"
               >
-                {isLoadingBalance ? 'Refreshing...' : 'Refresh Balance'}
+                Refresh Balance
               </button>
             </div>
           </div>

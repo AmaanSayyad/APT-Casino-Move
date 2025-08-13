@@ -112,7 +112,8 @@ const CustomInput = ({
               onChange={onChange}
               type={type}
               placeholder={getFormattedPlaceholder(name)}
-              className={`w-full rounded-lg py-3 pl-11 ${(name === 'betAmount' || name.includes('stop')) ? 'pr-16' : 'pr-4'} bg-gradient-to-br from-[#190026]/90 to-[#0D0015]/90 text-white font-medium focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all cursor-pointer text-sm`}
+              className={`w-full rounded-lg py-3 pl-11 ${(name === 'betAmount' || name.includes('stop')) ? 'pr-16' : 'pr-4'} bg-[#190026] text-white font-medium focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all cursor-pointer text-sm`}
+              style={{ backgroundColor: '#190026' }}
             />
           )}
         </div>

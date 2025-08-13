@@ -192,7 +192,7 @@ const MinesBettingTable = ({ bettingTableData }) => {
         <div className="grid grid-cols-3 gap-3 mb-4 text-white/80 text-sm font-medium border-b border-gray-800/50 pb-3">
           <div className="font-display">Tiles Revealed</div>
           <div className="font-display">Multiplier</div>
-          <div className="font-display">For 100 APTC</div>
+                          <div className="font-display">For 1 APT</div>
         </div>
         
         <motion.div
@@ -208,7 +208,7 @@ const MinesBettingTable = ({ bettingTableData }) => {
             // Extract the numeric value from the multiplier string - safely
             const multiplierText = tile.multiplier || "0x";
             const multiplierValue = parseFloat(multiplierText.replace('x', '').replace(',', '')) || 0;
-            // Calculate payout for 100 APTC
+            // Calculate payout for 1 APT
             const payout = (100 * multiplierValue).toFixed(0);
             
             // Determine background color based on payout

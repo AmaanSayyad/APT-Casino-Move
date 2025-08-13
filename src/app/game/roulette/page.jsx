@@ -21,6 +21,7 @@ import { gameData, bettingTableData } from "./config/gameDetail";
 import { useToken } from "@/hooks/useToken";
 import BettingHistory from '@/components/BettingHistory';
 import useWalletStatus from '@/hooks/useWalletStatus';
+
 import { FaVolumeMute, FaVolumeUp, FaChartLine, FaCoins, FaTrophy, FaDice, FaBalanceScale, FaRandom, FaPercentage, FaPlayCircle } from "react-icons/fa";
 import { GiCardRandom, GiDiceTarget, GiRollingDices, GiPokerHand } from "react-icons/gi";
 import { motion } from "framer-motion";
@@ -30,8 +31,9 @@ import RoulettePayout from './components/RoulettePayout';
 import WinProbabilities from './components/WinProbabilities';
 import RouletteHistory from './components/RouletteHistory';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { useSelector, useDispatch } from 'react-redux';
+import { setBalance, setLoading, loadBalanceFromStorage } from '@/store/balanceSlice';
 import { aptosClient, CASINO_MODULE_ADDRESS, parseAptAmount, CasinoGames } from '@/lib/aptos';
-import { Aptos } from "@aptos-labs/ts-sdk"; // If not already imported
 
 
 // Aptos wallet integration will be added here
@@ -891,22 +893,14 @@ export default function GameRoulette() {
   const [rollResult, setRollResult] = useState(-1);
   const [notificationIndex, setNotificationIndex] = useState(0);
   const [showNotification, setShowNotification] = useState(false);
-  const [notificationMessages] = useState([
-    "Placing Bet...",
-    "Bet Placed Successfully!",
-    "Generating VRF Outcome...",
-    "Result Ready!"
-  ]);
-  const [selectedNumbers, setSelectedNumbers] = useState([]);
-  const [currentBetType, setCurrentBetType] = useState(null);
-  const [writeContractResult, setWriteContractResult] = useState(null);
-  const [writeContractError, setWriteContractError] = useState(null);
-  const [isWaitingForTransaction, setIsWaitingForTransaction] = useState(false);
-  const [transactionReceipt, setTransactionReceipt] = useState(null);
-  const [wheelSpinning, setWheelSpinning] = useState(false);
-  const [showBettingStats, setShowBettingStats] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState("");
+  const [notificationSeverity, setNotificationSeverity] = useState("success");
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
   const [showHelp, setShowHelp] = useState(false);
   const [recentResults, setRecentResults] = useState([]);
+  const [wheelSpinning, setWheelSpinning] = useState(false);
+  const [showBettingStats, setShowBettingStats] = useState(false);
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [bettingHistory, setBettingHistory] = useState([]);
@@ -917,8 +911,35 @@ export default function GameRoulette() {
   const address = account?.address;
   const isConnected = !!connected;
   const isWalletReady = isConnected && account && signAndSubmitTransaction && wallet;
-  const { balance } = useToken(address);
+  const [realBalance, setRealBalance] = useState('0');
+  const { balance } = useToken(address); // Keep for compatibility
   const HOUSE_ADDR = CASINO_MODULE_ADDRESS;
+
+  // Function to fetch real APT balance
+  const fetchRealBalance = useCallback(async () => {
+    if (!account?.address) return;
+    
+    try {
+      const resources = await aptosClient.getAccountResources({ accountAddress: account.address });
+      const aptCoinResource = resources.find(r => r.type === "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>");
+      
+      if (aptCoinResource) {
+        const balanceValue = aptCoinResource.data.coin.value;
+        const formattedBalance = (parseInt(balanceValue) / 100000000).toFixed(8);
+        setRealBalance(formattedBalance);
+        console.log("Real balance updated:", formattedBalance);
+      }
+    } catch (error) {
+      console.error("Error fetching real balance:", error);
+    }
+  }, [account?.address]);
+
+  // Fetch balance when wallet connects
+  useEffect(() => {
+    if (account?.address) {
+      fetchRealBalance();
+    }
+  }, [account?.address, fetchRealBalance]);
 
   // Sound refs
   const spinSoundRef = useRef(null);
@@ -1073,6 +1094,10 @@ export default function GameRoulette() {
 
   // Create theme using muiStyles
   const theme = createTheme(muiStyles["dark"]);
+
+  // Redux state management
+  const dispatch = useDispatch();
+  const { userBalance, isLoading: isLoadingBalance } = useSelector((state) => state.balance);
 
   // insert into events
   const insertEvent = (type, oldVal, newVal, ind = 0) => {
@@ -1801,100 +1826,179 @@ export default function GameRoulette() {
     dispatchEvents({ type: "reset" });
   }, [playSound, menuClickRef]);
 
-  // Deposit to escrow
-  const handleDeposit = useCallback(async () => {
-    if (!isWalletReady) return alert('Connect Aptos wallet first');
-    const amountApt = bet > 0 ? bet : 1; // default 1 APT
-    const amountOctas = parseAptAmount(String(amountApt));
-    try {
-      const payload = CasinoGames.roulette.deposit(amountOctas, CASINO_MODULE_ADDRESS);
-      const tx = await signAndSubmitTransaction(payload);
-      await aptosClient.waitForTransaction({ transactionHash: tx.hash });
-      alert(`Deposited ${amountApt} APT`);
-    } catch (e) {
-      console.error(e);
-      alert(`Deposit failed: ${e?.message || e}`);
-    }
-  }, [isWalletReady, bet, signAndSubmitTransaction]);
-
-  const aptosClient = new Aptos(); // Assuming testnet, adjust if needed
-
-  // Add error checking for signAndSubmitTransaction
-  if (!signAndSubmitTransaction) {
-    console.error("signAndSubmitTransaction is not available");
-    return;
-  }
-
   const handlePlaceBet = async (amountOctas, betKind, betValue) => {
     if (!isWalletReady) {
       throw new Error('Wallet not ready. Please connect your wallet first.');
     }
     
+    if (!signAndSubmitTransaction) {
+      throw new Error('Wallet signAndSubmitTransaction not available');
+    }
+    
     try {
-      console.log("Submitting transaction with:", { amountOctas, betKind, betValue });
+      console.log("=== ROULETTE BET DEBUG ===");
+      console.log("Input parameters:", { amountOctas, betKind, betValue });
       console.log("signAndSubmitTransaction available:", !!signAndSubmitTransaction);
+      console.log("CasinoGames available:", !!CasinoGames);
+      console.log("CasinoGames.roulette available:", !!CasinoGames?.roulette);
+      console.log("CasinoGames.roulette.userPlaceBet available:", !!CasinoGames?.roulette?.userPlaceBet);
       
+      if (!CasinoGames?.roulette?.userPlaceBet) {
+        throw new Error('CasinoGames.roulette.userPlaceBet is not available');
+      }
+      
+      console.log("About to call userPlaceBet with:", { amountOctas, betKind, betValue });
       const payload = CasinoGames.roulette.userPlaceBet(amountOctas, betKind, betValue);
-      console.log("Payload created:", payload);
+      console.log("Payload created:", JSON.stringify(payload, null, 2));
       console.log("Payload type:", typeof payload);
-      console.log("Payload keys:", Object.keys(payload));
-      console.log("Payload.function:", payload?.function);
+      console.log("Payload keys:", Object.keys(payload || {}));
       
-      if (!payload || !payload.function) {
+      if (!payload || !payload.data || !payload.data.function) {
+        console.error("Payload validation failed - payload structure:", payload);
         throw new Error('Invalid payload created');
       }
       
       console.log("About to call signAndSubmitTransaction with payload:", payload);
       const response = await signAndSubmitTransaction(payload);
       console.log("Transaction submitted:", response);
-      await aptosClient.waitForTransaction({ transactionHash: response.hash });
+      console.log("Response keys:", Object.keys(response || {}));
+      console.log("Response hash:", response?.hash);
+      
+      // Wait for transaction using the imported aptosClient
+      const txHash = response?.hash || response;
+      console.log("Using transaction hash:", txHash);
+      
+      try {
+        await aptosClient.waitForTransaction({ transactionHash: txHash });
+        console.log("Transaction confirmed on blockchain");
+      } catch (waitError) {
+        console.warn("Could not wait for transaction confirmation, but transaction was submitted:", waitError.message);
+        // Transaction was still submitted successfully, so we continue
+      }
+      
       console.log("Bet placed successfully");
     } catch (error) {
-      console.error("Failed to place bet:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error("Failed to place bet:", errorMessage, error);
       throw error;
     }
   };
 
+  // This is the primary function called when the user clicks "Place Bet"
   const placeAptBet = async () => {
     if (!isWalletReady) {
       alert("Please connect your wallet first");
       return;
     }
-    if (total <= 0) {
-      alert("Please select a bet");
+
+    // --- 1. Collect all active bets from the board state ---
+    const activeBets = [];
+    const addBet = (amount, kind, value, name) => {
+      if (amount > 0) activeBets.push({ amount, kind, value, name });
+    };
+
+    addBet(red, 1, 0, "Red");
+    addBet(black, 1, 1, "Black");
+    addBet(odd, 2, 1, "Odd");
+    addBet(even, 2, 0, "Even");
+    addBet(under, 3, 0, "1-18"); // Using kind 3 for High/Low
+    addBet(over, 3, 1, "19-36");
+    dozens.forEach((amount, i) => addBet(amount, 4, i, `Dozen ${i+1}`));
+    columns.forEach((amount, i) => addBet(amount, 5, i, `Column ${i+1}`));
+    inside.forEach((amount, i) => addBet(amount, 0, i, `Number ${i}`));
+
+    if (activeBets.length === 0) {
+      alert("Please place a bet");
       return;
     }
 
-    // Map current selections to bet_kind and bet_value
-    let betKind = 0; 
-    let betValue = 0; 
-    let betAmount = total;
+    // For now, only allow single bets
+    if (activeBets.length > 1) {
+      alert(`You have ${activeBets.length} bets selected. Please select only one bet type for now.`);
+      return;
+    }
 
-    if (red > 0) { betKind = 1; betValue = 0; betAmount = red; }
-    else if (black > 0) { betKind = 1; betValue = 1; betAmount = black; }
-    else if (odd > 0) { betKind = 2; betValue = 1; betAmount = odd; }
-    else if (even > 0) { betKind = 2; betValue = 0; betAmount = even; }
-    // Add more mappings as needed
-
-    console.log("Betting with:", { betAmount, betKind, betValue, total, red, black, odd, even });
-
-    const amountOctas = parseAptAmount(betAmount.toString());
+    const bet = activeBets[0];
+    console.log(`Placing single bet: ${bet.name} - ${bet.amount} APT`);
 
     setSubmitDisabled(true);
     setWheelSpinning(true);
 
     try {
-      await handlePlaceBet(amountOctas, betKind, betValue);
-      setNotificationIndex(3);
-      setShowNotification(true);
+      const amountOctas = parseAptAmount(bet.amount.toString());
+      await handlePlaceBet(amountOctas, bet.kind, bet.value);
+      
+      console.log(`Bet placed successfully: ${bet.name}`);
+      
+      // Update balance after bet
+      setTimeout(() => {
+        fetchRealBalance();
+      }, 2000); // Wait 2 seconds for blockchain to update
+      
+      // Simulate visual result
+      const winningNumber = Math.floor(Math.random() * 37);
+      setRollResult(winningNumber);
+      
+      setNotificationMessage(`🎲 ${bet.name} bet placed successfully! Wagered: ${bet.amount} APT`);
+      setNotificationSeverity("success");
+      setSnackbarMessage(`🎲 ${bet.name} bet placed successfully! Wagered: ${bet.amount} APT`);
+      setSnackbarOpen(true);
+
     } catch (e) {
       console.error("Bet error:", e);
       const errorMessage = e?.message || e?.toString() || "Unknown error occurred";
-      alert(`Bet failed: ${errorMessage}`);
+      setNotificationMessage(`❌ Bet failed: ${errorMessage}`);
+      setNotificationSeverity("error");
+      setSnackbarMessage(`❌ Bet failed: ${errorMessage}`);
+      setSnackbarOpen(true);
     } finally {
       setSubmitDisabled(false);
       setWheelSpinning(false);
     }
+  };
+
+  // Helper function to get payout ratio based on bet kind
+  const getPayoutRatio = (kind) => {
+    switch (kind) {
+      case 0: return 35; // Single Number
+      case 1: return 2;  // Color
+      case 2: return 2;  // Odd/Even
+      case 3: return 2;  // High/Low
+      case 4: return 3;  // Dozen
+      case 5: return 3;  // Column
+      default: return 0;
+    }
+  };
+
+  // Helper function to check if a bet is a winner
+  const checkWin = (kind, value, winningNumber) => {
+    if (winningNumber === 0 && kind !== 0) return false;
+
+    const redNumbers = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
+    switch (kind) {
+      case 0: return value === winningNumber; // Single Number
+      case 1: return value === 0 ? redNumbers.includes(winningNumber) : !redNumbers.includes(winningNumber); // Color
+      case 2: return value === 1 ? winningNumber % 2 !== 0 : winningNumber % 2 === 0; // Odd/Even
+      case 3: return value === 0 ? winningNumber >= 1 && winningNumber <= 18 : winningNumber >= 19 && winningNumber <= 36; // High/Low
+      case 4: return (value === 0 && winningNumber <= 12) || (value === 1 && winningNumber > 12 && winningNumber <= 24) || (value === 2 && winningNumber > 24 && winningNumber <= 36); // Dozen
+      case 5: return (value === 0 && winningNumber % 3 === 1) || (value === 1 && winningNumber % 3 === 2) || (value === 2 && winningNumber % 3 === 0); // Column
+      default: return false;
+    }
+  };
+  
+  const handleGoAgain = () => {
+    console.log("Resetting game for next round...");
+    
+    // Reset core game state
+    setRollResult(-1);
+    setWinnings(0);
+    setSubmitDisabled(false);
+    
+    // Clear all bets from the board
+    clearBet();
+    
+    // Reset the main bet amount input if you want
+    setBet(0.1); 
   };
 
   return (
@@ -2296,18 +2400,55 @@ export default function GameRoulette() {
                 value={bet}
                 handleChange={handleBetChange}
               />
-              <Box sx={{ mt: 2, mb: 1 }}>
-                <Typography variant="body1" color="white">
-                  Total Balance:{" "}
-                  {balance === '0' ? (
-                    <CircularProgress size={16} />
-                  ) : (
-                    `${currency(balance, { pattern: "#", precision: 4 }).format()} APTC`
-                  )}
-              </Typography>
-            </Box>
+              {/* User Balance Display */}
+              {isWalletReady && (
+                <Box sx={{ mt: 2, mb: 1 }}>
+                  <Box
+                    sx={{
+                      background: 'linear-gradient(to right, rgba(34, 197, 94, 0.2), rgba(22, 163, 74, 0.1))',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(34, 197, 94, 0.3)',
+                      px: 1.5,
+                      py: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
+                        Balance:
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: 'success.light', fontWeight: 'medium', fontSize: '0.875rem' }}>
+                        {isLoadingBalance ? 'Loading...' : `${(parseFloat(userBalance || "0") / 100000000).toFixed(8)} APT`}
+                      </Typography>
+                    </Box>
+                    <Button
+                      size="small"
+                      onClick={() => {
+                        // Show balance modal functionality can be added here
+                        console.log('Manage balance clicked');
+                      }}
+                      sx={{
+                        ml: 1,
+                        fontSize: '0.75rem',
+                        backgroundColor: 'rgba(34, 197, 94, 0.3)',
+                        color: 'success.light',
+                        '&:hover': {
+                          backgroundColor: 'rgba(34, 197, 94, 0.4)',
+                        },
+                        px: 1,
+                        py: 0.5,
+                        minWidth: 'auto'
+                      }}
+                    >
+                      Manage
+                    </Button>
+                  </Box>
+                </Box>
+              )}
               <Typography color="white" sx={{ opacity: 0.8 }}>
-                Current Bet Total: {currency(total, { pattern: "#" }).format()} APTC
+                Current Bet Total: {currency(total, { pattern: "#" }).format()} APT
               </Typography>
               
               {/* Quick Bet Buttons */}
@@ -2364,54 +2505,41 @@ export default function GameRoulette() {
               <Box sx={{ mt: 3 }}>
               {rollResult >= 0 ? (
                 <Box>
-                  {winnings > 0 ? (
-                      <Button 
-                        onClick={() => handleWithdrawWinnings(winnings)}
-                        sx={{
-                          animation: 'pulse 1.5s infinite',
-                          '@keyframes pulse': {
-                            '0%': { transform: 'scale(1)' },
-                            '50%': { transform: 'scale(1.05)' },
-                            '100%': { transform: 'scale(1)' },
-                          }
-                        }}
-                      >
-                        Collect {winnings} APTC
-                      </Button>
-                    ) : (
-                      <Button onClick={() => placeBet(null, null, null, 0, true)}>Go Again</Button>
-                    )}
-                    <Box sx={{ mt: 1, textAlign: 'center' }}>
-                      <Typography variant="h5">
-                        Result: <span style={{ 
-                          color: rollResult === 0 ? '#14D854' : 
-                                 [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(rollResult) ? '#d82633' : 'white'
-                        }}>{rollResult}</span>
+                  <Button onClick={handleGoAgain}>Go Again</Button>
+                  <Box sx={{ mt: 1, textAlign: 'center' }}>
+                    <Typography variant="h5">
+                      Result: <span style={{ 
+                        color: rollResult === 0 ? '#14D854' : 
+                               [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(rollResult) ? '#d82633' : 'white'
+                      }}>{rollResult}</span>
                     </Typography>
-                      {winnings > 0 ? (
-                        <Typography variant="body1" color="success.main" sx={{ animation: 'fadeIn 1s', fontWeight: 'bold' }}>
-                          You won {winnings} APTC!
-                        </Typography>
-                      ) : (
-                        <Typography variant="body1" color="white" sx={{ opacity: 0.8 }}>
-                          Better luck next time!
-                        </Typography>
-                      )}
                   </Box>
                 </Box>
-              ) : isConnected ? (
+              ) : isWalletReady ? (
                 <Box sx={{ display: "flex", flexDirection: "column" }}>
                   <Button
                     disabled={total === 0 || submitDisabled}
                     loading={submitDisabled}
                     onClick={placeAptBet}
                   >
-                    Place Bet (APT)
+                    {total > 0 ? `Place Bet (${total.toFixed(2)} APT)` : 'Place Bet (APT)'}
                   </Button>
-                  <Button sx={{ mt: 1 }} onClick={handleDeposit}>Deposit APT</Button>
                   {submitDisabled && rollResult < 0 && (
                     <Typography color="white" sx={{ opacity: 0.8 }}>
                       Die being rolled, please wait...
+                    </Typography>
+                  )}
+                  {total > 0 && !submitDisabled && (
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1, textAlign: 'center' }}>
+                      {(() => {
+                        const activeBetCount = [red, black, odd, even, over, under].filter(x => x > 0).length +
+                                              dozens.filter(x => x > 0).length +
+                                              columns.filter(x => x > 0).length +
+                                              inside.filter(x => x > 0).length;
+                        return activeBetCount > 1 
+                          ? `${activeBetCount} bets selected - Please select only one bet type`
+                          : `1 bet selected`;
+                      })()}
                     </Typography>
                   )}
                 </Box>
@@ -2429,32 +2557,45 @@ export default function GameRoulette() {
             <Box sx={{ width: { xs: '100%', md: '300px' }, mt: { xs: 4, md: 0 } }}>
               <Box sx={{ display: 'flex', mb: 1 }}>
                 <Button 
+                  variant={showBettingStats ? "outlined" : "contained"}
                   onClick={() => setShowBettingStats(false)}
-                  sx={{ 
-                    flex: 1, 
-                    borderBottom: !showBettingStats ? '2px solid #681DDB' : '2px solid transparent'
-                  }}
+                  sx={{ mr: 1, minWidth: 80 }}
                 >
                   History
                 </Button>
                 <Button 
+                  variant={showBettingStats ? "contained" : "outlined"}
                   onClick={() => setShowBettingStats(true)}
-                  sx={{ 
-                    flex: 1, 
-                    borderBottom: showBettingStats ? '2px solid #681DDB' : '2px solid transparent'
-                  }}
+                  sx={{ minWidth: 80 }}
                 >
                   Stats
                 </Button>
-        </Box>
-
-              {showBettingStats ? (
-                <BettingStats history={bettingHistory} />
-              ) : (
-                <BettingHistory history={bettingHistory} />
-              )}
+              </Box>
+              
+              <Box sx={{ 
+                backgroundColor: 'rgba(0,0,0,0.3)', 
+                borderRadius: 2, 
+                p: 2, 
+                minHeight: 300,
+                border: '1px solid rgba(255,255,255,0.1)'
+              }}>
+                {!showBettingStats ? (
+                  <Box>
+                    <Typography variant="h6" color="white" sx={{ mb: 2 }}>
+                      Betting History
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      No betting history yet
+                    </Typography>
+                  </Box>
+                ) : (
+                  <BettingStats history={bettingHistory} />
+                )}
+              </Box>
             </Box>
           </Box>
+        </Box>
+
           
           {/* Help Modal for Mobile */}
           {showHelp && (
@@ -2733,20 +2874,22 @@ export default function GameRoulette() {
               }}
             />
           </Box>
-        </Box>
 
         <Snackbar
           open={showNotification}
-          autoHideDuration={notificationIndex === notificationSteps.RESULT_READY ? 5000 : null}
+          autoHideDuration={6000}
           onClose={handleCloseNotification}
-          anchorOrigin={{ vertical: "top", horizontal: "center" }}
+          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+          sx={{ zIndex: 10001 }}
         >
-          <Alert
+          <MuiAlert
             onClose={handleCloseNotification}
             severity={notificationIndex === notificationSteps.RESULT_READY ? (winnings > 0 ? "success" : "error") : "info"}
-            sx={{ width: "100%" }}
+            elevation={6}
+            variant="filled"
+            sx={{ width: '100%', backgroundColor: 'background.paper', color: 'text.primary' }}
           >
-            {notificationMessages[notificationIndex]}
+            {notificationMessage}
             {notificationIndex === notificationSteps.RESULT_READY && (
               <Typography>
                 {winnings > 0
@@ -2754,7 +2897,7 @@ export default function GameRoulette() {
                   : "Better luck next time!"}
               </Typography>
             )}
-          </Alert>
+          </MuiAlert>
         </Snackbar>
 
         {/* Sound control button - add near the top of the UI */}
@@ -2771,6 +2914,25 @@ export default function GameRoulette() {
             {isMuted ? <FaVolumeMute /> : <FaVolumeUp />}
           </IconButton>
         </Box>
+
+        {/* Snackbar for notifications */}
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={6000}
+          onClose={() => setSnackbarOpen(false)}
+          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        >
+          <MuiAlert
+            onClose={() => setSnackbarOpen(false)}
+            severity="info"
+            elevation={6}
+            variant="filled"
+          >
+            {snackbarMessage}
+          </MuiAlert>
+        </Snackbar>
+
+        <GameDetail gameData={gameData} bettingTableData={bettingTableData} />
       </div>
     </ThemeProvider>
   );

@@ -58,4 +58,27 @@ module apt_casino::user_balance {
     public fun get_admin_addr(): address acquires House {
         borrow_global<House>(@apt_casino).admin
     }
+
+    // Add winnings from games (can be called by other modules)
+    public fun add_winnings(user_addr: address, amount: u64) acquires UserBalance {
+        if (exists<UserBalance>(user_addr)) {
+            let user_balance = borrow_global_mut<UserBalance>(user_addr);
+            user_balance.balance = user_balance.balance + amount;
+        } else {
+            // Create new balance if it doesn't exist
+            // Note: This requires the user to have called deposit at least once
+        };
+    }
+
+    // Add winnings with signer (can create new balance if needed)
+    public entry fun add_winnings_with_signer(user: &signer, amount: u64) acquires UserBalance {
+        let user_addr = signer::address_of(user);
+        if (exists<UserBalance>(user_addr)) {
+            let user_balance = borrow_global_mut<UserBalance>(user_addr);
+            user_balance.balance = user_balance.balance + amount;
+        } else {
+            // Create new balance if it doesn't exist
+            move_to(user, UserBalance { balance: amount });
+        };
+    }
 }

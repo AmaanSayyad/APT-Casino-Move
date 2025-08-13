@@ -1,10 +1,12 @@
 module apt_casino::roulette {
     use std::signer;
+    use std::vector; // Import the vector module
     use aptos_framework::event; // module events
     use aptos_framework::error; // error helpers
     use aptos_framework::aptos_coin::AptosCoin;
     use aptos_framework::coin;
     use aptos_framework::randomness; // On-chain randomness (Aptos Roll)
+    use apt_casino::user_balance;
 
     /// Admin/House state
     struct House has key {
@@ -129,25 +131,116 @@ module apt_casino::roulette {
                 let want_odd = (bet_value == 1);
                 if ((is_odd && want_odd) || (!is_odd && !want_odd)) (true, amount * 2) else (false, 0)
             } else (false, 0)
+        } else if (bet_kind == 3) { // High/Low bet
+            if (roll > 0) {
+                if (bet_value == 0 && roll <= 18) { (true, amount * 2) } // Low (1-18)
+                else if (bet_value == 1 && roll > 18 && roll <= 36) { (true, amount * 2) } // High (19-36)
+                else { (false, 0) }
+            } else { (false, 0) }
+        } else if (bet_kind == 4) { // Dozen bet
+            if (roll > 0) {
+                if (bet_value == 0 && roll <= 12) { (true, amount * 3) }
+                else if (bet_value == 1 && roll > 12 && roll <= 24) { (true, amount * 3) }
+                else if (bet_value == 2 && roll > 24 && roll <= 36) { (true, amount * 3) }
+                else { (false, 0) }
+            } else { (false, 0) }
+        } else if (bet_kind == 5) { // Column bet
+            if (roll > 0) {
+                if (bet_value == 0 && roll % 3 == 1) { (true, amount * 3) }
+                else if (bet_value == 1 && roll % 3 == 2) { (true, amount * 3) }
+                else if (bet_value == 2 && roll % 3 == 0) { (true, amount * 3) }
+                else { (false, 0) }
+            } else { (false, 0) }
         } else {
             abort error::invalid_argument(E_INVALID_BET)
         }
     }
 
-    /// User places a bet directly (user pays gas). Requires prior deposit to have escrow.
+    /// User places a bet directly (user pays gas). Direct wallet betting, no deposit needed.
     #[randomness]
     entry fun user_place_bet(user: &signer, amount: u64, bet_kind: u8, bet_value: u8) acquires Balance {
         let user_addr = signer::address_of(user);
-        assert!(exists<Balance>(user_addr), error::not_found(E_INSUFFICIENT_ESCROW));
+        
+        // Take APT directly from user's wallet
+        coin::transfer<AptosCoin>(user, @apt_casino, amount);
+        
+        // Create roulette balance for this user if it doesn't exist
+        if (!exists<Balance>(user_addr)) {
+            move_to(user, Balance { amount: 0 });
+        };
+        
+        // Now place bet with the amount
         let bal = borrow_global_mut<Balance>(user_addr);
-        assert!(bal.amount >= amount, error::invalid_argument(E_INSUFFICIENT_ESCROW));
-
+        
         event::emit<BetPlaced>(BetPlaced { player: user_addr, amount, bet_kind, bet_value });
-        bal.amount = bal.amount - amount;
+        
+        // Calculate result using on-chain randomness
         let roll: u8 = (randomness::u64_range(0, 37) as u8);
         let (win, payout) = settle(amount, bet_kind, bet_value, roll);
-        if (win && payout > 0) bal.amount = bal.amount + payout;
+        
+        if (win && payout > 0) {
+            bal.amount = bal.amount + payout;
+            
+            // Also add winnings to main user_balance system
+            user_balance::add_winnings_with_signer(user, payout);
+        };
+        
         event::emit<BetResult>(BetResult { player: user_addr, win, roll, payout });
+    }
+
+    /// User places multiple bets directly (user pays gas).
+    #[randomness]
+    entry fun user_place_bets_multiple(user: &signer, amounts: vector<u64>, bet_kinds: vector<u8>, bet_values: vector<u8>) acquires Balance {
+        let user_addr = signer::address_of(user);
+
+        // --- 1. Calculate Total Bet Amount & Validate ---
+        let num_bets = vector::length(&amounts);
+        assert!(vector::length(&bet_kinds) == num_bets, error::invalid_argument(E_INVALID_BET));
+        assert!(vector::length(&bet_values) == num_bets, error::invalid_argument(E_INVALID_BET));
+
+        let i = 0;
+        let total_amount = 0;
+        while (i < num_bets) {
+            total_amount = total_amount + *vector::borrow(&amounts, i);
+            i = i + 1;
+        };
+        assert!(total_amount > 0, error::invalid_argument(E_INVALID_BET));
+
+        // --- 2. Transfer Total Amount ---
+        coin::transfer<AptosCoin>(user, @apt_casino, total_amount);
+
+        if (!exists<Balance>(user_addr)) {
+            move_to(user, Balance { amount: 0 });
+        };
+
+        // --- 3. Settle Bets ---
+        let roll: u8 = (randomness::u64_range(0, 37) as u8);
+        let bal = borrow_global_mut<Balance>(user_addr);
+        let total_payout = 0;
+        let overall_win = false;
+        
+        i = 0;
+        while (i < num_bets) {
+            let amount = *vector::borrow(&amounts, i);
+            let bet_kind = *vector::borrow(&bet_kinds, i);
+            let bet_value = *vector::borrow(&bet_values, i);
+
+            event::emit<BetPlaced>(BetPlaced { player: user_addr, amount, bet_kind, bet_value });
+            let (win, payout) = settle(amount, bet_kind, bet_value, roll);
+            if (win) {
+                overall_win = true;
+                total_payout = total_payout + payout;
+            };
+            i = i + 1;
+        };
+
+        // --- 4. Handle Payouts ---
+        if (overall_win && total_payout > 0) {
+            bal.amount = bal.amount + total_payout;
+            user_balance::add_winnings_with_signer(user, total_payout);
+        };
+
+        event::emit<BetResult>(BetResult { player: user_addr, win: overall_win, roll, payout: total_payout });
     }
 }
 

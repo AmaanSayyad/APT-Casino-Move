@@ -5,6 +5,7 @@ module apt_casino::wheel {
     use aptos_framework::aptos_coin::AptosCoin;
     use aptos_framework::coin;
     use aptos_framework::randomness;
+    use apt_casino::user_balance;
 
     struct House has key { admin: address }
     struct Balance has key { amount: u64 }
@@ -25,6 +26,7 @@ module apt_casino::wheel {
         coin::register<AptosCoin>(admin);
     }
 
+    // Keep for backward compatibility (not used in new system)
     public entry fun deposit(user: &signer, amount: u64, house_addr: address) acquires Balance {
         coin::transfer<AptosCoin>(user, house_addr, amount);
         let addr = signer::address_of(user);
@@ -52,27 +54,46 @@ module apt_casino::wheel {
     #[randomness]
     entry fun house_spin(admin: &signer, player: address, amount: u64, sectors: u8) acquires House, Balance {
         assert!(signer::address_of(admin) == get_admin_addr(), error::permission_denied(E_NOT_ADMIN));
-        spin_internal(player, amount, sectors);
+        spin_internal(admin, player, amount, sectors);
     }
 
     #[randomness]
     entry fun user_spin(user: &signer, amount: u64, sectors: u8) acquires Balance {
         let addr = signer::address_of(user);
-        spin_internal(addr, amount, sectors);
+        
+        // Take APT directly from user's wallet
+        coin::transfer<AptosCoin>(user, @apt_casino, amount);
+        
+        // Create wheel balance for this user if it doesn't exist
+        if (!exists<Balance>(addr)) {
+            move_to(user, Balance { amount: 0 });
+        };
+        
+        // Now spin with the bet amount
+        spin_internal(user, addr, amount, sectors);
     }
 
-    fun spin_internal(player: address, amount: u64, sectors: u8) acquires Balance {
-        assert!(exists<Balance>(player), error::not_found(E_INSUFFICIENT_ESCROW));
-        let b = borrow_global_mut<Balance>(player);
-        assert!(amount > 0 && b.amount >= amount, error::invalid_argument(E_INVALID_BET));
+    fun spin_internal(user: &signer, player: address, amount: u64, sectors: u8) acquires Balance {
+        // No need to check Balance resource - we're using the bet amount directly
+        assert!(amount > 0, error::invalid_argument(E_INVALID_BET));
         assert!(sectors > 1 && sectors <= 12, error::invalid_argument(E_INVALID_BET));
 
         event::emit<WheelBetPlaced>(WheelBetPlaced { player, amount, sectors });
-        b.amount = b.amount - amount;
+        
+        // Calculate result and payout
         let result: u8 = (randomness::u64_range(0, (sectors as u64)) as u8);
         let multiplier = if (result == 0) 2 else if (result == 1) 3 else if (result == 2) 4 else 5;
         let payout = amount * (multiplier as u64) / 2; // simple demo
-        if (payout > 0) { b.amount = b.amount + payout; };
+        
+        if (payout > 0) { 
+            // Transfer winnings to main user_balance system
+            user_balance::add_winnings_with_signer(user, payout);
+            
+            // Also add to wheel balance for immediate use
+            let b = borrow_global_mut<Balance>(player);
+            b.amount = b.amount + payout;
+        };
+        
         event::emit<WheelBetResult>(WheelBetResult { player, result, payout });
     }
 
