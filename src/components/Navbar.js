@@ -10,7 +10,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { setBalance, setLoading, loadBalanceFromStorage } from '@/store/balanceSlice';
 import AptosConnectWalletButton from "./AptosConnectWalletButton";
 
-import TokenBalance from './TokenBalance';
+
 import { useNotification } from './NotificationSystem';
 import { UserBalanceSystem, parseAptAmount, aptosClient, CASINO_MODULE_ADDRESS } from '@/lib/aptos';
 
@@ -545,8 +545,7 @@ export default function Navbar() {
             )}
           </div>
           
-          {/* Token Balance */}
-          {isClient && !isDev && <TokenBalance />}
+
           
           {/* User Balance Display */}
           {isWalletReady && (
