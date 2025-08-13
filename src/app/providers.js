@@ -24,7 +24,11 @@ export default function Providers({ children }) {
     <AptosWalletAdapterProvider
       autoConnect={false}
       onError={(error) => {
-        console.error("Aptos wallet error:", error);
+        if (error) {
+          console.error("Aptos wallet error:", error.message || error);
+        } else {
+          console.error("An unknown Aptos wallet error occurred.");
+        }
       }}
     >
       <QueryClientProvider client={queryClient}>

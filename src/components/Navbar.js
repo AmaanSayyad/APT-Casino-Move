@@ -164,15 +164,15 @@ export default function Navbar() {
       console.log('Amount in octas:', amountOctas);
       console.log('CASINO_MODULE_ADDRESS:', CASINO_MODULE_ADDRESS);
       
-      const payloadData = UserBalanceSystem.deposit(amountOctas);
-      console.log('Deposit payload data:', payloadData);
-      
-      if (!payloadData || !payloadData.function) {
+      const payload = UserBalanceSystem.deposit(amountOctas);
+      console.log('Deposit payload:', payload);
+
+      if (!payload || !payload.data || !payload.data.function) {
         throw new Error('Invalid deposit payload');
       }
       
       console.log('Submitting deposit transaction...');
-      const tx = await signAndSubmitTransaction(payloadData);
+      const tx = await signAndSubmitTransaction(payload);
       console.log('Deposit transaction submitted:', tx);
       
       console.log('Waiting for transaction confirmation...');
@@ -187,7 +187,7 @@ export default function Navbar() {
       await loadUserBalance();
     } catch (error) {
       console.error('Deposit failed:', error);
-      notification.error(`Deposit failed: ${error?.message || error}`);
+      notification.error(`Deposit failed: ${error?.message || 'User rejected the transaction.'}`);
     } finally {
       setIsLoadingBalance(false);
     }
@@ -213,15 +213,15 @@ export default function Navbar() {
       console.log('Current balance (octas):', userBalance);
       console.log('Current balance (APT):', currentBalance);
       
-      const payloadData = UserBalanceSystem.withdraw(userBalance); // Withdraw all balance
-      console.log('Withdraw payload data:', payloadData);
-      
-      if (!payloadData || !payloadData.function) {
+      const payload = UserBalanceSystem.withdraw(userBalance); // Withdraw all balance
+      console.log('Withdraw payload:', payload);
+
+      if (!payload || !payload.data || !payload.data.function) {
         throw new Error('Invalid withdraw payload');
       }
       
       console.log('Submitting withdraw transaction...');
-      const tx = await signAndSubmitTransaction(payloadData);
+      const tx = await signAndSubmitTransaction(payload);
       console.log('Withdraw transaction submitted:', tx);
       
       console.log('Waiting for transaction confirmation...');
@@ -235,7 +235,7 @@ export default function Navbar() {
       await loadUserBalance();
     } catch (error) {
       console.error('Withdraw failed:', error);
-      notification.error(`Withdraw failed: ${error?.message || error}`);
+      notification.error(`Withdraw failed: ${error?.message || 'User rejected the transaction.'}`);
     } finally {
       setIsLoadingBalance(false);
     }

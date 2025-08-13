@@ -124,7 +124,7 @@ export async function waitForTransaction(hash) {
   }
 }
 
-// Helper function to create entry function payload (Legacy format that works)
+// Helper function to create entry function payload
 export function createEntryFunctionPayload(
   moduleAddress,
   moduleName,
@@ -132,26 +132,12 @@ export function createEntryFunctionPayload(
   typeArgs = [],
   args = []
 ) {
-  // Use the legacy format that wallet adapters expect
   return {
-    function: `${moduleAddress}::${moduleName}::${functionName}`,
-    type_arguments: typeArgs,
-    arguments: args
-  };
-}
-
-// Alternative format function
-export function createLegacyEntryFunctionPayload(
-  moduleAddress,
-  moduleName,
-  functionName,
-  typeArgs = [],
-  args = []
-) {
-  return {
-    function: `${moduleAddress}::${moduleName}::${functionName}`,
-    type_arguments: typeArgs,
-    arguments: args
+    data: {
+      function: `${moduleAddress}::${moduleName}::${functionName}`,
+      typeArguments: typeArgs,
+      functionArguments: args,
+    },
   };
 }
 
@@ -354,10 +340,13 @@ export const UserBalanceSystem = {
     try {
       const resource = await aptosClient.getAccountResource({
         accountAddress: userAddress,
-        resourceType: `${CASINO_MODULE_ADDRESS}::user_balance::UserBalance`
+        resourceType: `${CASINO_MODULE_ADDRESS}::user_balance::UserBalance`,
       });
       return resource.data.balance;
     } catch (error) {
+      if (error instanceof Error && 'error_code' in error && error.error_code === 'resource_not_found') {
+        return "0";
+      }
       console.error("Error getting user balance:", error);
       return "0";
     }
