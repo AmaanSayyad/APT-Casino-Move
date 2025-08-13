@@ -60,15 +60,11 @@ const BorrowCard = ({ asset }) => {
       };
     }
     
-    // In production, try to load wallet data
+    // Load Aptos wallet data
     const loadWalletData = async () => {
       try {
-        // Load account state
-        const { useAccount } = await import('wagmi');
-        const accountData = useAccount();
-        if (accountData) {
-          setIsConnected(accountData.isConnected || false);
-        }
+        // Set connected state for Aptos testnet
+        setIsConnected(true);
         
         // Load balances
         try {
@@ -135,14 +131,8 @@ const BorrowCard = ({ asset }) => {
       return;
     }
     
-    try {
-      const { useConnectModal } = await import('@rainbow-me/rainbowkit');
-      const { openConnectModal } = useConnectModal();
-      openConnectModal?.();
-    } catch (err) {
-      console.warn("Failed to open connect modal:", err);
-      notification.error("Unable to open wallet connect dialog");
-    }
+    // Show Aptos wallet connection message
+    alert("Please connect your Aptos wallet to continue");
   };
   
   const handleBorrow = async () => {

@@ -2,36 +2,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import HeaderText from "@/components/HeaderText";
 import StatsOverview from "@/components/StatsOverview";
-import UniswapWidget from "@/components/UniswapWidget";
+
 import BorrowCard from "@/components/BorrowCard";
 import LendingTable from "@/components/LendingTable";
 import Image from "next/image";
 import { FaChartLine, FaHistory, FaInfoCircle, FaExchangeAlt, FaCoins, FaWallet, FaLock, FaUnlock } from "react-icons/fa";
 
-// Assets for borrowing by network
+  // Assets for borrowing on Aptos testnet only
 const BORROW_ASSETS = {
-  5003: [
+  aptos_testnet: [
     {
-      symbol: "MNT",
-      name: "Mantle Sepolia",
-      iconColor: "#2196F3",
-      address: null // Native token
-    }
-  ],
-  50002: [
-    {
-      symbol: "PHR",
-      name: "Pharos Devnet",
-      iconColor: "#34C759",
-      address: null // Native token
-    }
-  ],
-  // Fallback for other networks
-  default: [
-    {
-      symbol: "ETH",
-      name: "Ethereum",
-      iconColor: "#627EEA",
+      symbol: "APT",
+      name: "Aptos Coin",
+      iconColor: "#F1324D",
       address: null // Native token
     }
   ]
@@ -45,7 +28,7 @@ const MOCK_TRANSACTIONS = [
 ];
 
 export default function Bank() {
-  const [chainId, setChainId] = useState(5003); // Default to Mantle Sepolia
+  const [chainId, setChainId] = useState('aptos_testnet'); // Default to Aptos testnet
   const [assets, setAssets] = useState([]);
   const [isClient, setIsClient] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -80,11 +63,11 @@ export default function Bank() {
     
     // In development mode, use mock data
     if (isDev) {
-      setChainId(5003); // Mantle Sepolia for development
+      setChainId('aptos_testnet'); // Aptos testnet for development
       setAssets([
         {
-          symbol: "APTC",
-          name: "APT Casino Token",
+          symbol: "APT",
+          name: "Aptos Coin",
           iconColor: "#F1324D",
           address: "0x...",
           apr: "12.5%",
@@ -92,9 +75,9 @@ export default function Bank() {
           available: "$120,000"
         },
         {
-          symbol: "USDC",
-          name: "USD Coin",
-          iconColor: "#2775CA",
+          symbol: "APTC",
+          name: "APT Casino Token",
+          iconColor: "#34C759",
           address: "0x...",
           apr: "8.2%",
           totalDeposited: "$520,000",
@@ -118,18 +101,11 @@ export default function Bank() {
       return;
     }
     
-    // Only try to use wagmi hooks on client side and outside of development
+    // Load Aptos testnet data
     const loadChainData = async () => {
       try {
-        // Dynamic imports to avoid issues during SSR
-        const wagmi = await import('wagmi');
-        const { useChainId } = wagmi;
-        
-        // Get chain ID
-        const currentChainId = useChainId();
-        if (currentChainId) {
-          setChainId(currentChainId);
-        }
+        // Set to Aptos testnet
+        setChainId('aptos_testnet');
         
         // Load lending market data
         try {
@@ -156,8 +132,8 @@ export default function Bank() {
     loadChainData();
   }, [isDev]);
   
-  // Get appropriate borrow assets for the current chain
-  const borrowAssets = BORROW_ASSETS[chainId] || BORROW_ASSETS.default;
+  // Get appropriate borrow assets for Aptos testnet
+  const borrowAssets = BORROW_ASSETS.aptos_testnet;
   
   // Animated number component for stats
   const AnimatedNumber = ({ value, prefix = '', suffix = '', duration = 2000 }) => {
@@ -204,7 +180,7 @@ export default function Bank() {
         {showNetworkBanner && (
           <div className="bg-gradient-to-r from-red-magic/80 to-blue-magic/80 py-2 px-4 text-center relative mb-8 rounded-lg">
             <p className="text-white text-sm">
-              Connected to {chainId === 5003 ? 'Mantle Sepolia Testnet' : chainId === 50002 ? 'Pharos Devnet' : 'Unknown Network'}. 
+              Connected to Aptos Testnet. 
               <button className="underline ml-2">Switch Network</button>
             </p>
             <button 
@@ -259,7 +235,11 @@ export default function Bank() {
             <>
               <div className="max-w-2xl mx-auto mb-12">
                 <div className="bg-gradient-to-r p-[1px] from-red-magic to-blue-magic rounded-xl">
-                  <UniswapWidget />
+                  {/* Aptos Testnet Only - No Uniswap Integration */}
+        <div className="bg-gray-800 rounded-lg p-6 text-center">
+          <h3 className="text-xl font-semibold text-white mb-2">Aptos Testnet Only</h3>
+          <p className="text-gray-400">This application works exclusively with Aptos testnet</p>
+        </div>
                 </div>
               </div>
               

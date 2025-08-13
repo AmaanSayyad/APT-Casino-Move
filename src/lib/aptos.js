@@ -1,11 +1,11 @@
-import { AptosClient, AptosAccount, TxnBuilderTypes, BCS, Provider } from "@aptos-labs/ts-sdk";
+import { Aptos, AptosConfig, NetworkToNetworkName } from "@aptos-labs/ts-sdk";
 import { 
   WalletCore, 
   NetworkInfo, 
   WalletInfo, 
   WalletReadyState,
   WalletAdapter 
-} from "@aptos-labs/wallet-adapter-base";
+} from "@aptos-labs/wallet-adapter-core";
 
 // Aptos network configurations
 export const APTOS_NETWORKS = {
@@ -32,12 +32,22 @@ export const APTOS_NETWORKS = {
 // Default network (can be changed via environment variable)
 export const DEFAULT_NETWORK = process.env.NEXT_PUBLIC_APTOS_NETWORK || 'testnet';
 
-// Aptos client instance
-export const aptosClient = new AptosClient(APTOS_NETWORKS[DEFAULT_NETWORK].url);
+// Aptos client instance (ts-sdk v3+)
+const NETWORK_ENUM_MAP = {
+  mainnet: NetworkToNetworkName.MAINNET,
+  testnet: NetworkToNetworkName.TESTNET,
+  devnet: NetworkToNetworkName.DEVNET,
+};
+
+const aptosConfig = new AptosConfig({
+  network: NETWORK_ENUM_MAP[DEFAULT_NETWORK] || NetworkToNetworkName.TESTNET,
+});
+
+export const aptosClient = new Aptos(aptosConfig);
 
 // Module addresses for our casino contracts
 export const CASINO_MODULE_ADDRESS = process.env.NEXT_PUBLIC_CASINO_MODULE_ADDRESS || 
-  "0x1234567890123456789012345678901234567890123456789012345678901234";
+  "0x421055ba162a1f697532e79ea9a6852422d311f0993eb880c75110218d7f52c0";
 
 // Token module address (APT token)
 export const APT_TOKEN_MODULE = "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>";
@@ -114,8 +124,24 @@ export async function waitForTransaction(hash) {
   }
 }
 
-// Helper function to create entry function payload
+// Helper function to create entry function payload (Legacy format that works)
 export function createEntryFunctionPayload(
+  moduleAddress,
+  moduleName,
+  functionName,
+  typeArgs = [],
+  args = []
+) {
+  // Use the legacy format that wallet adapters expect
+  return {
+    function: `${moduleAddress}::${moduleName}::${functionName}`,
+    type_arguments: typeArgs,
+    arguments: args
+  };
+}
+
+// Alternative format function
+export function createLegacyEntryFunctionPayload(
   moduleAddress,
   moduleName,
   functionName,
@@ -156,13 +182,40 @@ export async function getRandomNumber(seed) {
 export const CasinoGames = {
   // Roulette game functions
   roulette: {
-    placeBet: (betType, betValue, amount, numbers = []) => {
+    deposit: (amountOctas, houseAddr) => {
       return createEntryFunctionPayload(
         CASINO_MODULE_ADDRESS,
         "roulette",
-        "place_bet",
+        "deposit",
         [],
-        [betType, betValue, amount, numbers]
+        [amountOctas, houseAddr]
+      );
+    },
+    userPlaceBet: (amountOctas, betKind, betValue) => {
+      return createEntryFunctionPayload(
+        CASINO_MODULE_ADDRESS,
+        "roulette",
+        "user_place_bet",
+        [],
+        [amountOctas, betKind, betValue]
+      );
+    },
+    housePlaceBet: (player, amount, betKind, betValue) => {
+      return createEntryFunctionPayload(
+        CASINO_MODULE_ADDRESS,
+        "roulette",
+        "house_place_bet",
+        [],
+        [player, amount, betKind, betValue]
+      );
+    },
+    requestWithdraw: (amount) => {
+      return createEntryFunctionPayload(
+        CASINO_MODULE_ADDRESS,
+        "roulette",
+        "request_withdraw",
+        [],
+        [amount]
       );
     },
     
@@ -182,6 +235,16 @@ export const CasinoGames = {
 
   // Mines game functions  
   mines: {
+    deposit: (amountOctas) => {
+      return createEntryFunctionPayload(
+        CASINO_MODULE_ADDRESS,
+        "mines",
+        "deposit",
+        [],
+        [amountOctas, CASINO_MODULE_ADDRESS]
+      );
+    },
+    
     startGame: (betAmount, minesCount, tilesToReveal) => {
       return createEntryFunctionPayload(
         CASINO_MODULE_ADDRESS,
@@ -228,13 +291,22 @@ export const CasinoGames = {
 
   // Wheel game functions
   wheel: {
-    spin: (betAmount, riskLevel) => {
+    userSpin: (amountOctas, sectors) => {
       return createEntryFunctionPayload(
         CASINO_MODULE_ADDRESS,
         "wheel",
-        "spin",
+        "user_spin",
         [],
-        [betAmount, riskLevel]
+        [amountOctas, sectors]
+      );
+    },
+    deposit: (amountOctas) => {
+      return createEntryFunctionPayload(
+        CASINO_MODULE_ADDRESS,
+        "wheel",
+        "deposit",
+        [],
+        [amountOctas, CASINO_MODULE_ADDRESS]
       );
     },
 
@@ -253,6 +325,51 @@ export const CasinoGames = {
   }
 };
 
+// User balance management system
+export const UserBalanceSystem = {
+  // Deposit APT to house account
+  deposit: (amountOctas) => {
+    return createEntryFunctionPayload(
+      CASINO_MODULE_ADDRESS,
+      "user_balance",
+      "deposit",
+      [],
+      [amountOctas]
+    );
+  },
+
+  // Withdraw APT from house account
+  withdraw: (amountOctas) => {
+    return createEntryFunctionPayload(
+      CASINO_MODULE_ADDRESS,
+      "user_balance",
+      "withdraw",
+      [],
+      [amountOctas]
+    );
+  },
+
+  // Get user balance
+  getBalance: async (userAddress) => {
+    try {
+      const resource = await aptosClient.getAccountResource({
+        accountAddress: userAddress,
+        resourceType: `${CASINO_MODULE_ADDRESS}::user_balance::UserBalance`
+      });
+      return resource.data.balance;
+    } catch (error) {
+      console.error("Error getting user balance:", error);
+      return "0";
+    }
+  },
+
+  // Check if user has sufficient balance
+  hasSufficientBalance: async (userAddress, requiredAmount) => {
+    const balance = await UserBalanceSystem.getBalance(userAddress);
+    return parseInt(balance) >= parseInt(requiredAmount);
+  }
+};
+
 // Export default configuration
 export default {
   aptosClient,
@@ -260,5 +377,6 @@ export default {
   DEFAULT_NETWORK,
   CASINO_MODULE_ADDRESS,
   CASINO_MODULES,
-  CasinoGames
+  CasinoGames,
+  UserBalanceSystem
 }; 

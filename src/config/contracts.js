@@ -1,678 +1,106 @@
-// Chain IDs
-export const CHAIN_IDS = {
-    MANTLE_SEPOLIA: 5003,
-    PHAROS_DEVNET: 50002,
-    // Add more chains here as needed
-    // ARBITRUM: 42161,
-    // OPTIMISM: 10,
-    // BSC: 56,
-    // etc...
+// Aptos Network Configuration
+export const APTOS_NETWORKS = {
+  TESTNET: 'testnet',
+  MAINNET: 'mainnet',
+  DEVNET: 'devnet'
 };
 
-// RPC URLs
-export const RPC_URLS = {
-    [CHAIN_IDS.MANTLE_SEPOLIA]: "https://rpc.sepolia.mantle.xyz",
-    [CHAIN_IDS.PHAROS_DEVNET]: "https://devnet.dplabs-internal.com",
-    // Add more RPCs here as needed
+// Aptos Network URLs
+export const APTOS_NETWORK_URLS = {
+  [APTOS_NETWORKS.TESTNET]: "https://fullnode.testnet.aptoslabs.com",
+  [APTOS_NETWORKS.MAINNET]: "https://fullnode.mainnet.aptoslabs.com",
+  [APTOS_NETWORKS.DEVNET]: "https://fullnode.devnet.aptoslabs.com"
 };
 
-// Block Explorers
-export const BLOCK_EXPLORERS = {
-    [CHAIN_IDS.MANTLE_SEPOLIA]: "https://sepolia.mantlescan.xyz",
-    [CHAIN_IDS.PHAROS_DEVNET]: "https://pharosscan.xyz",
-    // Add more explorers here as needed
+// Aptos Faucet URLs
+export const APTOS_FAUCET_URLS = {
+  [APTOS_NETWORKS.TESTNET]: "https://faucet.testnet.aptoslabs.com",
+  [APTOS_NETWORKS.DEVNET]: "https://faucet.devnet.aptoslabs.com"
 };
 
-// Token Contracts
-export const TOKEN_CONTRACTS = {
-    [CHAIN_IDS.MANTLE_SEPOLIA]: {
-        address: "0xfa671d1F2811fa725d8fe8eC4149B7594A9f3124",
-        name: "APT-Casino",
-        symbol: "APTC",
-        decimals: 18
-    },
-    [CHAIN_IDS.PHAROS_DEVNET]: {
-        address: "0xfa671d1F2811fa725d8fe8eC4149B7594A9f3124",
-        name: "APT-Casino",
-        symbol: "APTC",
-        decimals: 18
-    },
-    // Add more chain configurations here as needed
+// Aptos Explorer URLs
+export const APTOS_EXPLORER_URLS = {
+  [APTOS_NETWORKS.TESTNET]: "https://explorer.aptoslabs.com/account",
+  [APTOS_NETWORKS.MAINNET]: "https://explorer.aptoslabs.com/account",
+  [APTOS_NETWORKS.DEVNET]: "https://explorer.aptoslabs.com/account"
 };
 
-// Roulette Contracts
-export const ROULETTE_CONTRACTS = {
-    [CHAIN_IDS.MANTLE_SEPOLIA]: {
-        address: "0xD2cfA0790CcE7dd980699F6F1F4A4f1D13cEBA9F",
-        treasuryAddress: "0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199"
-    },
-    [CHAIN_IDS.PHAROS_DEVNET]: {
-        address: "0xD2cfA0790CcE7dd980699F6F1F4A4f1D13cEBA9F",
-        treasuryAddress: "0xF7249B507F1f89Eaea5d694cEf5cb96F245Bc5b6"
-    },
-    // Add more chain configurations here as needed
-};
+// Default network (can be changed via environment variable)
+export const DEFAULT_NETWORK = APTOS_NETWORKS.TESTNET;
 
-// ABIs will be stored here after your Remix deployment
-export const ABIS = {
-    TOKEN: null, // Will be filled with your Remix deployment ABI
-    ROULETTE: null // Will be filled with your Remix deployment ABI
-};
-
-// Chain Names for UI
-export const CHAIN_NAMES = {
-    [CHAIN_IDS.MANTLE_SEPOLIA]: "Mantle Sepolia",
-    [CHAIN_IDS.PHAROS_DEVNET]: "Pharos Devnet",
-    // Add more chain names here as needed
-};
-
-// Chain Native Currencies
-export const NATIVE_CURRENCIES = {
-    [CHAIN_IDS.MANTLE_SEPOLIA]: {
-        name: "MNT",
-        symbol: "MNT",
-        decimals: 18
-    },
-    [CHAIN_IDS.PHAROS_DEVNET]: {
-        name: "PHR",
-        symbol: "PHR",
-        decimals: 18
-    },
-    // Add more native currencies here as needed
-};
-
-// Supported Networks Configuration
-export const SUPPORTED_NETWORKS = [
-    {
-        id: CHAIN_IDS.MANTLE_SEPOLIA,
-        name: CHAIN_NAMES[CHAIN_IDS.MANTLE_SEPOLIA],
-        rpcUrl: RPC_URLS[CHAIN_IDS.MANTLE_SEPOLIA],
-        explorer: BLOCK_EXPLORERS[CHAIN_IDS.MANTLE_SEPOLIA],
-        nativeCurrency: NATIVE_CURRENCIES[CHAIN_IDS.MANTLE_SEPOLIA],
-        tokenContract: TOKEN_CONTRACTS[CHAIN_IDS.MANTLE_SEPOLIA],
-        rouletteContract: ROULETTE_CONTRACTS[CHAIN_IDS.MANTLE_SEPOLIA]
-    },
-    {
-        id: CHAIN_IDS.PHAROS_DEVNET,
-        name: CHAIN_NAMES[CHAIN_IDS.PHAROS_DEVNET],
-        rpcUrl: RPC_URLS[CHAIN_IDS.PHAROS_DEVNET],
-        explorer: BLOCK_EXPLORERS[CHAIN_IDS.PHAROS_DEVNET],
-        nativeCurrency: NATIVE_CURRENCIES[CHAIN_IDS.PHAROS_DEVNET],
-        tokenContract: TOKEN_CONTRACTS[CHAIN_IDS.PHAROS_DEVNET],
-        rouletteContract: ROULETTE_CONTRACTS[CHAIN_IDS.PHAROS_DEVNET]
-    }
-    // More networks will be added here as you deploy to them
-];
-
-export const NETWORKS = {
-    MANTLE_SEPOLIA: {
-        id: CHAIN_IDS.MANTLE_SEPOLIA,
-        name: CHAIN_NAMES[CHAIN_IDS.MANTLE_SEPOLIA],
-        rpcUrl: RPC_URLS[CHAIN_IDS.MANTLE_SEPOLIA],
-        explorer: BLOCK_EXPLORERS[CHAIN_IDS.MANTLE_SEPOLIA],
-        nativeCurrency: NATIVE_CURRENCIES[CHAIN_IDS.MANTLE_SEPOLIA],
-        tokenContract: TOKEN_CONTRACTS[CHAIN_IDS.MANTLE_SEPOLIA],
-        rouletteContract: ROULETTE_CONTRACTS[CHAIN_IDS.MANTLE_SEPOLIA]
-    },
-    PHAROS_DEVNET: {
-        id: CHAIN_IDS.PHAROS_DEVNET,
-        name: CHAIN_NAMES[CHAIN_IDS.PHAROS_DEVNET],
-        rpcUrl: RPC_URLS[CHAIN_IDS.PHAROS_DEVNET],
-        explorer: BLOCK_EXPLORERS[CHAIN_IDS.PHAROS_DEVNET],
-        nativeCurrency: NATIVE_CURRENCIES[CHAIN_IDS.PHAROS_DEVNET],
-        tokenContract: TOKEN_CONTRACTS[CHAIN_IDS.PHAROS_DEVNET],
-        rouletteContract: ROULETTE_CONTRACTS[CHAIN_IDS.PHAROS_DEVNET]
-    }
-};
-
-export const CONTRACTS = {
-  PHAROS_DEVNET: {
-    chainId: CHAIN_IDS.PHAROS_DEVNET,
-    chainName: 'Pharos Devnet',
-    token: {
-      address: '0xf6b4c0dd3355103523F031C8a1EAE944a8145180',
-      abi: [
-        // Token ABI
-        {
-          "inputs": [],
-          "stateMutability": "nonpayable",
-          "type": "constructor"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "spender",
-              "type": "address"
-            },
-            {
-              "internalType": "uint256",
-              "name": "allowance",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "needed",
-              "type": "uint256"
-            }
-          ],
-          "name": "ERC20InsufficientAllowance",
-          "type": "error"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "sender",
-              "type": "address"
-            },
-            {
-              "internalType": "uint256",
-              "name": "balance",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "needed",
-              "type": "uint256"
-            }
-          ],
-          "name": "ERC20InsufficientBalance",
-          "type": "error"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "approver",
-              "type": "address"
-            }
-          ],
-          "name": "ERC20InvalidApprover",
-          "type": "error"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "receiver",
-              "type": "address"
-            }
-          ],
-          "name": "ERC20InvalidReceiver",
-          "type": "error"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "sender",
-              "type": "address"
-            }
-          ],
-          "name": "ERC20InvalidSender",
-          "type": "error"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "spender",
-              "type": "address"
-            }
-          ],
-          "name": "ERC20InvalidSpender",
-          "type": "error"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "owner",
-              "type": "address"
-            }
-          ],
-          "name": "OwnableInvalidOwner",
-          "type": "error"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "account",
-              "type": "address"
-            }
-          ],
-          "name": "OwnableUnauthorizedAccount",
-          "type": "error"
-        },
-        {
-          "anonymous": false,
-          "inputs": [
-            {
-              "indexed": true,
-              "internalType": "address",
-              "name": "owner",
-              "type": "address"
-            },
-            {
-              "indexed": true,
-              "internalType": "address",
-              "name": "spender",
-              "type": "address"
-            },
-            {
-              "indexed": false,
-              "internalType": "uint256",
-              "name": "value",
-              "type": "uint256"
-            }
-          ],
-          "name": "Approval",
-          "type": "event"
-        },
-        {
-          "anonymous": false,
-          "inputs": [
-            {
-              "indexed": true,
-              "internalType": "address",
-              "name": "previousOwner",
-              "type": "address"
-            },
-            {
-              "indexed": true,
-              "internalType": "address",
-              "name": "newOwner",
-              "type": "address"
-            }
-          ],
-          "name": "OwnershipTransferred",
-          "type": "event"
-        },
-        {
-          "anonymous": false,
-          "inputs": [
-            {
-              "indexed": false,
-              "internalType": "address",
-              "name": "account",
-              "type": "address"
-            }
-          ],
-          "name": "Paused",
-          "type": "event"
-        },
-        {
-          "anonymous": false,
-          "inputs": [
-            {
-              "indexed": true,
-              "internalType": "address",
-              "name": "from",
-              "type": "address"
-            },
-            {
-              "indexed": true,
-              "internalType": "address",
-              "name": "to",
-              "type": "address"
-            },
-            {
-              "indexed": false,
-              "internalType": "uint256",
-              "name": "value",
-              "type": "uint256"
-            }
-          ],
-          "name": "Transfer",
-          "type": "event"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "owner",
-              "type": "address"
-            },
-            {
-              "internalType": "address",
-              "name": "spender",
-              "type": "address"
-            }
-          ],
-          "name": "allowance",
-          "outputs": [
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "spender",
-              "type": "address"
-            },
-            {
-              "internalType": "uint256",
-              "name": "value",
-              "type": "uint256"
-            }
-          ],
-          "name": "approve",
-          "outputs": [
-            {
-              "internalType": "bool",
-              "name": "",
-              "type": "bool"
-            }
-          ],
-          "stateMutability": "nonpayable",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "account",
-              "type": "address"
-            }
-          ],
-          "name": "balanceOf",
-          "outputs": [
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [],
-          "name": "decimals",
-          "outputs": [
-            {
-              "internalType": "uint8",
-              "name": "",
-              "type": "uint8"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [],
-          "name": "name",
-          "outputs": [
-            {
-              "internalType": "string",
-              "name": "",
-              "type": "string"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [],
-          "name": "symbol",
-          "outputs": [
-            {
-              "internalType": "string",
-              "name": "",
-              "type": "string"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [],
-          "name": "totalSupply",
-          "outputs": [
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "to",
-              "type": "address"
-            },
-            {
-              "internalType": "uint256",
-              "name": "value",
-              "type": "uint256"
-            }
-          ],
-          "name": "transfer",
-          "outputs": [
-            {
-              "internalType": "bool",
-              "name": "",
-              "type": "bool"
-            }
-          ],
-          "stateMutability": "nonpayable",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "from",
-              "type": "address"
-            },
-            {
-              "internalType": "address",
-              "name": "to",
-              "type": "address"
-            },
-            {
-              "internalType": "uint256",
-              "name": "value",
-              "type": "uint256"
-            }
-          ],
-          "name": "transferFrom",
-          "outputs": [
-            {
-              "internalType": "bool",
-              "name": "",
-              "type": "bool"
-            }
-          ],
-          "stateMutability": "nonpayable",
-          "type": "function"
-        }
-      ]
-    },
-    roulette: {
-      address: '0x0BF9D7E4E7ee2d6c1e5B028EF14F1CBbaaC4856e',
-      abi: [
-        // Roulette ABI
-        {
-          "inputs": [
-            {
-              "internalType": "contract IERC20",
-              "name": "_token",
-              "type": "address"
-            }
-          ],
-          "stateMutability": "nonpayable",
-          "type": "constructor"
-        },
-        {
-          "anonymous": false,
-          "inputs": [
-            {
-              "indexed": true,
-              "internalType": "address",
-              "name": "player",
-              "type": "address"
-            },
-            {
-              "indexed": false,
-              "internalType": "uint256",
-              "name": "amount",
-              "type": "uint256"
-            },
-            {
-              "indexed": false,
-              "internalType": "enum Roulette.BetType",
-              "name": "betType",
-              "type": "uint8"
-            },
-            {
-              "indexed": false,
-              "internalType": "uint8",
-              "name": "betValue",
-              "type": "uint8"
-            }
-          ],
-          "name": "BetPlaced",
-          "type": "event"
-        },
-        {
-          "anonymous": false,
-          "inputs": [
-            {
-              "indexed": true,
-              "internalType": "address",
-              "name": "player",
-              "type": "address"
-            },
-            {
-              "indexed": false,
-              "internalType": "uint256",
-              "name": "amount",
-              "type": "uint256"
-            },
-            {
-              "indexed": false,
-              "internalType": "bool",
-              "name": "won",
-              "type": "bool"
-            },
-            {
-              "indexed": false,
-              "internalType": "uint256",
-              "name": "winnings",
-              "type": "uint256"
-            }
-          ],
-          "name": "BetResult",
-          "type": "event"
-        },
-        {
-          "anonymous": false,
-          "inputs": [
-            {
-              "indexed": false,
-              "internalType": "uint256",
-              "name": "randomNumber",
-              "type": "uint256"
-            }
-          ],
-          "name": "RandomGenerated",
-          "type": "event"
-        },
-        {
-          "inputs": [],
-          "name": "MIN_WAIT_BLOCK",
-          "outputs": [
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [],
-          "name": "TREASURY",
-          "outputs": [
-            {
-              "internalType": "address",
-              "name": "",
-              "type": "address"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [],
-          "name": "TREASURY_FEE_RATE",
-          "outputs": [
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "enum Roulette.BetType",
-              "name": "betType",
-              "type": "uint8"
-            },
-            {
-              "internalType": "uint8",
-              "name": "betValue",
-              "type": "uint8"
-            },
-            {
-              "internalType": "uint256",
-              "name": "amount",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256[]",
-              "name": "numbers",
-              "type": "uint256[]"
-            }
-          ],
-          "name": "placeBet",
-          "outputs": [],
-          "stateMutability": "nonpayable",
-          "type": "function"
-        },
-        {
-          "inputs": [],
-          "name": "randomResult",
-          "outputs": [
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        }
-      ]
-    }
+// Casino Module Configuration
+export const CASINO_MODULE_CONFIG = {
+  [APTOS_NETWORKS.TESTNET]: {
+    moduleAddress: process.env.NEXT_PUBLIC_CASINO_MODULE_ADDRESS || "0x1234567890123456789012345678901234567890123456789012345678901234",
+    moduleName: "casino",
+    rouletteModule: "roulette",
+    minesModule: "mines",
+    wheelModule: "wheel"
+  },
+  [APTOS_NETWORKS.MAINNET]: {
+    moduleAddress: process.env.NEXT_PUBLIC_CASINO_MODULE_ADDRESS || "0x1234567890123456789012345678901234567890123456789012345678901234",
+    moduleName: "casino",
+    rouletteModule: "roulette",
+    minesModule: "mines",
+    wheelModule: "wheel"
+  },
+  [APTOS_NETWORKS.DEVNET]: {
+    moduleAddress: process.env.NEXT_PUBLIC_CASINO_MODULE_ADDRESS || "0x1234567890123456789012345678901234567890123456789012345678901234",
+    moduleName: "casino",
+    rouletteModule: "roulette",
+    minesModule: "mines",
+    wheelModule: "wheel"
   }
+};
+
+// Token Configuration
+export const TOKEN_CONFIG = {
+  APT: {
+    name: "Aptos Coin",
+    symbol: "APT",
+    decimals: 8,
+    type: "0x1::aptos_coin::AptosCoin"
+  },
+  APTC: {
+    name: "APT Casino Token",
+    symbol: "APTC",
+    decimals: 8,
+    type: "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>"
+  }
+};
+
+// Network Information
+export const NETWORK_INFO = {
+  [APTOS_NETWORKS.TESTNET]: {
+    name: "Aptos Testnet",
+    chainId: 2,
+    nativeCurrency: TOKEN_CONFIG.APT,
+    explorer: APTOS_EXPLORER_URLS[APTOS_NETWORKS.TESTNET],
+    faucet: APTOS_FAUCET_URLS[APTOS_NETWORKS.TESTNET]
+  },
+  [APTOS_NETWORKS.MAINNET]: {
+    name: "Aptos Mainnet",
+    chainId: 1,
+    nativeCurrency: TOKEN_CONFIG.APT,
+    explorer: APTOS_EXPLORER_URLS[APTOS_NETWORKS.MAINNET]
+  },
+  [APTOS_NETWORKS.DEVNET]: {
+    name: "Aptos Devnet",
+    chainId: 0,
+    nativeCurrency: TOKEN_CONFIG.APT,
+    explorer: APTOS_EXPLORER_URLS[APTOS_NETWORKS.DEVNET],
+    faucet: APTOS_FAUCET_URLS[APTOS_NETWORKS.DEVNET]
+  }
+};
+
+// Export default configuration
+export default {
+  APTOS_NETWORKS,
+  APTOS_NETWORK_URLS,
+  APTOS_FAUCET_URLS,
+  APTOS_EXPLORER_URLS,
+  DEFAULT_NETWORK,
+  CASINO_MODULE_CONFIG,
+  TOKEN_CONFIG,
+  NETWORK_INFO
 }; 

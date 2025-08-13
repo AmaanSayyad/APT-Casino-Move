@@ -11,9 +11,9 @@ import { motion } from "framer-motion";
 import { FaHistory, FaTrophy, FaInfoCircle, FaChartLine, FaCoins, FaChevronDown, FaPercentage, FaBalanceScale } from "react-icons/fa";
 import { GiCardRandom, GiWheelbarrow, GiSpinningBlades, GiTrophyCup } from "react-icons/gi";
 import { HiOutlineTrendingUp, HiOutlineChartBar } from "react-icons/hi";
-import useWalletStatus from '@/hooks/useWalletStatus';
-import ConnectWalletButton from '@/components/ConnectWalletButton';
-import TokenBalance from '@/components/TokenBalance';
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { CasinoGames, parseAptAmount, aptosClient, CASINO_MODULE_ADDRESS, UserBalanceSystem } from '@/lib/aptos';
+import { InputTransactionData } from '@aptos-labs/ts-sdk';
 
 // Import new components
 import WheelVideo from "./components/WheelVideo";
@@ -41,8 +41,37 @@ export default function Home() {
   const [result, setResult] = useState(null);
   const [showStats, setShowStats] = useState(false);
   
+
+  
   // Wallet connection
-  const { isConnected, address } = useWalletStatus();
+  const { connected: isConnected, account, signAndSubmitTransaction, wallet } = useWallet();
+  const address = account?.address;
+  
+  // Check if wallet is ready
+  const isWalletReady = isConnected && account && signAndSubmitTransaction && wallet;
+
+  // Load user balance from house account
+  const loadUserBalance = async () => {
+    if (!address) return;
+    
+    try {
+      setIsLoadingBalance(true);
+      const balance = await UserBalanceSystem.getBalance(address);
+      setUserBalance(balance);
+    } catch (error) {
+      console.error('Error loading user balance:', error);
+      setUserBalance("0");
+    } finally {
+      setIsLoadingBalance(false);
+    }
+  };
+
+  // Load balance when wallet connects
+  useEffect(() => {
+    if (isWalletReady && address) {
+      loadUserBalance();
+    }
+  }, [isWalletReady, address]);
 
   // Scroll to section function
   const scrollToElement = (elementId) => {
@@ -54,39 +83,162 @@ export default function Home() {
     }
   };
 
-  const manulBet = () => {
-    if (betAmount <= 0 || betAmount > balance || isSpinning) return;
-    
-    setIsSpinning(true);
-    setHasSpun(false);
-    setBalance(prev => prev - betAmount);
-    
-    const result = calculateResult(risk, noOfSegments);
-    
-    setTimeout(() => {
-      setCurrentMultiplier(result.multiplier);
-      setWheelPosition(result.position);
+  // Test function to create a simple transaction
+  const testSimpleTransaction = async () => {
+    if (!isWalletReady) {
+      alert('Wallet not ready. Please connect your wallet first.');
+      return;
+    }
+
+    try {
+      console.log('=== TESTING SIMPLE TRANSACTION ===');
+      console.log('Wallet details:', {
+        connected: isConnected,
+        account: account?.address,
+        wallet: !!wallet,
+        signAndSubmitTransaction: !!signAndSubmitTransaction
+      });
+
+      // Test the CasinoGames function
+      console.log('Testing CasinoGames.wheel.userSpin...');
+      const amountOctas = parseAptAmount("0.1"); // 0.1 APT
+      const sectors = 10;
       
+      const payload = CasinoGames.wheel.userSpin(amountOctas, sectors);
+      console.log('Payload from CasinoGames:', payload);
+      console.log('Payload has function:', !!payload?.function);
+      console.log('Function value:', payload?.function);
+      console.log('Arguments:', payload?.arguments);
+      console.log('Type arguments:', payload?.type_arguments);
+
+      if (!payload || !payload.function) {
+        throw new Error('CasinoGames.wheel.userSpin returned invalid payload');
+      }
+
+      console.log('Calling signAndSubmitTransaction...');
+      const result = await signAndSubmitTransaction(payload);
+      console.log('Transaction successful:', result);
+      alert('Test transaction successful!');
+      
+    } catch (error) {
+      console.error('=== TRANSACTION ERROR ===');
+      console.error('Error type:', typeof error);
+      console.error('Error message:', error?.message);
+      console.error('Error stack:', error?.stack);
+      console.error('Full error:', error);
+      alert(`Transaction failed: ${error?.message || error}`);
+    }
+  };
+
+  const manulBet = async () => {
+    if (!isWalletReady) {
+      alert('Wallet not ready. Please connect your wallet first.');
+      return;
+    }
+    if (betAmount <= 0 || isSpinning) return;
+
+    // Check if user has sufficient balance in house account
+    const requiredAmount = parseAptAmount(String(betAmount));
+    if (parseInt(userBalance) < parseInt(requiredAmount)) {
+      alert(`Insufficient balance. You have ${(parseFloat(userBalance) / 100000000).toFixed(8)} APT, but need ${betAmount} APT. Please deposit more.`);
+      return;
+    }
+
+    try {
+      setIsSpinning(true);
+      setHasSpun(false);
+
+      console.log('=== STARTING BET ===');
+      console.log('User balance in house account:', userBalance);
+      console.log('Bet amount in octas:', requiredAmount);
+      console.log('CASINO_MODULE_ADDRESS:', CASINO_MODULE_ADDRESS);
+      
+      // Create payload for the bet
+      const payload = CasinoGames.wheel.userSpin(requiredAmount, Number(noOfSegments));
+      console.log('Bet payload:', payload);
+      
+      if (!payload || !payload.function) {
+        throw new Error('Invalid bet payload');
+      }
+      
+      // Submit the bet transaction
+      const tx = await signAndSubmitTransaction(payload);
+      console.log('Bet transaction successful:', tx);
+      await aptosClient.waitForTransaction({ transactionHash: tx.hash });
+      
+      // Reload balance after bet
+      await loadUserBalance();
+
+      // UI feedback; actual result comes via events in a full implementation
       setTimeout(() => {
-        const winAmount = betAmount * result.multiplier;
-        setBalance(prev => prev + winAmount);
-        
+        setCurrentMultiplier(1);
+        setWheelPosition(Math.floor(Math.random() * sectors));
+        const winAmount = betAmount; // placeholder
         const newHistoryItem = {
           id: Date.now(),
-          game: "Wheel",
+          game: 'Wheel',
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           betAmount: betAmount,
-          multiplier: `${result.multiplier.toFixed(2)}x`,
-          payout: winAmount
+          multiplier: `1.00x`,
+          payout: winAmount,
         };
-        
         setGameHistory(prev => [newHistoryItem, ...prev]);
         setIsSpinning(false);
         setHasSpun(true);
-      }, 1000);
-    }, 3000);
+      }, 1500);
+    } catch (e) {
+      console.error(e);
+      alert(`Bet failed: ${e?.message || e}`);
+      setIsSpinning(false);
+    }
   };
 
+  const handleDeposit = async () => {
+    if (!isWalletReady) {
+      alert('Wallet not ready. Please connect your wallet first.');
+      return;
+    }
+    const amountApt = betAmount > 0 ? betAmount : 1; // default 1 APT
+    const amountOctas = parseAptAmount(String(amountApt));
+    try {
+      const payload = UserBalanceSystem.deposit(amountOctas);
+      console.log('Deposit payload:', payload);
+      const tx = await signAndSubmitTransaction(payload);
+      await aptosClient.waitForTransaction({ transactionHash: tx.hash });
+      alert(`Deposited ${amountApt} APT to house account`);
+      // Reload balance after deposit
+      await loadUserBalance();
+    } catch (e) {
+      console.error(e);
+      alert(`Deposit failed: ${e?.message || e}`);
+    }
+  };
+
+  const handleWithdraw = async () => {
+    if (!isWalletReady) {
+      alert('Wallet not ready. Please connect your wallet first.');
+      return;
+    }
+    
+    const currentBalance = parseFloat(userBalance) / 100000000; // Convert from octas to APT
+    if (currentBalance <= 0) {
+      alert('No balance to withdraw');
+      return;
+    }
+    
+    try {
+      const payload = UserBalanceSystem.withdraw(userBalance); // Withdraw all balance
+      console.log('Withdraw payload:', payload);
+      const tx = await signAndSubmitTransaction(payload);
+      await aptosClient.waitForTransaction({ transactionHash: tx.hash });
+      alert(`Withdrawn ${currentBalance.toFixed(8)} APT from house account`);
+      // Reload balance after withdraw
+      await loadUserBalance();
+    } catch (e) {
+      console.error(e);
+      alert(`Withdraw failed: ${e?.message || e}`);
+    }
+  };
 
   const autoBet = async ({
     numberOfBets,
@@ -353,6 +505,27 @@ export default function Home() {
               isSpinning={isSpinning}
               autoBet={autoBet}
             />
+            
+            {/* Wallet Status */}
+            <div className="mt-4 p-3 bg-gradient-to-r from-blue-900/20 to-blue-800/10 rounded-lg border border-blue-800/30">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-300">Wallet Status:</span>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  isWalletReady 
+                    ? 'bg-green-600/30 text-green-300 border border-green-500/30' 
+                    : 'bg-red-600/30 text-red-300 border border-red-500/30'
+                }`}>
+                  {isWalletReady ? 'Ready' : 'Not Connected'}
+                </span>
+              </div>
+              {!isWalletReady && (
+                <p className="text-xs text-gray-400 mt-2 text-center">
+                  Please connect your wallet to play
+                </p>
+              )}
+            </div>
+
+
           </div>
         </div>
       </div>

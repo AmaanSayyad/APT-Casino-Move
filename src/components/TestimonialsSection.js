@@ -10,7 +10,7 @@ const TestimonialsSection = () => {
       name: 'Michael T.',
       avatar: '/images/avatars/avatar1.png',
       rating: 5,
-      text: 'APT Casino offers the most transparent gaming experience I\'ve found in Web3. The provably fair system gives me confidence that games are legitimate, and I\'ve already won over 500 APTC tokens!',
+              text: 'APT Casino offers the most transparent gaming experience I\'ve found on Aptos. The provably fair system gives me confidence that games are legitimate, and I\'ve already won over 500 APTC tokens!',
       game: 'Roulette',
       amount: 520
     },

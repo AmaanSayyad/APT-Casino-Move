@@ -1,49 +1,36 @@
 "use client";
 
 import { useState, useCallback, useEffect } from 'react';
-import { formatUnits, parseUnits } from 'viem';
-import { useReadContract, useWriteContract } from 'wagmi';
-import { tokenABI, tokenContractAddress } from '@/app/game/roulette/contractDetails';
 
 export const useToken = (address) => {
   const [balance, setBalance] = useState('0');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Read token balance
-  const { data: balanceData, isError, isLoading: isBalanceLoading } = useReadContract({
-    address: tokenContractAddress,
-    abi: tokenABI,
-    functionName: 'balanceOf',
-    args: [address],
-    enabled: Boolean(address),
-    watch: true,
-  });
-
-  // Update balance when data changes
+  // Mock balance for Aptos testnet
   useEffect(() => {
-    if (balanceData) {
-      setBalance(formatUnits(balanceData, 18));
+    if (address) {
+      // Simulate loading
+      setIsLoading(true);
+      
+      // Mock balance data
+      setTimeout(() => {
+        setBalance((Math.random() * 1000 + 100).toFixed(2));
+        setIsLoading(false);
+      }, 1000);
     }
-    if (isError) {
-      setError('Failed to load token balance');
-    }
-    setIsLoading(isBalanceLoading);
-  }, [balanceData, isError, isBalanceLoading]);
+  }, [address]);
 
   const transfer = useCallback(async (to, amount) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const { writeContract } = useWriteContract();
+      // Simulate transfer delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      await writeContract({
-        address: tokenContractAddress,
-        abi: tokenABI,
-        functionName: 'transfer',
-        args: [to, parseUnits(amount.toString(), 18)],
-      });
+      // Mock successful transfer
+      setBalance(prev => (parseFloat(prev) - parseFloat(amount)).toFixed(2));
       
       return true;
     } catch (err) {
@@ -60,16 +47,12 @@ export const useToken = (address) => {
     
     try {
       setIsLoading(true);
-      const { data: refreshedBalance } = await useReadContract({
-        address: tokenContractAddress,
-        abi: tokenABI,
-        functionName: 'balanceOf',
-        args: [address],
-      });
       
-      if (refreshedBalance) {
-        setBalance(formatUnits(refreshedBalance, 18));
-      }
+      // Simulate refresh delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Mock refreshed balance
+      setBalance((Math.random() * 1000 + 100).toFixed(2));
     } catch (err) {
       console.error('Failed to refresh token balance:', err);
       setError('Failed to refresh token balance');

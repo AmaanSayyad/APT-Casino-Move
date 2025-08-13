@@ -1,7 +1,7 @@
 import GradientBgButton from "@/components/GradientBgButton";
 import GradientBorderButton from "@/components/GradientBorderButton";
 import Image from "next/image";
-import polygon from "../../../../public/images/Polygon.png";
+
 
 export const Table = () => {
   return (
@@ -17,7 +17,7 @@ export const Table = () => {
       <tbody>
         <tr>
           <td>
-            <Image src={polygon} width={10} height={10} alt="polygon" />
+            <div className="w-2.5 h-2.5 bg-blue-500 rounded-full"></div>
             MATIC (Mumbia testnet)
           </td>
           <td>$0.93</td>

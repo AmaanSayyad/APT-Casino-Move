@@ -1,7 +1,6 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import LaunchGameButton from "./LaunchGameButton";
-import ConnectWalletButton from "./ConnectWalletButton";
 
 export default function HeroSection() {
   const [isDev, setIsDev] = useState(false);
@@ -35,7 +34,7 @@ export default function HeroSection() {
         `font-display capitalize flex text-white flex-col text-center items-center gap-6 z-10 max-w-7xl w-full mx-auto ${showAnnouncement ? '' : 'mt-14 sm:mt-14 md:mt-16'}`
       }>
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold leading-tight">
-          Enter the Web3 Gaming <br /> Arena:{" "}
+                        Enter the Aptos Gaming <br /> Arena:{" "}
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-red-magic to-blue-magic">
             APT-Casino
           </span>
@@ -46,7 +45,6 @@ export default function HeroSection() {
         </h2>
         
         <div className="flex flex-wrap justify-center gap-4 mt-6">
-          <ConnectWalletButton />
           <LaunchGameButton />
           
           {/* Additional Quick Links */}

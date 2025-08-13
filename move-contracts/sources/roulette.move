@@ -1,366 +1,154 @@
 module apt_casino::roulette {
     use std::signer;
-    use std::vector;
-    use std::hash;
-    use std::bcs;
-    use aptos_framework::coin::{Self, Coin};
-    use aptos_framework::account;
-    use aptos_framework::timestamp;
-    use aptos_framework::resource_account;
-    use aptos_framework::event::{Self, EventHandle};
-    use aptos_framework::event_store;
+    use aptos_framework::event; // module events
+    use aptos_framework::error; // error helpers
+    use aptos_framework::aptos_coin::AptosCoin;
+    use aptos_framework::coin;
+    use aptos_framework::randomness; // On-chain randomness (Aptos Roll)
 
-    /// Error codes
-    const ENOT_AUTHORIZED: u64 = 1;
-    const EINSUFFICIENT_BALANCE: u64 = 2;
-    const EINVALID_BET_TYPE: u64 = 3;
-    const EINVALID_BET_VALUE: u64 = 4;
-    const EINVALID_AMOUNT: u64 = 5;
-    const ENO_GAME_ACTIVE: u64 = 6;
-    const EGAME_ALREADY_ACTIVE: u64 = 7;
-
-    /// Bet types
-    const BET_TYPE_NUMBER: u8 = 0;
-    const BET_TYPE_COLOR: u8 = 1;
-    const BET_TYPE_ODD_EVEN: u8 = 2;
-    const BET_TYPE_HIGH_LOW: u8 = 3;
-    const BET_TYPE_DOZEN: u8 = 4;
-    const BET_TYPE_COLUMN: u8 = 5;
-    const BET_TYPE_SPLIT: u8 = 6;
-    const BET_TYPE_STREET: u8 = 7;
-    const BET_TYPE_CORNER: u8 = 8;
-    const BET_TYPE_LINE: u8 = 9;
-
-    /// Game state
-    struct GameState has key {
-        active: bool,
-        current_round: u64,
-        total_bets: u64,
-        total_amount: u64,
-        bets: vector<Bet>,
-        random_seed: vector<u8>,
-        last_update: u64,
+    /// Admin/House state
+    struct House has key {
+        admin: address,
     }
 
-    /// Bet structure
-    struct Bet has store, drop {
-        player: address,
+    /// Per-user escrowed balance (internal ledger in Octas)
+    struct Balance has key {
         amount: u64,
-        bet_type: u8,
-        bet_value: u8,
-        numbers: vector<u8>,
-        round: u64,
     }
 
-    /// Events
-    struct BetPlacedEvent has drop, store {
-        player: address,
-        amount: u64,
-        bet_type: u8,
-        bet_value: u8,
-        round: u64,
+    #[event]
+    struct BetPlaced has drop, store, copy { player: address, amount: u64, bet_kind: u8, bet_value: u8 }
+    #[event]
+    struct BetResult has drop, store, copy { player: address, win: bool, roll: u8, payout: u64 }
+    #[event]
+    struct WithdrawRequested has drop, store, copy { player: address, amount: u64 }
+    #[event]
+    struct PayoutExecuted has drop, store, copy { player: address, amount: u64 }
+
+    const E_NOT_ADMIN: u64 = 1;
+    const E_INSUFFICIENT_ESCROW: u64 = 2;
+    const E_INVALID_BET: u64 = 3;
+    const E_ALREADY_INIT: u64 = 4;
+
+    /// Publish admin resources under the deployer account.
+    public entry fun init(admin: &signer) {
+        assert!(!exists<House>(signer::address_of(admin)), E_ALREADY_INIT);
+        move_to(admin, House { admin: signer::address_of(admin) });
+        // Ensure the house has a CoinStore to receive deposits
+        coin::register<AptosCoin>(admin);
     }
 
-    struct BetResultEvent has drop, store {
-        player: address,
-        amount: u64,
-        won: bool,
-        winnings: u64,
-        round: u64,
-        result: u8,
-    }
+    /// User deposits APT into the house escrow. Requires one-time signature from the user.
+    public entry fun deposit(user: &signer, amount: u64, house_addr: address) acquires Balance {
+        // Transfer APT from user into the house's account
+        coin::transfer<AptosCoin>(user, house_addr, amount);
 
-    struct RandomGeneratedEvent has drop, store {
-        random_number: u8,
-        round: u64,
-    }
-
-    /// Capabilities
-    struct RouletteCapability has key {
-        signer_cap: account::SignerCapability,
-    }
-
-    /// Event handles
-    struct RouletteEvents has key {
-        bet_placed_events: EventHandle<BetPlacedEvent>,
-        bet_result_events: EventHandle<BetResultEvent>,
-        random_generated_events: EventHandle<RandomGeneratedEvent>,
-    }
-
-    /// Initialize the roulette game
-    fun init_module(account: &signer) {
-        let account_addr = signer::address_of(account);
-        
-        // Create resource account for the casino
-        let (resource_signer, resource_signer_cap) = account::create_resource_account(
-            account,
-            b"roulette_seed"
-        );
-
-        // Store the capability
-        move_to(account, RouletteCapability {
-            signer_cap: resource_signer_cap,
-        });
-
-        // Initialize game state
-        move_to(&resource_signer, GameState {
-            active: false,
-            current_round: 0,
-            total_bets: 0,
-            total_amount: 0,
-            bets: vector::empty(),
-            random_seed: vector::empty(),
-            last_update: 0,
-        });
-
-        // Initialize events
-        move_to(&resource_signer, RouletteEvents {
-            bet_placed_events: event::new_event_handle<BetPlacedEvent>(&resource_signer),
-            bet_result_events: event::new_event_handle<BetResultEvent>(&resource_signer),
-            random_generated_events: event::new_event_handle<RandomGeneratedEvent>(&resource_signer),
-        });
-    }
-
-    /// Place a bet
-    public entry fun place_bet(
-        player: &signer,
-        bet_type: u8,
-        bet_value: u8,
-        amount: u64,
-        numbers: vector<u8>,
-    ) acquires GameState, RouletteEvents {
-        let player_addr = signer::address_of(player);
-        
-        // Validate bet amount
-        assert!(amount > 0, EINVALID_AMOUNT);
-        
-        // Get player's APT balance
-        let player_coin_store = coin::withdraw<AptosCoin>(player, amount);
-        
-        // Get game state
-        let game_state = borrow_global_mut<GameState>(@apt_casino);
-        
-        // Start new round if not active
-        if (!game_state.active) {
-            game_state.active = true;
-            game_state.current_round = game_state.current_round + 1;
-            game_state.total_bets = 0;
-            game_state.total_amount = 0;
-            game_state.bets = vector::empty();
-            game_state.random_seed = vector::empty();
-            game_state.last_update = timestamp::now_seconds();
-        };
-
-        // Validate bet
-        validate_bet(bet_type, bet_value, &numbers);
-        
-        // Create bet
-        let bet = Bet {
-            player: player_addr,
-            amount,
-            bet_type,
-            bet_value,
-            numbers,
-            round: game_state.current_round,
-        };
-        
-        // Add bet to game
-        vector::push_back(&mut game_state.bets, bet);
-        game_state.total_bets = game_state.total_bets + 1;
-        game_state.total_amount = game_state.total_amount + amount;
-        
-        // Emit bet placed event
-        let events = borrow_global_mut<RouletteEvents>(@apt_casino);
-        event::emit_event(&mut events.bet_placed_events, BetPlacedEvent {
-            player: player_addr,
-            amount,
-            bet_type,
-            bet_value,
-            round: game_state.current_round,
-        });
-        
-        // Generate random number and process bets if enough time has passed
-        if (game_state.total_bets >= 1 && 
-            timestamp::now_seconds() >= game_state.last_update + 30) {
-            generate_random_and_process_bets();
-        };
-    }
-
-    /// Generate random number and process all bets
-    fun generate_random_and_process_bets() acquires GameState, RouletteEvents {
-        let game_state = borrow_global_mut<GameState>(@apt_casino);
-        let events = borrow_global_mut<RouletteEvents>(@apt_casino);
-        
-        // Generate random number using on-chain randomness
-        let random_number = generate_random_number();
-        
-        // Emit random generated event
-        event::emit_event(&mut events.random_generated_events, RandomGeneratedEvent {
-            random_number,
-            round: game_state.current_round,
-        });
-        
-        // Process all bets
-        let i = 0;
-        let len = vector::length(&game_state.bets);
-        while (i < len) {
-            let bet = vector::borrow(&game_state.bets, i);
-            let (won, winnings) = calculate_winnings(bet, random_number);
-            
-            // Emit bet result event
-            event::emit_event(&mut events.bet_result_events, BetResultEvent {
-                player: bet.player,
-                amount: bet.amount,
-                won,
-                winnings,
-                round: game_state.current_round,
-                result: random_number,
-            });
-            
-            i = i + 1;
-        };
-        
-        // Reset game state
-        game_state.active = false;
-        game_state.bets = vector::empty();
-        game_state.total_bets = 0;
-        game_state.total_amount = 0;
-    }
-
-    /// Generate random number using on-chain randomness
-    fun generate_random_number(): u8 {
-        let seed = vector::empty<u8>();
-        vector::append(&mut seed, bcs::to_bytes(&timestamp::now_seconds()));
-        vector::append(&mut seed, bcs::to_bytes(&timestamp::now_microseconds()));
-        
-        let hash = hash::sha3_256(seed);
-        let random_bytes = vector::empty<u8>();
-        vector::append(&mut random_bytes, hash);
-        
-        // Convert to number 0-36 (roulette has 37 numbers: 0-36)
-        let random_value = 0;
-        let i = 0;
-        while (i < 8) {
-            random_value = random_value + (*vector::borrow(&random_bytes, i) as u64);
-            i = i + 1;
-        };
-        
-        ((random_value % 37) as u8)
-    }
-
-    /// Calculate winnings for a bet
-    fun calculate_winnings(bet: &Bet, result: u8): (bool, u64) {
-        if (bet.bet_type == BET_TYPE_NUMBER) {
-            if (bet.bet_value == result) {
-                return (true, bet.amount * 36)
-            }
-        } else if (bet.bet_type == BET_TYPE_COLOR) {
-            let is_red = is_red_number(result);
-            if ((bet.bet_value == 0 && is_red) || (bet.bet_value == 1 && !is_red)) {
-                return (true, bet.amount * 2)
-            }
-        } else if (bet.bet_type == BET_TYPE_ODD_EVEN && result != 0) {
-            let is_even = result % 2 == 0;
-            if ((bet.bet_value == 0 && !is_even) || (bet.bet_value == 1 && is_even)) {
-                return (true, bet.amount * 2)
-            }
-        } else if (bet.bet_type == BET_TYPE_HIGH_LOW && result != 0) {
-            let is_high = result >= 19;
-            if ((bet.bet_value == 0 && !is_high) || (bet.bet_value == 1 && is_high)) {
-                return (true, bet.amount * 2)
-            }
-        } else if (bet.bet_type == BET_TYPE_DOZEN && result != 0) {
-            let dozen = (result - 1) / 12;
-            if (bet.bet_value == dozen) {
-                return (true, bet.amount * 3)
-            }
-        } else if (bet.bet_type == BET_TYPE_COLUMN && result != 0) {
-            let column = (result - 1) % 3;
-            if (bet.bet_value == column) {
-                return (true, bet.amount * 3)
-            }
-        } else if (bet.bet_type == BET_TYPE_SPLIT || 
-                   bet.bet_type == BET_TYPE_STREET || 
-                   bet.bet_type == BET_TYPE_CORNER || 
-                   bet.bet_type == BET_TYPE_LINE) {
-            if (contains_number(&bet.numbers, result)) {
-                let multiplier = if (bet.bet_type == BET_TYPE_SPLIT) { 18 }
-                               else if (bet.bet_type == BET_TYPE_STREET) { 12 }
-                               else if (bet.bet_type == BET_TYPE_CORNER) { 9 }
-                               else { 6 };
-                return (true, bet.amount * multiplier)
-            }
-        };
-        
-        (false, 0)
-    }
-
-    /// Check if number is red
-    fun is_red_number(number: u8): bool {
-        let red_numbers = vector[1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
-        let i = 0;
-        while (i < vector::length(&red_numbers)) {
-            if (*vector::borrow(&red_numbers, i) == number) {
-                return true
-            };
-            i = i + 1;
-        };
-        false
-    }
-
-    /// Check if vector contains number
-    fun contains_number(numbers: &vector<u8>, target: u8): bool {
-        let i = 0;
-        while (i < vector::length(numbers)) {
-            if (*vector::borrow(numbers, i) == target) {
-                return true
-            };
-            i = i + 1;
-        };
-        false
-    }
-
-    /// Validate bet
-    fun validate_bet(bet_type: u8, bet_value: u8, numbers: &vector<u8>) {
-        if (bet_type == BET_TYPE_NUMBER) {
-            assert!(bet_value <= 36, EINVALID_BET_VALUE);
-            assert!(vector::length(numbers) == 0, EINVALID_BET_VALUE);
-        } else if (bet_type == BET_TYPE_COLOR || bet_type == BET_TYPE_ODD_EVEN || bet_type == BET_TYPE_HIGH_LOW) {
-            assert!(bet_value <= 1, EINVALID_BET_VALUE);
-            assert!(vector::length(numbers) == 0, EINVALID_BET_VALUE);
-        } else if (bet_type == BET_TYPE_DOZEN || bet_type == BET_TYPE_COLUMN) {
-            assert!(bet_value <= 2, EINVALID_BET_VALUE);
-            assert!(vector::length(numbers) == 0, EINVALID_BET_VALUE);
-        } else if (bet_type == BET_TYPE_SPLIT) {
-            assert!(vector::length(numbers) == 2, EINVALID_BET_VALUE);
-        } else if (bet_type == BET_TYPE_STREET) {
-            assert!(vector::length(numbers) == 3, EINVALID_BET_VALUE);
-        } else if (bet_type == BET_TYPE_CORNER) {
-            assert!(vector::length(numbers) == 4, EINVALID_BET_VALUE);
-        } else if (bet_type == BET_TYPE_LINE) {
-            assert!(vector::length(numbers) == 6, EINVALID_BET_VALUE);
+        let user_addr = signer::address_of(user);
+        if (exists<Balance>(user_addr)) {
+            let b_ref = borrow_global_mut<Balance>(user_addr);
+            b_ref.amount = b_ref.amount + amount;
         } else {
-            abort EINVALID_BET_TYPE
+            move_to(user, Balance { amount });
+        }
+        // Note: deposit event intentionally omitted (bet events are primary)
+    }
+
+    /// Request withdrawal from internal escrow. House will later execute payout and pay gas.
+    public entry fun request_withdraw(user: &signer, amount: u64) acquires Balance {
+        let user_addr = signer::address_of(user);
+        assert!(exists<Balance>(user_addr), error::not_found(E_INSUFFICIENT_ESCROW));
+        let b_ref = borrow_global_mut<Balance>(user_addr);
+        assert!(b_ref.amount >= amount, error::invalid_argument(E_INSUFFICIENT_ESCROW));
+        b_ref.amount = b_ref.amount - amount;
+
+        event::emit<WithdrawRequested>(WithdrawRequested { player: user_addr, amount });
+    }
+
+    /// Admin executes a payout: transfers APT from house to player. Gas is paid by the house.
+    public entry fun admin_payout(admin: &signer, to: address, amount: u64) acquires House {
+        assert!(signer::address_of(admin) == get_admin_addr(), error::permission_denied(E_NOT_ADMIN));
+        coin::transfer<AptosCoin>(admin, to, amount);
+        event::emit<PayoutExecuted>(PayoutExecuted { player: to, amount });
+    }
+
+    /// House places a bet on behalf of a player. Gas is paid by the house. The bet is settled
+    /// instantly using on-chain randomness. The player's internal escrow is debited/credited.
+    ///
+    /// bet_kind:
+    ///   0 = single number (0-36), payout 35x
+    ///   1 = color (0=Red,1=Black) using parity rule (even=Black, odd=Red) for demo, payout 2x
+    ///   2 = odd/even (0=Even,1=Odd), payout 2x
+    #[randomness]
+    entry fun house_place_bet(admin: &signer, player: address, amount: u64, bet_kind: u8, bet_value: u8) acquires House, Balance {
+        assert!(signer::address_of(admin) == get_admin_addr(), error::permission_denied(E_NOT_ADMIN));
+
+        // Load and check player's escrow balance
+        assert!(exists<Balance>(player), error::not_found(E_INSUFFICIENT_ESCROW));
+        let bal = borrow_global_mut<Balance>(player);
+        assert!(bal.amount >= amount, error::invalid_argument(E_INSUFFICIENT_ESCROW));
+
+        // Emit placement event
+        event::emit<BetPlaced>(BetPlaced { player, amount, bet_kind, bet_value });
+
+        // Debit upfront
+        bal.amount = bal.amount - amount;
+
+        // On-chain randomness: draw number in [0,36]
+        // NOTE: Function name may change with framework version; replace with the stable API if needed.
+        let roll: u8 = (randomness::u64_range(0, 37) as u8);
+
+        let (win, payout) = settle(amount, bet_kind, bet_value, roll);
+        if (win && payout > 0) {
+            bal.amount = bal.amount + payout;
+        };
+
+        event::emit<BetResult>(BetResult { player, win, roll, payout });
+    }
+
+    /// View helpers
+    public fun get_balance(addr: address): u64 acquires Balance { 
+        if (exists<Balance>(addr)) borrow_global<Balance>(addr).amount else 0
+    }
+
+    public fun get_admin_addr(): address acquires House { borrow_global<House>(@apt_casino).admin }
+
+    /// Payout calculation
+    fun settle(amount: u64, bet_kind: u8, bet_value: u8, roll: u8): (bool, u64) {
+        if (bet_kind == 0) {
+            // Single number
+            if (bet_value <= 36 && roll == bet_value) (true, amount * 35) else (false, 0)
+        } else if (bet_kind == 1) {
+            // Color by parity: even=Black(1), odd=Red(0). This is a demo mapping.
+            let is_red = (roll % 2) == 1; // odd
+            let bv_is_red = (bet_value == 0);
+            if (roll != 0 && ((is_red && bv_is_red) || (!is_red && !bv_is_red))) (true, amount * 2) else (false, 0)
+        } else if (bet_kind == 2) {
+            // Odd / Even
+            if (roll != 0) {
+                let is_odd = (roll % 2) == 1;
+                let want_odd = (bet_value == 1);
+                if ((is_odd && want_odd) || (!is_odd && !want_odd)) (true, amount * 2) else (false, 0)
+            } else (false, 0)
+        } else {
+            abort error::invalid_argument(E_INVALID_BET)
         }
     }
 
-    /// Get game state
-    public fun get_game_state(): (bool, u64, u64, u64) acquires GameState {
-        let game_state = borrow_global<GameState>(@apt_casino);
-        (game_state.active, game_state.current_round, game_state.total_bets, game_state.total_amount)
-    }
+    /// User places a bet directly (user pays gas). Requires prior deposit to have escrow.
+    #[randomness]
+    entry fun user_place_bet(user: &signer, amount: u64, bet_kind: u8, bet_value: u8) acquires Balance {
+        let user_addr = signer::address_of(user);
+        assert!(exists<Balance>(user_addr), error::not_found(E_INSUFFICIENT_ESCROW));
+        let bal = borrow_global_mut<Balance>(user_addr);
+        assert!(bal.amount >= amount, error::invalid_argument(E_INSUFFICIENT_ESCROW));
 
-    /// Get bet by index
-    public fun get_bet(index: u64): (address, u64, u8, u8, vector<u8>, u64) acquires GameState {
-        let game_state = borrow_global<GameState>(@apt_casino);
-        assert!(index < vector::length(&game_state.bets), EINVALID_BET_VALUE);
-        let bet = vector::borrow(&game_state.bets, index);
-        (bet.player, bet.amount, bet.bet_type, bet.bet_value, bet.numbers, bet.round)
+        event::emit<BetPlaced>(BetPlaced { player: user_addr, amount, bet_kind, bet_value });
+        bal.amount = bal.amount - amount;
+        let roll: u8 = (randomness::u64_range(0, 37) as u8);
+        let (win, payout) = settle(amount, bet_kind, bet_value, roll);
+        if (win && payout > 0) bal.amount = bal.amount + payout;
+        event::emit<BetResult>(BetResult { player: user_addr, win, roll, payout });
     }
+}
 
-    /// Get total bets count
-    public fun get_total_bets(): u64 acquires GameState {
-        let game_state = borrow_global<GameState>(@apt_casino);
-        vector::length(&game_state.bets)
-    }
-} 
+

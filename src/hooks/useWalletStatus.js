@@ -7,36 +7,20 @@ import React, {
   useEffect,
   useCallback,
 } from 'react';
-import {
-  useAccount,
-  useDisconnect,
-  useChainId,
-} from 'wagmi';
-import { useConnectModal } from '@rainbow-me/rainbowkit';
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
 
 const WalletStatusContext = createContext(null);
 
 export function WalletStatusProvider({ children }) {
   const isDev = process.env.NODE_ENV === 'development';
 
-  const { isConnected, address } = useAccount();
-  const chainId = useChainId();
-  const { disconnect } = useDisconnect();
-  const { openConnectModal } = useConnectModal();
-
-  const getChainFromId = (id) => {
-    if (!id) return null;
-    switch (id) {
-      case 1:
-        return { id: 1, name: 'Ethereum' };
-      case 137:
-        return { id: 137, name: 'Polygon' };
-      case 5003:
-        return { id: 5003, name: 'Mantle Sepolia' };
-      default:
-        return { id, name: `Chain ${id}` };
-    }
-  };
+  const { 
+    connected, 
+    account, 
+    network, 
+    connect, 
+    disconnect
+  } = useWallet();
 
   const [devWallet, setDevWallet] = useState({
     isConnected: false,
@@ -54,7 +38,7 @@ export function WalletStatusProvider({ children }) {
       setDevWallet({
         isConnected: true,
         address: '0x1234...dev',
-        chain: { id: 5003, name: 'Mantle Sepolia' },
+        chain: { id: 'aptos_testnet', name: 'Aptos Testnet' },
       });
     }
 
@@ -70,7 +54,7 @@ export function WalletStatusProvider({ children }) {
           ? {
               isConnected: true,
               address: '0x1234...dev',
-              chain: { id: 5003, name: 'Mantle Sepolia' },
+              chain: { id: 'aptos_testnet', name: 'Aptos Testnet' },
             }
           : {
               isConnected: false,
@@ -86,25 +70,25 @@ export function WalletStatusProvider({ children }) {
     };
   }, [isDev]);
 
-  const connectWallet = useCallback(() => {
+  const connectWallet = useCallback(async () => {
     if (isDev) {
       localStorage.setItem('dev-wallet-state', 'connected');
       setDevWallet({
         isConnected: true,
         address: '0x1234...dev',
-        chain: { id: 5003, name: 'Mantle Sepolia' },
+        chain: { id: 'aptos_testnet', name: 'Aptos Testnet' },
       });
       return;
     }
 
-    if (openConnectModal) {
-      openConnectModal();
-    } else {
-      setError('Wallet connection modal not available');
+    try {
+      await connect();
+    } catch (err) {
+      setError('Failed to connect to Aptos wallet: ' + err.message);
     }
-  }, [openConnectModal, isDev]);
+  }, [connect, isDev]);
 
-  const disconnectWallet = useCallback(() => {
+  const disconnectWallet = useCallback(async () => {
     if (isDev) {
       localStorage.setItem('dev-wallet-state', 'disconnected');
       setDevWallet({
@@ -115,7 +99,11 @@ export function WalletStatusProvider({ children }) {
       return;
     }
 
-    disconnect();
+    try {
+      await disconnect();
+    } catch (err) {
+      setError('Failed to disconnect wallet: ' + err.message);
+    }
   }, [disconnect, isDev]);
 
   const resetError = useCallback(() => {
@@ -125,13 +113,16 @@ export function WalletStatusProvider({ children }) {
   const currentStatus = isDev
     ? devWallet
     : {
-        isConnected,
-        address,
-        chain: getChainFromId(chainId),
+        isConnected: connected,
+        address: account?.address,
+        chain: { 
+          id: 'aptos_testnet', 
+          name: 'Aptos Testnet' 
+        },
       };
 
   useEffect(() => {
-    console.log('🔌 Wallet connection changed:');
+    console.log('🔌 Aptos Wallet connection changed:');
     console.log('Connected:', currentStatus.isConnected);
     console.log('Address:', currentStatus.address);
     console.log('Chain:', currentStatus.chain);

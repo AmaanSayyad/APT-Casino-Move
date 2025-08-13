@@ -5,10 +5,6 @@ const nextConfig = {
   images: {
     domains: ['images.unsplash.com'],
   },
-  // Increase chunk loading timeout to 60 seconds
-  experimental: {
-    pageLoadTimeout: 60, // 60 seconds
-  },
   // Performance optimizations
   poweredByHeader: false,
   reactStrictMode: false, // Disable strict mode to prevent double-renders and potential issues
@@ -18,21 +14,6 @@ const nextConfig = {
       '@': require('path').resolve(__dirname, 'src'),
     };
     
-    // Polyfill Node.js modules that Uniswap's dependencies require
-    config.resolve.fallback = {
-      ...config.resolve.fallback,
-      fs: false,
-      net: false,
-      tls: false,
-      path: false,
-      stream: false,
-      zlib: false,
-      http: false,
-      https: false,
-      crypto: false,
-      os: false,
-    };
-
     // Optimize chunking for better loading performance
     if (!isServer && !dev) {
       // Combine smaller chunks to reduce network requests
@@ -47,7 +28,7 @@ const nextConfig = {
           framework: {
             name: 'framework',
             chunks: 'all',
-            test: /[\\/]node_modules[\\/](@react|react|react-dom|next|scheduler)[\\/]/,
+            test: /[\\/]node_modules[\\/](@react|react|next|scheduler)[\\/]/,
             priority: 40,
             enforce: true,
           },
@@ -73,7 +54,6 @@ const nextConfig = {
     return config;
   },
   eslint: {
-    // Exclude web3-contracts during build
     ignoreDuringBuilds: true,
   },
   typescript: {

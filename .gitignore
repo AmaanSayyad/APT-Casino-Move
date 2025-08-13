@@ -3,19 +3,26 @@
 /.pnp
 .pnp.js
 
+# OS
+.DS_Store
+Thumbs.db
+
+# build artifacts
+/dist
+/build
+/out
+/.next/
+next-env.d.ts
+
+# package managers
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
 # testing
 /coverage
 
-# next.js
-/.next/
-/out/
-/build
-
-# production
-/build
-
 # misc
-.DS_Store
 *.pem
 
 # debug
@@ -26,13 +33,16 @@ yarn-error.log*
 # local env files
 .env*.local
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
-next-env.d.ts
 
 # IDE
 .idea
@@ -44,3 +54,20 @@ logs
 
 # Cache
 .cache 
+
+# Aptos / Move
+move-contracts/build
+move-contracts/.aptos
+move-contracts/.move
+move-contracts/.package-cache
+
+# Generated assets
+public/fonts/*.eot
+public/fonts/*.ttf
+public/fonts/*.woff
+public/fonts/*.woff2
+
+# Local data
+.tmp
+.DS_Store
+*.swp

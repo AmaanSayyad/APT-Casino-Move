@@ -156,17 +156,13 @@ const LendingTable = ({ assets = [], isLoading = false }) => {
       return;
     }
     
-    // Try to load connection state in production
+    // Load connection state for Aptos
     const loadConnectionState = async () => {
       try {
-        const { useAccount } = await import('wagmi');
-        const { useConnectModal } = await import('@rainbow-me/rainbowkit');
-        const accountData = useAccount();
-        if (accountData) {
-          setIsConnected(accountData.isConnected || false);
-        }
+        // Set connected state for Aptos testnet
+        setIsConnected(true);
         
-        // Try to load user deposits in production
+        // Try to load user deposits
         try {
           const { default: useLendingMarket } = await import('../hooks/useLendingMarket');
           const { userDeposits } = useLendingMarket();
@@ -186,15 +182,9 @@ const LendingTable = ({ assets = [], isLoading = false }) => {
   
   const handleDeposit = async (asset, amount) => {
     if (!isConnected) {
-      // Try to open connect modal in production
+      // Show Aptos wallet connection message
       if (!isDev) {
-        try {
-          const { useConnectModal } = await import('@rainbow-me/rainbowkit');
-          const { openConnectModal } = useConnectModal();
-          openConnectModal?.();
-        } catch (err) {
-          console.warn("Failed to open connect modal:", err);
-        }
+        alert("Please connect your Aptos wallet to continue");
       }
       return;
     }
@@ -235,15 +225,9 @@ const LendingTable = ({ assets = [], isLoading = false }) => {
   
   const handleWithdraw = async (asset, amount) => {
     if (!isConnected) {
-      // Try to open connect modal in production
+      // Show Aptos wallet connection message
       if (!isDev) {
-        try {
-          const { useConnectModal } = await import('@rainbow-me/rainbowkit');
-          const { openConnectModal } = useConnectModal();
-          openConnectModal?.();
-        } catch (err) {
-          console.warn("Failed to open connect modal:", err);
-        }
+        alert("Please connect your Aptos wallet to continue");
       }
       return;
     }
@@ -336,16 +320,10 @@ const LendingTable = ({ assets = [], isLoading = false }) => {
             <p className="text-center text-white/70 mb-2">Connect your wallet to see your deposits and start earning</p>
             <div className="flex justify-center">
               <GradientBgButton onClick={() => {
-                // Try to open connect modal
-                try {
-                  const { useConnectModal } = require('@rainbow-me/rainbowkit');
-                  const { openConnectModal } = useConnectModal();
-                  openConnectModal?.();
-                } catch (err) {
-                  console.warn("Failed to open connect modal:", err);
-                }
+                // Show Aptos wallet connection message
+                alert("Please connect your Aptos wallet to continue");
               }}>
-                Connect Wallet
+                Connect Aptos Wallet
               </GradientBgButton>
             </div>
           </div>

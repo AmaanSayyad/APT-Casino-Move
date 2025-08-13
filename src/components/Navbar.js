@@ -1,13 +1,16 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
-import ConnectWalletButton from "./ConnectWalletButton";
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import AptosConnectWalletButton from "./AptosConnectWalletButton";
+
 import TokenBalance from './TokenBalance';
 import { useNotification } from './NotificationSystem';
+import { UserBalanceSystem, parseAptAmount, aptosClient, CASINO_MODULE_ADDRESS } from '@/lib/aptos';
 
 // Mock search results for demo purposes
 const MOCK_SEARCH_RESULTS = {
@@ -43,6 +46,18 @@ export default function Navbar() {
   const notification = useNotification();
   const isDev = process.env.NODE_ENV === 'development';
 
+  // User balance management
+  const [userBalance, setUserBalance] = useState("0");
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
+  const [showBalanceModal, setShowBalanceModal] = useState(false);
+  const [depositAmount, setDepositAmount] = useState("0.1");
+  const [withdrawAmount, setWithdrawAmount] = useState("0");
+
+  // Wallet connection
+  const { connected: isConnected, account, signAndSubmitTransaction } = useWallet();
+  const address = account?.address;
+  const isWalletReady = isConnected && account && signAndSubmitTransaction;
+
   // Mock notifications for UI purposes
   const [notifications, setNotifications] = useState([
     {
@@ -61,6 +76,29 @@ export default function Navbar() {
     }
   ]);
 
+  // Load user balance from house account
+  const loadUserBalance = async () => {
+    if (!address) return;
+    
+    try {
+      setIsLoadingBalance(true);
+      const balance = await UserBalanceSystem.getBalance(address);
+      setUserBalance(balance);
+    } catch (error) {
+      console.error('Error loading user balance:', error);
+      setUserBalance("0");
+    } finally {
+      setIsLoadingBalance(false);
+    }
+  };
+
+  // Load balance when wallet connects
+  useEffect(() => {
+    if (isWalletReady && address) {
+      loadUserBalance();
+    }
+  }, [isWalletReady, address]);
+
   useEffect(() => {
     setIsClient(true);
     setUnreadNotifications(notifications.filter(n => !n.isRead).length);
@@ -71,28 +109,10 @@ export default function Navbar() {
       setIsDarkMode(savedMode === 'true');
     }
     
-    // In development mode, don't try to use Wagmi hooks
-    if (!isDev) {
-      // Safely import and use Wagmi hooks only on the client side
-      try {
-        const { useAccount } = require('wagmi');
-        
-        // This is a workaround to safely use the hook
-        // The real hook will be used in the AccountLoader component
-        const getAccount = () => {
-          try {
-            const { address } = useAccount();
-            setUserAddress(address);
-          } catch (error) {
-            console.warn("Failed to load wallet account:", error);
-            setUserAddress(null);
-          }
-        };
-        
-        getAccount();
-      } catch (error) {
-        console.warn("Wagmi not available:", error);
-      }
+    // Aptos wallet integration - simplified for testnet only
+    // In development mode, use mock data
+    if (isDev) {
+      setUserAddress('0x1234...dev');
     }
     
     // Handle click outside search panel
@@ -111,7 +131,116 @@ export default function Navbar() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isDev, notifications]);
+
+  // Close balance modal with ESC
+  useEffect(() => {
+    if (!showBalanceModal) return;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setShowBalanceModal(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [showBalanceModal]);
   
+  // Handle deposit to house account
+  const handleDeposit = async () => {
+    if (!isWalletReady) {
+      notification.error('Wallet not ready. Please connect your wallet first.');
+      return;
+    }
+    
+    if (!depositAmount || parseFloat(depositAmount) <= 0) {
+      notification.error('Please enter a valid amount');
+      return;
+    }
+    
+    try {
+      setIsLoadingBalance(true);
+      
+      console.log('=== DEPOSIT PROCESS ===');
+      console.log('Deposit amount (APT):', depositAmount);
+      
+      const amountOctas = parseAptAmount(depositAmount);
+      console.log('Amount in octas:', amountOctas);
+      console.log('CASINO_MODULE_ADDRESS:', CASINO_MODULE_ADDRESS);
+      
+      const payloadData = UserBalanceSystem.deposit(amountOctas);
+      console.log('Deposit payload data:', payloadData);
+      
+      if (!payloadData || !payloadData.function) {
+        throw new Error('Invalid deposit payload');
+      }
+      
+      console.log('Submitting deposit transaction...');
+      const tx = await signAndSubmitTransaction(payloadData);
+      console.log('Deposit transaction submitted:', tx);
+      
+      console.log('Waiting for transaction confirmation...');
+      await aptosClient.waitForTransaction({ transactionHash: tx.hash });
+      console.log('Deposit transaction confirmed!');
+      
+      notification.success(`Deposited ${depositAmount} APT to house account`);
+      setShowBalanceModal(false);
+      setDepositAmount("0.1");
+      
+      // Reload balance after deposit
+      await loadUserBalance();
+    } catch (error) {
+      console.error('Deposit failed:', error);
+      notification.error(`Deposit failed: ${error?.message || error}`);
+    } finally {
+      setIsLoadingBalance(false);
+    }
+  };
+
+  // Handle withdraw from house account
+  const handleWithdraw = async () => {
+    if (!isWalletReady) {
+      notification.error('Wallet not ready. Please connect your wallet first.');
+      return;
+    }
+    
+    const currentBalance = parseFloat(userBalance) / 100000000; // Convert from octas to APT
+    if (currentBalance <= 0) {
+      notification.error('No balance to withdraw');
+      return;
+    }
+    
+    try {
+      setIsLoadingBalance(true);
+      
+      console.log('=== WITHDRAW PROCESS ===');
+      console.log('Current balance (octas):', userBalance);
+      console.log('Current balance (APT):', currentBalance);
+      
+      const payloadData = UserBalanceSystem.withdraw(userBalance); // Withdraw all balance
+      console.log('Withdraw payload data:', payloadData);
+      
+      if (!payloadData || !payloadData.function) {
+        throw new Error('Invalid withdraw payload');
+      }
+      
+      console.log('Submitting withdraw transaction...');
+      const tx = await signAndSubmitTransaction(payloadData);
+      console.log('Withdraw transaction submitted:', tx);
+      
+      console.log('Waiting for transaction confirmation...');
+      await aptosClient.waitForTransaction({ transactionHash: tx.hash });
+      console.log('Withdraw transaction confirmed!');
+      
+      notification.success(`Withdrawn ${currentBalance.toFixed(8)} APT from house account`);
+      setShowBalanceModal(false);
+      
+      // Reload balance after withdraw
+      await loadUserBalance();
+    } catch (error) {
+      console.error('Withdraw failed:', error);
+      notification.error(`Withdraw failed: ${error?.message || error}`);
+    } finally {
+      setIsLoadingBalance(false);
+    }
+  };
+
   // Handle search input
   useEffect(() => {
     if (searchQuery.length > 1) {
@@ -483,11 +612,29 @@ export default function Navbar() {
           {/* Token Balance */}
           {isClient && !isDev && <TokenBalance />}
           
+          {/* User Balance Display */}
+          {isWalletReady && (
+            <div className="flex items-center space-x-3">
+              <div className="bg-gradient-to-r from-green-900/20 to-green-800/10 rounded-lg border border-green-800/30 px-3 py-2">
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs text-gray-300">Balance:</span>
+                  <span className="text-sm text-green-300 font-medium">
+                    {isLoadingBalance ? 'Loading...' : `${(parseFloat(userBalance) / 100000000).toFixed(8)} APT`}
+                  </span>
+                  <button
+                    onClick={() => setShowBalanceModal(true)}
+                    className="ml-2 text-xs bg-green-600/30 hover:bg-green-500/30 text-green-300 px-2 py-1 rounded transition-colors"
+                  >
+                    Manage
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          
           {/* Aptos Wallet Button */}
           <AptosConnectWalletButton />
-          
-          {/* Wallet Button */}
-          <ConnectWalletButton />
+  
         </div>
       </div>
       
@@ -532,6 +679,29 @@ export default function Navbar() {
               </button>
             </div>
             
+            {/* User Balance in Mobile Menu */}
+            {isWalletReady && (
+              <div className="pt-2 mt-2 border-t border-purple-500/10">
+                <div className="p-3 bg-gradient-to-r from-green-900/20 to-green-800/10 rounded-lg border border-green-800/30">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm text-gray-300">House Balance:</span>
+                    <span className="text-sm text-green-300 font-medium">
+                      {isLoadingBalance ? 'Loading...' : `${(parseFloat(userBalance) / 100000000).toFixed(8)} APT`}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowBalanceModal(true);
+                      setShowMobileMenu(false);
+                    }}
+                    className="w-full text-xs bg-green-600/30 hover:bg-green-500/30 text-green-300 px-3 py-2 rounded transition-colors"
+                  >
+                    Manage Balance
+                  </button>
+                </div>
+              </div>
+            )}
+            
             <div className="pt-2 mt-2 border-t border-purple-500/10">
               <a 
                 href="#support" 
@@ -543,6 +713,86 @@ export default function Navbar() {
             </div>
           </div>
         </div>
+      )}
+      
+      {/* Balance Management Modal (portal) */}
+      {isClient && showBalanceModal && createPortal(
+        <div
+          className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowBalanceModal(false)}
+        >
+          <div
+            className="bg-[#0A0008] border border-purple-500/20 rounded-lg p-6 w-full max-w-md mx-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-white">Manage House Balance</h3>
+              <button
+                onClick={() => setShowBalanceModal(false)}
+                className="text-white/50 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+            
+            {/* Current Balance */}
+            <div className="mb-4 p-3 bg-gradient-to-r from-green-900/20 to-green-800/10 rounded-lg border border-green-800/30">
+              <span className="text-sm text-gray-300">Current Balance:</span>
+              <div className="text-lg text-green-300 font-bold">
+                {isLoadingBalance ? 'Loading...' : `${(parseFloat(userBalance) / 100000000).toFixed(8)} APT`}
+              </div>
+            </div>
+            
+            {/* Deposit Section */}
+            <div className="mb-4">
+              <h4 className="text-sm font-medium text-white mb-2">Deposit APT</h4>
+              <div className="flex space-x-2">
+                <input
+                  type="number"
+                  value={depositAmount}
+                  onChange={(e) => setDepositAmount(e.target.value)}
+                  placeholder="0.1"
+                  step="0.1"
+                  min="0.1"
+                  className="flex-1 bg-[#1A0018] border border-purple-500/30 rounded px-3 py-2 text-white placeholder-white/50"
+                />
+                                 <button
+                   onClick={handleDeposit}
+                   disabled={!isWalletReady || isLoadingBalance}
+                   className="px-4 py-2 bg-green-600 hover:bg-green-500 disabled:bg-gray-600 text-white rounded font-medium transition-colors disabled:cursor-not-allowed"
+                 >
+                   {isLoadingBalance ? 'Processing...' : 'Deposit'}
+                 </button>
+              </div>
+            </div>
+            
+            {/* Withdraw Section */}
+            <div className="mb-4">
+              <h4 className="text-sm font-medium text-white mb-2">Withdraw All APT</h4>
+                             <button
+                 onClick={handleWithdraw}
+                 disabled={!isWalletReady || isLoadingBalance || parseFloat(userBalance) <= 0}
+                 className="w-full px-4 py-2 bg-yellow-600 hover:bg-yellow-500 disabled:bg-gray-600 text-white rounded font-medium transition-colors disabled:cursor-not-allowed"
+               >
+                 {isLoadingBalance ? 'Processing...' : 'Withdraw All'}
+               </button>
+            </div>
+            
+            {/* Refresh Button */}
+            <div className="text-center">
+              <button
+                onClick={loadUserBalance}
+                disabled={isLoadingBalance}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-600 text-white rounded font-medium transition-colors disabled:cursor-not-allowed"
+              >
+                {isLoadingBalance ? 'Refreshing...' : 'Refresh Balance'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
       
       <div className="w-full h-[2px] magic-gradient overflow-hidden"></div>

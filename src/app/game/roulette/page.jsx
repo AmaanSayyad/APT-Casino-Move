@@ -12,14 +12,6 @@ import currency from "currency.js";
 import TextFieldCurrency from "@/components/TextFieldCurrency";
 import Button from "@/components/Button";
 import { rouletteTutorial, rouletteOdds } from "./tutorials";
-import {
-  rouletteABI,
-  rouletteContractAddress,
-  tokenABI,
-  tokenContractAddress,
-} from "./contractDetails";
-import * as ViemClient from "./ViemClient";
-import { getContract, parseEther } from "viem";
 import { muiStyles } from "./styles";
 import Image from "next/image";
 import MuiAlert from "@mui/material/Alert";
@@ -37,17 +29,12 @@ import StrategyGuide from './components/StrategyGuide';
 import RoulettePayout from './components/RoulettePayout';
 import WinProbabilities from './components/WinProbabilities';
 import RouletteHistory from './components/RouletteHistory';
-import { useAccount, useConfig, usePublicClient, useWalletClient, useContractWrite, useWaitForTransaction } from 'wagmi';
-import { writeContract, waitForTransactionReceipt } from '@wagmi/core';
-import contractAbi from '../../../contracts/Roulette.json'
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { aptosClient, CASINO_MODULE_ADDRESS, parseAptAmount, CasinoGames } from '@/lib/aptos';
+import { Aptos } from "@aptos-labs/ts-sdk"; // If not already imported
 
 
-// Debug imports
-
-
-
-console.log("ViemClient:", ViemClient);
-console.log("publicPharosSepoliaClient:", ViemClient.publicPharosSepoliaClient);
+// Aptos wallet integration will be added here
 
 const TooltipWide = styled(({ className, ...props }) => (
   <Tooltip {...props} classes={{ popper: className }} />
@@ -925,12 +912,13 @@ export default function GameRoulette() {
   const [bettingHistory, setBettingHistory] = useState([]);
   const [error, setError] = useState(null);
 
-  // Get wallet status and balance
-  const { address, isConnected } = useAccount();
+  // Aptos wallet
+  const { account, connected, signAndSubmitTransaction, wallet } = useWallet();
+  const address = account?.address;
+  const isConnected = !!connected;
+  const isWalletReady = isConnected && account && signAndSubmitTransaction && wallet;
   const { balance } = useToken(address);
-  const { config: wagmiConfig } = useConfig();
-  const publicClient = usePublicClient();
-  const { data: walletClient } = useWalletClient();
+  const HOUSE_ADDR = CASINO_MODULE_ADDRESS;
 
   // Sound refs
   const spinSoundRef = useRef(null);
@@ -1053,128 +1041,6 @@ export default function GameRoulette() {
     // Remove the dev mode setting
     console.log('Environment:', process.env.NODE_ENV);
   }, []);
-
-  useEffect(() => {
-    // Set up event listeners
-    const setupEventListeners = () => {
-      if (!address || !isConnected) {
-        console.log('Wallet not connected, skipping event listeners');
-        return;
-      }
-
-      console.log('Setting up contract event listeners...');
-      console.log('Contract address:', rouletteContractAddress);
-      console.log('Connected wallet:', address);
-
-      const winningsListener = ViemClient.publicPharosSepoliaClient.watchContractEvent({
-      address: rouletteContractAddress,
-      abi: rouletteABI,
-      eventName: "RandomNumberGenerated",
-      onLogs: (logs) => {
-          console.log('RandomNumberGenerated event received:', logs);
-          try {
-            // Safely parse the random number
-            const randomNumberRaw = logs[0]?.args?.randomNumber;
-            const randomNumber = typeof randomNumberRaw === 'object' 
-              ? parseInt(randomNumberRaw.toString()) 
-              : parseInt(randomNumberRaw);
-            
-            if (!isNaN(randomNumber)) {
-        setRollResult(randomNumber);
-              setNotificationIndex(notificationSteps.RESULT_READY);
-              console.log(`Random Number Generated: ${randomNumber}`);
-            } else {
-              console.error("Invalid random number:", randomNumberRaw);
-            }
-          } catch (error) {
-            console.error("Error processing random number:", error);
-          }
-      },
-    });
-
-      const betResultListener = ViemClient.publicPharosSepoliaClient.watchContractEvent({
-      address: rouletteContractAddress,
-      abi: rouletteABI,
-      eventName: "BetResult",
-      onLogs: (logs) => {
-          console.log('BetResult event received:', logs);
-          try {
-            if (!logs || !logs[0] || !logs[0].args) {
-              console.error("Invalid logs in BetResult event:", logs);
-              return;
-            }
-            
-            const { player, amount, won } = logs[0].args;
-            
-            // Safely compare addresses
-            const playerAddress = player ? player.toLowerCase() : null;
-            const userAddress = address ? address.toLowerCase() : null;
-            
-            if (userAddress && playerAddress === userAddress) {
-              // Safely convert amount to number
-              let amountNum = 0;
-              try {
-                const amountStr = typeof amount === 'object' ? amount.toString() : String(amount);
-                amountNum = parseFloat(amountStr) / 1e18;
-              } catch (e) {
-                console.error("Error parsing amount:", e);
-                amountNum = 0;
-              }
-              
-              setWinnings(won ? amountNum : 0);
-              
-              // Add to betting history
-              setBettingHistory(prev => [{
-                type: currentBetType?.type || 'Unknown',
-                amount: amountNum,
-                won: Boolean(won),
-                payout: won ? amountNum : 0,
-                roll: rollResult,
-                timestamp: new Date().toISOString()
-              }, ...prev].slice(0, 10)); // Keep last 10 bets
-              
-              console.log(`Bet Result - Won: ${won}, Amount: ${amountNum}`);
-            }
-          } catch (error) {
-            console.error("Error processing bet result:", error);
-          }
-        },
-      });
-
-      const vrfRequestListener = ViemClient.publicPharosSepoliaClient.watchContractEvent({
-        address: rouletteContractAddress,
-        abi: rouletteABI,
-        eventName: "RandomNumberRequested",
-        onLogs: (logs) => {
-          console.log('RandomNumberRequested event received:', logs);
-          try {
-            setNotificationIndex(notificationSteps.GENERATING_VRF);
-            
-            // Handle the request ID safely
-            if (logs && logs[0] && logs[0].args) {
-              const requestId = logs[0].args.requestId;
-              const safeRequestId = typeof requestId === 'object' 
-                ? (requestId.toString ? requestId.toString() : JSON.stringify(requestId)) 
-                : requestId;
-              console.log("VRF Request ID:", safeRequestId);
-      } else {
-              console.log("VRF Request received but no request ID found");
-            }
-          } catch (error) {
-            console.error("Error handling VRF request:", error);
-          }
-        },
-      });
-
-      return () => {
-        if (typeof winningsListener === 'function') winningsListener();
-        if (typeof betResultListener === 'function') betResultListener();
-        if (typeof vrfRequestListener === 'function') vrfRequestListener();
-      };
-    };
-
-    setupEventListeners();
-  }, [address, isConnected, currentBetType, rollResult, setNotificationIndex, setRollResult, setWinnings, setBettingHistory, setCurrentBetType]);
 
   // Check screen size for responsive layout
   useEffect(() => {
@@ -1669,7 +1535,7 @@ export default function GameRoulette() {
     }
   }, [playSound, winnings, reset]);
 
-  const config = useConfig(); // this retrieves your wagmi config instance
+  const config = undefined; // wagmi removed
 
   const contractAddress = '0xbD8Ca722093d811bF314dDAB8438711a4caB2e73'; // ✅ FIX THIS
 
@@ -1934,6 +1800,102 @@ export default function GameRoulette() {
     dispatchInside({ type: "reset" });
     dispatchEvents({ type: "reset" });
   }, [playSound, menuClickRef]);
+
+  // Deposit to escrow
+  const handleDeposit = useCallback(async () => {
+    if (!isWalletReady) return alert('Connect Aptos wallet first');
+    const amountApt = bet > 0 ? bet : 1; // default 1 APT
+    const amountOctas = parseAptAmount(String(amountApt));
+    try {
+      const payload = CasinoGames.roulette.deposit(amountOctas, CASINO_MODULE_ADDRESS);
+      const tx = await signAndSubmitTransaction(payload);
+      await aptosClient.waitForTransaction({ transactionHash: tx.hash });
+      alert(`Deposited ${amountApt} APT`);
+    } catch (e) {
+      console.error(e);
+      alert(`Deposit failed: ${e?.message || e}`);
+    }
+  }, [isWalletReady, bet, signAndSubmitTransaction]);
+
+  const aptosClient = new Aptos(); // Assuming testnet, adjust if needed
+
+  // Add error checking for signAndSubmitTransaction
+  if (!signAndSubmitTransaction) {
+    console.error("signAndSubmitTransaction is not available");
+    return;
+  }
+
+  const handlePlaceBet = async (amountOctas, betKind, betValue) => {
+    if (!isWalletReady) {
+      throw new Error('Wallet not ready. Please connect your wallet first.');
+    }
+    
+    try {
+      console.log("Submitting transaction with:", { amountOctas, betKind, betValue });
+      console.log("signAndSubmitTransaction available:", !!signAndSubmitTransaction);
+      
+      const payload = CasinoGames.roulette.userPlaceBet(amountOctas, betKind, betValue);
+      console.log("Payload created:", payload);
+      console.log("Payload type:", typeof payload);
+      console.log("Payload keys:", Object.keys(payload));
+      console.log("Payload.function:", payload?.function);
+      
+      if (!payload || !payload.function) {
+        throw new Error('Invalid payload created');
+      }
+      
+      console.log("About to call signAndSubmitTransaction with payload:", payload);
+      const response = await signAndSubmitTransaction(payload);
+      console.log("Transaction submitted:", response);
+      await aptosClient.waitForTransaction({ transactionHash: response.hash });
+      console.log("Bet placed successfully");
+    } catch (error) {
+      console.error("Failed to place bet:", error);
+      throw error;
+    }
+  };
+
+  const placeAptBet = async () => {
+    if (!isWalletReady) {
+      alert("Please connect your wallet first");
+      return;
+    }
+    if (total <= 0) {
+      alert("Please select a bet");
+      return;
+    }
+
+    // Map current selections to bet_kind and bet_value
+    let betKind = 0; 
+    let betValue = 0; 
+    let betAmount = total;
+
+    if (red > 0) { betKind = 1; betValue = 0; betAmount = red; }
+    else if (black > 0) { betKind = 1; betValue = 1; betAmount = black; }
+    else if (odd > 0) { betKind = 2; betValue = 1; betAmount = odd; }
+    else if (even > 0) { betKind = 2; betValue = 0; betAmount = even; }
+    // Add more mappings as needed
+
+    console.log("Betting with:", { betAmount, betKind, betValue, total, red, black, odd, even });
+
+    const amountOctas = parseAptAmount(betAmount.toString());
+
+    setSubmitDisabled(true);
+    setWheelSpinning(true);
+
+    try {
+      await handlePlaceBet(amountOctas, betKind, betValue);
+      setNotificationIndex(3);
+      setShowNotification(true);
+    } catch (e) {
+      console.error("Bet error:", e);
+      const errorMessage = e?.message || e?.toString() || "Unknown error occurred";
+      alert(`Bet failed: ${errorMessage}`);
+    } finally {
+      setSubmitDisabled(false);
+      setWheelSpinning(false);
+    }
+  };
 
   return (
     <ThemeProvider theme={theme}>
@@ -2437,35 +2399,26 @@ export default function GameRoulette() {
                       )}
                   </Box>
                 </Box>
-              ) : isConnected && correctNetwork ? (
+              ) : isConnected ? (
                 <Box sx={{ display: "flex", flexDirection: "column" }}>
                   <Button
-                    disabled={total === 0}
+                    disabled={total === 0 || submitDisabled}
                     loading={submitDisabled}
-                    onClick={lockBet}
+                    onClick={placeAptBet}
                   >
-                    Submit Bet
+                    Place Bet (APT)
                   </Button>
+                  <Button sx={{ mt: 1 }} onClick={handleDeposit}>Deposit APT</Button>
                   {submitDisabled && rollResult < 0 && (
                     <Typography color="white" sx={{ opacity: 0.8 }}>
                       Die being rolled, please wait...
                     </Typography>
                   )}
                 </Box>
-              ) : !isConnected ? (
-                <Box sx={{ display: "flex", flexDirection: "column" }}>
-                  <Button onClick={() => document.getElementById('wallet-connect-button')?.click()}>
-                    Connect Wallet
-                  </Button>
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, textAlign: 'center' }}>
-                    Connect your wallet to place bets
-                  </Typography>
-                </Box>
               ) : (
                 <Box sx={{ display: "flex", flexDirection: "column" }}>
-                  <Button onClick={() => switchNetwork()}>Switch Network</Button>
                   <Typography variant="caption" color="text.secondary" sx={{ mt: 1, textAlign: 'center' }}>
-                    Switch to Mantle Sepolia network
+                    Connect wallet from header to place bets
                   </Typography>
                 </Box>
               )}

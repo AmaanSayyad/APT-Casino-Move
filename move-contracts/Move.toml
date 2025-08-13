@@ -7,4 +7,4 @@ upgrade_policy = "compatible"
 AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-framework/", rev = "main" }
 
 [addresses]
-apt_casino = "0x1234567890123456789012345678901234567890123456789012345678901234" 
+apt_casino = "0x421055ba162a1f697532e79ea9a6852422d311f0993eb880c75110218d7f52c0"

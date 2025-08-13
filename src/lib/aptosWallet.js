@@ -1,5 +1,5 @@
 import { AptosWalletAdapterProvider, useWallet } from "@aptos-labs/wallet-adapter-react";
-import { WalletReadyState } from "@aptos-labs/wallet-adapter-base";
+import { WalletReadyState } from "@aptos-labs/wallet-adapter-core";
 
 // Import Aptos network configuration
 import { APTOS_NETWORKS, DEFAULT_NETWORK } from './aptos';

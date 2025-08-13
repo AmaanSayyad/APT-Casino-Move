@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, CircularProgress, Tooltip, Fade } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
 
 const BalanceContainer = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -39,13 +40,12 @@ const DevModeBadge = styled(Box)({
 });
 
 const TokenBalance = () => {
-  const [address, setAddress] = useState(null);
-  const [isConnected, setIsConnected] = useState(false);
+  const { connected, account } = useWallet();
   const [balances, setBalances] = useState({
+    APT: '0',
     APTC: '0',
-    MNT: '0',
   });
-  const [selectedToken, setSelectedToken] = useState('APTC');
+  const [selectedToken, setSelectedToken] = useState('APT');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -54,18 +54,21 @@ const TokenBalance = () => {
   useEffect(() => {
     setMounted(true);
 
-    // Don't try to use Wagmi in development
+    // Don't try to use Aptos wallet in development
     if (isDev) {
       setLoading(false);
       setBalances({
+        APT: (Math.random() * 100 + 10).toFixed(4),
         APTC: (Math.random() * 1000 + 100).toFixed(2),
-        MNT: (Math.random() * 5 + 0.5).toFixed(4),
       });
-      setIsConnected(true);
       
       // Set up dev wallet toggle event listener
       const handleDevWalletToggle = () => {
-        setIsConnected(prev => !prev);
+        // Toggle connection state
+        setBalances({
+          APT: (Math.random() * 100 + 10).toFixed(4),
+          APTC: (Math.random() * 1000 + 100).toFixed(2),
+        });
       };
       
       window.addEventListener('dev-wallet-toggle', handleDevWalletToggle);
@@ -74,38 +77,21 @@ const TokenBalance = () => {
       };
     }
 
-    // Safe way to use Wagmi hooks
+    // Load Aptos wallet data
     const loadWalletData = async () => {
       try {
-        // Dynamically import to avoid SSR issues
-        const { useAccount, useBalance } = await import('wagmi');
-        
-        // Get account data
-        const accountData = useAccount();
-        if (accountData) {
-          setAddress(accountData.address);
-          setIsConnected(accountData.isConnected);
-          
-          // Get token balances if connected
-          if (accountData.isConnected && accountData.address) {
-            try {
-              // Get native token balance (MNT)
-              const nativeBalance = useBalance({
-                address: accountData.address,
-              });
-              
-              // Get APTC token balance
-              const { default: useToken } = await import('@/hooks/useToken');
-              const tokenData = useToken(accountData.address);
-              
-              setBalances({
-                APTC: tokenData?.balance || '0',
-                MNT: nativeBalance?.data?.formatted || '0',
-              });
-            } catch (err) {
-              console.warn("Failed to load token balances:", err);
-            }
-          }
+        if (connected && account) {
+          // In a real implementation, you would fetch balances from Aptos blockchain
+          // For now, we'll show mock data
+          setBalances({
+            APT: '25.1234',
+            APTC: '500.00',
+          });
+        } else {
+          setBalances({
+            APT: '0',
+            APTC: '0',
+          });
         }
         
         setLoading(false);
@@ -117,21 +103,20 @@ const TokenBalance = () => {
         // In case of error, show mock balance in development
         if (process.env.NODE_ENV === 'development') {
           setBalances({
+            APT: (Math.random() * 100 + 10).toFixed(4),
             APTC: (Math.random() * 1000 + 100).toFixed(2),
-            MNT: (Math.random() * 5 + 0.5).toFixed(4),
           });
-          setIsConnected(true);
         }
       }
     };
 
     // Try to load the wallet data
     loadWalletData();
-  }, [isDev]);
+  }, [connected, account, isDev]);
 
   // Toggle between tokens
   const toggleToken = () => {
-    setSelectedToken(prev => prev === 'APTC' ? 'MNT' : 'APTC');
+    setSelectedToken(prev => prev === 'APT' ? 'APTC' : 'APT');
   };
 
   if (!mounted) {
@@ -139,7 +124,7 @@ const TokenBalance = () => {
   }
   
   // Not connected, but still show component with message
-  if (!isConnected && !isDev) {
+  if (!connected && !isDev) {
     return (
       <BalanceContainer sx={{ opacity: 0.7 }}>
         <Typography
@@ -150,7 +135,7 @@ const TokenBalance = () => {
             fontWeight: 500,
           }}
         >
-          Connect wallet to view balance
+          Connect Aptos Wallet
         </Typography>
       </BalanceContainer>
     );
@@ -168,7 +153,7 @@ const TokenBalance = () => {
             fontWeight: 500,
           }}
         >
-          {isDev ? `Dev Balance: ${balances.APTC} APTC` : "Connect wallet"}
+          {isDev ? `Dev Balance: ${balances.APT} APT` : "Connect Aptos Wallet"}
         </Typography>
       </BalanceContainer>
     );
