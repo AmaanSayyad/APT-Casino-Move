@@ -310,26 +310,6 @@ public fun check_circuit_breaker() {
 - **Stop-Loss Limits**: Maximum daily loss limits
 - **External Audits**: Regular security assessments
 
-## 📈 Expected Financial Projections
-
-### Year 1 Projections
-- **Initial Liquidity**: 1,000 APT
-- **Target Monthly Volume**: 10,000 APT
-- **House Edge Revenue**: 270-400 APT/month
-- **Operating Costs**: 50-100 APT/month
-- **Net Profit**: 220-300 APT/month
-
-### Year 2 Projections
-- **Target Monthly Volume**: 50,000 APT
-- **House Edge Revenue**: 1,350-2,000 APT/month
-- **Operating Costs**: 100-200 APT/month
-- **Net Profit**: 1,250-1,800 APT/month
-
-### Long-term Goals
-- **Market Leadership**: Top 3 APT-based casino
-- **Liquidity Pool**: 10,000+ APT
-- **Daily Active Users**: 1,000+
-- **Monthly Revenue**: 5,000+ APT
 
 ---
 

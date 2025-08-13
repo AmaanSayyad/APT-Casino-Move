@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  distDir: 'build',
   transpilePackages: ['three'],
   images: {
     domains: ['images.unsplash.com'],
@@ -41,8 +40,13 @@ const nextConfig = {
           lib: {
             test: /[\\/]node_modules[\\/]/,
             name(module) {
-              const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)[1];
-              return `npm.${packageName.replace('@', '')}`;
+              if (module.context && module.context.match) {
+                const match = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/);
+                if (match && match[1]) {
+                  return `npm.${match[1].replace('@', '')}`;
+                }
+              }
+              return 'npm.unknown';
             },
             priority: 10,
             minChunks: 1,
