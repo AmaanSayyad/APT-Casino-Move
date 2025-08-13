@@ -12,6 +12,8 @@ import { FaHistory, FaTrophy, FaInfoCircle, FaChartLine, FaCoins, FaChevronDown,
 import { GiCardRandom, GiWheelbarrow, GiSpinningBlades, GiTrophyCup } from "react-icons/gi";
 import { HiOutlineTrendingUp, HiOutlineChartBar } from "react-icons/hi";
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { useSelector, useDispatch } from 'react-redux';
+import { setBalance, setLoading } from '@/store/balanceSlice';
 import { CasinoGames, parseAptAmount, aptosClient, CASINO_MODULE_ADDRESS, UserBalanceSystem } from '@/lib/aptos';
 import { InputTransactionData } from '@aptos-labs/ts-sdk';
 
@@ -24,7 +26,6 @@ import WheelPayouts from "./components/WheelPayouts";
 import WheelHistory from "./components/WheelHistory";
 
 export default function Home() {
-  const [balance, setBalance] = useState(1000);
   const [betAmount, setBetAmount] = useState(10);
   const [risk, setRisk] = useState("medium");
   const [noOfSegments, setSegments] = useState(10);
@@ -41,7 +42,8 @@ export default function Home() {
   const [result, setResult] = useState(null);
   const [showStats, setShowStats] = useState(false);
   
-
+  const dispatch = useDispatch();
+  const { userBalance, isLoading: isLoadingBalance } = useSelector((state) => state.balance);
   
   // Wallet connection
   const { connected: isConnected, account, signAndSubmitTransaction, wallet } = useWallet();
@@ -55,14 +57,14 @@ export default function Home() {
     if (!address) return;
     
     try {
-      setIsLoadingBalance(true);
+      dispatch(setLoading(true));
       const balance = await UserBalanceSystem.getBalance(address);
-      setUserBalance(balance);
+      dispatch(setBalance(balance));
     } catch (error) {
       console.error('Error loading user balance:', error);
-      setUserBalance("0");
+      dispatch(setBalance("0"));
     } finally {
-      setIsLoadingBalance(false);
+      dispatch(setLoading(false));
     }
   };
 
@@ -494,7 +496,7 @@ export default function Home() {
           </div>
           <div className="w-full lg:w-1/3">
             <BettingPanel
-              balance={balance}
+              balance={parseFloat(userBalance) / 100000000}
               betAmount={betAmount}
               setBetAmount={setBetAmount}
               risk={risk}

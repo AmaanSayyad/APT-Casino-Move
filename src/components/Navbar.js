@@ -6,6 +6,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { useSelector, useDispatch } from 'react-redux';
+import { setBalance, setLoading } from '@/store/balanceSlice';
 import AptosConnectWalletButton from "./AptosConnectWalletButton";
 
 import TokenBalance from './TokenBalance';
@@ -45,10 +47,10 @@ export default function Navbar() {
   const searchPanelRef = useRef(null);
   const notification = useNotification();
   const isDev = process.env.NODE_ENV === 'development';
+  const dispatch = useDispatch();
+  const { userBalance, isLoading: isLoadingBalance } = useSelector((state) => state.balance);
 
   // User balance management
-  const [userBalance, setUserBalance] = useState("0");
-  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
   const [showBalanceModal, setShowBalanceModal] = useState(false);
   const [depositAmount, setDepositAmount] = useState("0.1");
   const [withdrawAmount, setWithdrawAmount] = useState("0");
@@ -81,14 +83,14 @@ export default function Navbar() {
     if (!address) return;
     
     try {
-      setIsLoadingBalance(true);
+      dispatch(setLoading(true));
       const balance = await UserBalanceSystem.getBalance(address);
-      setUserBalance(balance);
+      dispatch(setBalance(balance));
     } catch (error) {
       console.error('Error loading user balance:', error);
-      setUserBalance("0");
+      dispatch(setBalance("0"));
     } finally {
-      setIsLoadingBalance(false);
+      dispatch(setLoading(false));
     }
   };
 
@@ -142,6 +144,27 @@ export default function Navbar() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [showBalanceModal]);
   
+  // Poll for balance changes
+  const pollForBalance = async (initialBalance, attempts = 10, interval = 2000) => {
+    dispatch(setLoading(true));
+    for (let i = 0; i < attempts; i++) {
+      try {
+        const newBalance = await UserBalanceSystem.getBalance(address);
+        if (newBalance !== initialBalance) {
+          dispatch(setBalance(newBalance));
+          notification.success('Balance updated successfully!');
+          dispatch(setLoading(false));
+          return;
+        }
+      } catch (error) {
+        console.error(`Polling attempt ${i + 1} failed:`, error);
+      }
+      await new Promise(resolve => setTimeout(resolve, interval));
+    }
+    notification.error('Balance update timed out. Please refresh manually.');
+    dispatch(setLoading(false));
+  };
+
   // Handle deposit to house account
   const handleDeposit = async () => {
     if (!isWalletReady) {
@@ -155,7 +178,7 @@ export default function Navbar() {
     }
     
     try {
-      setIsLoadingBalance(true);
+      dispatch(setLoading(true));
       
       console.log('=== DEPOSIT PROCESS ===');
       console.log('Deposit amount (APT):', depositAmount);
@@ -174,22 +197,20 @@ export default function Navbar() {
       console.log('Submitting deposit transaction...');
       const tx = await signAndSubmitTransaction(payload);
       console.log('Deposit transaction submitted:', tx);
-      
-      console.log('Waiting for transaction confirmation...');
-      await aptosClient.waitForTransaction({ transactionHash: tx.hash });
-      console.log('Deposit transaction confirmed!');
-      
-      notification.success(`Deposited ${depositAmount} APT to house account`);
+
+      // Optimistic UI update
+      notification.success(`Deposit of ${depositAmount} APT submitted! Balance will update shortly.`);
       setShowBalanceModal(false);
       setDepositAmount("0.1");
       
-      // Reload balance after deposit
-      await loadUserBalance();
+      // Start polling for balance update
+      pollForBalance(userBalance);
+      
     } catch (error) {
       console.error('Deposit failed:', error);
-      notification.error(`Deposit failed: ${error?.message || 'User rejected the transaction.'}`);
+      notification.error(`Deposit failed: ${error?.message || 'An unknown error occurred.'}`);
     } finally {
-      setIsLoadingBalance(false);
+      dispatch(setLoading(false));
     }
   };
 
@@ -207,7 +228,7 @@ export default function Navbar() {
     }
     
     try {
-      setIsLoadingBalance(true);
+      dispatch(setLoading(true));
       
       console.log('=== WITHDRAW PROCESS ===');
       console.log('Current balance (octas):', userBalance);
@@ -223,21 +244,19 @@ export default function Navbar() {
       console.log('Submitting withdraw transaction...');
       const tx = await signAndSubmitTransaction(payload);
       console.log('Withdraw transaction submitted:', tx);
-      
-      console.log('Waiting for transaction confirmation...');
-      await aptosClient.waitForTransaction({ transactionHash: tx.hash });
-      console.log('Withdraw transaction confirmed!');
-      
-      notification.success(`Withdrawn ${currentBalance.toFixed(8)} APT from house account`);
+
+      // Optimistic UI update
+      notification.success(`Withdrawal of ${currentBalance.toFixed(8)} APT submitted! Balance will update shortly.`);
       setShowBalanceModal(false);
+
+      // Start polling for balance update
+      pollForBalance(userBalance);
       
-      // Reload balance after withdraw
-      await loadUserBalance();
     } catch (error) {
       console.error('Withdraw failed:', error);
-      notification.error(`Withdraw failed: ${error?.message || 'User rejected the transaction.'}`);
+      notification.error(`Withdraw failed: ${error?.message || 'An unknown error occurred.'}`);
     } finally {
-      setIsLoadingBalance(false);
+      dispatch(setLoading(false));
     }
   };
 

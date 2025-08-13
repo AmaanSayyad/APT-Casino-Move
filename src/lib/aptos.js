@@ -344,7 +344,7 @@ export const UserBalanceSystem = {
       });
       return resource.data.balance;
     } catch (error) {
-      if (error instanceof Error && 'error_code' in error && error.error_code === 'resource_not_found') {
+      if (error.message.includes("Resource not found")) {
         return "0";
       }
       console.error("Error getting user balance:", error);

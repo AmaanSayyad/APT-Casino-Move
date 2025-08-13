@@ -1,6 +1,8 @@
 "use client";
 
 import * as React from 'react';
+import { Provider } from 'react-redux';
+import { store } from '@/store';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WalletStatusProvider } from '@/hooks/useWalletStatus';
 import { NotificationProvider } from '@/components/NotificationSystem';
@@ -21,25 +23,27 @@ export default function Providers({ children }) {
   if (!mounted) return null;
 
   return (
-    <AptosWalletAdapterProvider
-      autoConnect={false}
-      onError={(error) => {
-        if (error) {
-          console.error("Aptos wallet error:", error.message || error);
-        } else {
-          console.error("An unknown Aptos wallet error occurred.");
-        }
-      }}
-    >
-      <QueryClientProvider client={queryClient}>
-        <NotificationProvider>
-          <WalletStatusProvider>
-            <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-              {children}
-            </ThemeProvider>
-          </WalletStatusProvider>
-        </NotificationProvider>
-      </QueryClientProvider>
-    </AptosWalletAdapterProvider>
+    <Provider store={store}>
+      <AptosWalletAdapterProvider
+        autoConnect={false}
+        onError={(error) => {
+          if (error) {
+            console.error("Aptos wallet error:", error.message || error);
+          } else {
+            console.error("An unknown Aptos wallet error occurred.");
+          }
+        }}
+      >
+        <QueryClientProvider client={queryClient}>
+          <NotificationProvider>
+            <WalletStatusProvider>
+              <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+                {children}
+              </ThemeProvider>
+            </WalletStatusProvider>
+          </NotificationProvider>
+        </QueryClientProvider>
+      </AptosWalletAdapterProvider>
+    </Provider>
   );
 }
