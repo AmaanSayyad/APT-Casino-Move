@@ -12,8 +12,8 @@ async function fundTreasury() {
   try {
     console.log('🏦 Funding Treasury Wallet...');
     
-    // Treasury private key - geçici olarak hardcode edildi
-    const TREASURY_PRIVATE_KEY = "0xd76b9dc17ee36ae0b06c86b626383b1e0fdfc11f9a0bc0c845138d0d66189f1f";
+    // Treasury private key - 9 APT'li adres
+    const TREASURY_PRIVATE_KEY = "0x0e5070144da800e1528a09e39ee0f589a4feafb880968de6f0d5479f7258bd82";
     
     console.log('🔑 Private key found:', TREASURY_PRIVATE_KEY.slice(0, 10) + '...');
     

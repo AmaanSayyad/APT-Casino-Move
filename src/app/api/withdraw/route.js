@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { AptosAccount, AptosClient, CoinClient } from 'aptos';
 
 // Kasa cüzdan private key'i - environment variable'dan al
-const TREASURY_PRIVATE_KEY = process.env.TREASURY_PRIVATE_KEY || "0xd76b9dc17ee36ae0b06c86b626383b1e0fdfc11f9a0bc0c845138d0d66189f1f";
+const TREASURY_PRIVATE_KEY = process.env.TREASURY_PRIVATE_KEY || "0x0e5070144da800e1528a09e39ee0f589a4feafb880968de6f0d5479f7258bd82";
 const APTOS_NODE_URL = process.env.NEXT_PUBLIC_APTOS_NETWORK === 'mainnet' 
   ? 'https://fullnode.mainnet.aptoslabs.com/v1'
   : 'https://fullnode.testnet.aptoslabs.com/v1';
