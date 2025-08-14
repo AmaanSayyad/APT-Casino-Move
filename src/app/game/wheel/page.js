@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import GameWheel, { wheelDataByRisk, getHighRiskMultiplier, getHighRiskProbability } from "../../../components/wheel/GameWheel";
 import BettingPanel from "../../../components/wheel/BettingPanel";
 import GameHistory from "../../../components/wheel/GameHistory";
@@ -11,12 +11,9 @@ import { motion } from "framer-motion";
 import { FaHistory, FaTrophy, FaInfoCircle, FaChartLine, FaCoins, FaChevronDown, FaPercentage, FaBalanceScale } from "react-icons/fa";
 import { GiCardRandom, GiWheelbarrow, GiSpinningBlades, GiTrophyCup } from "react-icons/gi";
 import { HiOutlineTrendingUp, HiOutlineChartBar } from "react-icons/hi";
-import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { setBalance, setLoading, loadBalanceFromStorage } from '@/store/balanceSlice';
 import { useNotification } from '@/components/NotificationSystem';
-import { CasinoGames, parseAptAmount } from '@/lib/aptos';
-import { InputTransactionData } from '@aptos-labs/ts-sdk';
 
 // Import new components
 import WheelVideo from "./components/WheelVideo";
@@ -42,33 +39,32 @@ export default function Home() {
   const [selectedRisk, setSelectedRisk] = useState('medium');
   const [result, setResult] = useState(null);
   const [showStats, setShowStats] = useState(false);
+  const [detectedColor, setDetectedColor] = useState(null);
+  const [detectedMultiplier, setDetectedMultiplier] = useState(null);
   
   const dispatch = useDispatch();
   const { userBalance, isLoading: isLoadingBalance } = useSelector((state) => state.balance);
   const notification = useNotification();
   
-  // Wallet connection
-  const { connected: isConnected, account, signAndSubmitTransaction, wallet } = useWallet();
-  const address = account?.address;
+  // Use ref to prevent infinite loop in useEffect
+  const isInitialized = useRef(false);
   
-  // Check if wallet is ready
-  const isWalletReady = isConnected && account && signAndSubmitTransaction && wallet;
-
-  // Load balance when wallet connects
+  // Load balance from localStorage on component mount
   useEffect(() => {
-    if (isWalletReady && address) {
-      // First try to load from localStorage
-      const savedBalance = loadBalanceFromStorage();
-      if (savedBalance && savedBalance !== "0") {
-        console.log('Loading saved balance from localStorage:', savedBalance);
-        dispatch(setBalance(savedBalance));
-      } else {
-        // Set initial balance to 0 if no saved balance
-        console.log('No saved balance, setting to 0');
-        dispatch(setBalance("0"));
-      }
+    if (isInitialized.current) return; // Prevent multiple executions
+    
+    const savedBalance = loadBalanceFromStorage();
+    if (savedBalance && savedBalance !== "0") {
+      console.log('Loading saved balance from localStorage:', savedBalance);
+      dispatch(setBalance(savedBalance));
+    } else {
+      // Set initial balance to 0 if no saved balance
+      console.log('No saved balance, setting to 0');
+      dispatch(setBalance("0"));
     }
-  }, [isWalletReady, address]);
+    
+    isInitialized.current = true; // Mark as initialized
+  }, []); // Empty dependency array since we use ref
 
   // Scroll to section function
   const scrollToSection = (sectionId) => {
@@ -80,34 +76,31 @@ export default function Home() {
 
   // Game modes
   const manulBet = async () => {
-    if (!isWalletReady) {
-      alert('Wallet not ready. Please connect your wallet first.');
+    if (betAmount <= 0 || isSpinning) return;
+
+    // Check Redux balance instead of wallet
+    const currentBalance = parseFloat(userBalance || '0') / 100000000; // Convert from octas to APT
+    
+    if (currentBalance < betAmount) {
+      alert(`Insufficient balance. You have ${currentBalance.toFixed(8)} APT but need ${betAmount} APT`);
       return;
     }
-    if (betAmount <= 0 || isSpinning) return;
 
     try {
       setIsSpinning(true);
       setHasSpun(false);
 
-      console.log('=== STARTING WHEEL BET ===');
+      console.log('=== STARTING WHEEL BET WITH REDUX BALANCE ===');
       console.log('Bet amount (APT):', betAmount);
-      console.log('Bet amount (octas):', parseAptAmount(String(betAmount)));
+      console.log('Current balance (APT):', currentBalance);
       console.log('Sectors:', noOfSegments);
-      console.log('User wallet address:', address);
       
-      // Create payload for direct bet (no deposit needed)
-      const betPayload = CasinoGames.wheel.userSpin(parseAptAmount(String(betAmount)), Number(noOfSegments));
-      console.log('Bet payload:', betPayload);
+      // Deduct bet amount from Redux balance
+      const betAmountInOctas = betAmount * 100000000; // Convert to octas
+      const newBalance = (parseFloat(userBalance || '0') - betAmountInOctas).toString();
+      dispatch(setBalance(newBalance));
       
-      if (!betPayload || !betPayload.data || !betPayload.data.function) {
-        throw new Error('Invalid bet payload');
-      }
-      
-      // Submit the bet transaction directly from user's wallet
-      console.log('Submitting bet transaction...');
-      const betTx = await signAndSubmitTransaction(betPayload);
-      console.log('Bet transaction successful:', betTx);
+      console.log('Balance deducted. New balance:', (parseFloat(newBalance) / 100000000).toFixed(8), 'APT');
       
       // Simulate game result (in real implementation, this would come from blockchain events)
       setTimeout(() => {
@@ -149,13 +142,20 @@ export default function Home() {
           }
         }
         
-        // Use the actual multiplier from the wheel segment
-        const actualMultiplier = wheelSegmentData.multiplier;
+        // Use the detected multiplier from ColorDetector if available, otherwise use wheel segment
+        const actualMultiplier = detectedMultiplier !== null ? detectedMultiplier : wheelSegmentData.multiplier;
         const winAmount = betAmount * actualMultiplier;
         
         // Set the current multiplier and position
         setCurrentMultiplier(actualMultiplier);
         setWheelPosition(result);
+        
+        // Trigger color detection after a short delay to get the final result
+        setTimeout(() => {
+          if (window.triggerWheelColorDetection) {
+            window.triggerWheelColorDetection();
+          }
+        }, 100);
         
         // Add to game history
         const newHistoryItem = {
@@ -209,6 +209,9 @@ export default function Home() {
       console.error('Bet failed:', e);
       alert(`Bet failed: ${e?.message || e}`);
       setIsSpinning(false);
+      
+      // Refund the deducted balance on error
+      dispatch(setBalance(userBalance));
     }
   };
 
@@ -228,9 +231,21 @@ export default function Home() {
     let totalProfit = 0;
 
     for (let i = 0; i < numberOfBets; i++) {
+      // Check Redux balance before each bet
+      const currentBalance = parseFloat(userBalance || '0') / 100000000; // Convert from octas to APT
+      
+      if (currentBalance < currentBet) {
+        alert(`Insufficient balance for bet ${i + 1}. Need ${currentBet} APT but have ${currentBalance.toFixed(8)} APT`);
+        break;
+      }
+
       setIsSpinning(true);
       setHasSpun(false);
-      // setBalance(prev => prev - currentBet); // This line is no longer needed
+      
+      // Deduct bet amount from Redux balance
+      const betAmountInOctas = currentBet * 100000000; // Convert to octas
+      const newBalance = (parseFloat(userBalance || '0') - betAmountInOctas).toString();
+      dispatch(setBalance(newBalance));
 
       // Calculate result position
       const resultPosition = Math.floor(Math.random() * noOfSegments);
@@ -270,14 +285,21 @@ export default function Home() {
         }
       }
       
-      // Use the actual multiplier from the wheel segment
-      const actualMultiplier = wheelSegmentData.multiplier;
+      // Use the detected multiplier from ColorDetector if available, otherwise use wheel segment
+      const actualMultiplier = detectedMultiplier !== null ? detectedMultiplier : wheelSegmentData.multiplier;
 
       // Simulate spin delay
       await new Promise((r) => setTimeout(r, 3000)); // spin animation time
 
       setCurrentMultiplier(actualMultiplier);
       setWheelPosition(resultPosition);
+
+      // Trigger color detection after a short delay to get the final result
+      setTimeout(() => {
+        if (window.triggerWheelColorDetection) {
+          window.triggerWheelColorDetection();
+        }
+      }, 100);
 
       setIsSpinning(false);
       setHasSpun(true);
@@ -288,8 +310,13 @@ export default function Home() {
       // Calculate win amount
       const winAmount = currentBet * actualMultiplier;
 
-      // Update balance with win
-      // setBalance(prev => prev + winAmount); // This line is no longer needed
+      // Update Redux balance with winnings
+      if (actualMultiplier > 0) {
+        const currentBalance = parseFloat(userBalance || '0') / 100000000; // Convert from octas to APT
+        const newBalanceWithWin = currentBalance + winAmount;
+        const newBalanceWithWinOctas = Math.floor(newBalanceWithWin * 100000000); // Convert back to octas
+        dispatch(setBalance(newBalanceWithWinOctas.toString()));
+      }
 
       // Update total profit
       const profit = winAmount - currentBet;
@@ -508,6 +535,11 @@ export default function Home() {
               wheelPosition={wheelPosition}
               setWheelPosition={setWheelPosition}
               hasSpun={hasSpun}
+              onColorDetected={({ color, multiplier }) => {
+                setDetectedColor(color);
+                setDetectedMultiplier(multiplier);
+                console.log('Color detected:', color, 'Multiplier:', multiplier);
+              }}
             />
           </div>
           <div className="w-full lg:w-1/3">
@@ -516,7 +548,7 @@ export default function Home() {
               setGameMode={setGameMode}
               betAmount={betAmount}
               setBetAmount={setBetAmount}
-              balance={999999} // High balance to allow betting
+              balance={parseFloat(userBalance || '0') / 100000000} // Convert from octas to APT
               manulBet={manulBet}
               risk={selectedRisk}
               setRisk={setSelectedRisk}

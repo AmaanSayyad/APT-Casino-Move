@@ -29,17 +29,27 @@ const ColorDetector = ({ wheelPosition, wheelData, segments, onColorDetected }) 
     if (currentSegment) {
       setCurrentColor(currentSegment.color);
       setCurrentMultiplier(currentSegment.multiplier);
-      
-      // Call the callback function with the detected color and multiplier
-      if (onColorDetected) {
-        onColorDetected({
-          color: currentSegment.color,
-          multiplier: currentSegment.multiplier,
-          probability: currentSegment.probability
-        });
-      }
     }
-  }, [wheelPosition, wheelData, segments, onColorDetected]);
+  }, [wheelPosition, wheelData, segments]);
+
+  // Only call onColorDetected when explicitly requested (not on every position change)
+  const triggerColorDetection = () => {
+    if (onColorDetected && currentColor && currentMultiplier !== null) {
+      const currentSegment = getCurrentSegmentUnderPointer();
+      onColorDetected({
+        color: currentColor,
+        multiplier: currentMultiplier,
+        probability: currentSegment?.probability || 0
+      });
+    }
+  };
+
+  // Expose triggerColorDetection function to parent
+  useEffect(() => {
+    if (window) {
+      window.triggerWheelColorDetection = triggerColorDetection;
+    }
+  }, [currentColor, currentMultiplier]);
 
   // Render a detailed preview of the detected color and multiplier
   return (
