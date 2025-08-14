@@ -1302,18 +1302,17 @@ export default function GameRoulette() {
   };
 
   const lockBet = async () => {
-    if (!address) {
-      alert("Please connect your wallet first");
-      return;
-    }
-
     if (total <= 0) {
       alert("Please place a bet first");
       return;
     }
 
-    if (!correctNetwork) {
-      alert("Please switch to Mantle Sepolia network");
+    // Check Redux balance instead of wallet
+    const currentBalance = parseFloat(userBalance || '0') / 100000000; // Convert from octas to APT
+    const totalBetAmount = total;
+
+    if (currentBalance < totalBetAmount) {
+      alert(`Insufficient balance. You have ${currentBalance.toFixed(8)} APT but need ${totalBetAmount} APT`);
       return;
     }
 
@@ -1324,15 +1323,18 @@ export default function GameRoulette() {
 
     try {
       setError(null);
-      console.log('Placing bet with configuration:', {
-        address,
-        betType: currentBetType,
-        betAmount: total,
-        tokenAddress: tokenContractAddress,
-        rouletteAddress: rouletteContractAddress
+      console.log('Placing bet with Redux balance:', {
+        currentBalance: currentBalance,
+        betAmount: totalBetAmount,
+        remainingBalance: currentBalance - totalBetAmount
       });
 
-      // Convert the bets into the format expected by the contract
+      // Deduct bet amount from Redux balance
+      const betAmountInOctas = totalBetAmount * 100000000; // Convert to octas
+      const newBalance = (parseFloat(userBalance || '0') - betAmountInOctas).toString();
+      dispatch(setBalance(newBalance));
+
+      // Convert the bets into the format for game simulation
       let betType, betValue, betAmount, numbers;
       
       // Handle different bet types
@@ -1420,148 +1422,125 @@ export default function GameRoulette() {
             alert("Invalid inside bet position");
             setSubmitDisabled(false);
             setShowNotification(false);
+            // Refund the deducted balance
+            dispatch(setBalance(userBalance));
             return;
           }
         } else {
           alert("Invalid bet configuration");
           setSubmitDisabled(false);
           setShowNotification(false);
+          // Refund the deducted balance
+          dispatch(setBalance(userBalance));
           return;
         }
       }
 
-      const amount = parseEther(betAmount.toString());
-
-      console.log("Preparing transaction with:", {
+      console.log("Game simulation with:", {
         betType,
         betValue,
-        amount: amount.toString(),
-        numbers,
-        tokenAddress: tokenContractAddress,
-        rouletteAddress: rouletteContractAddress,
-        playerAddress: address
+        betAmount,
+        numbers
       });
 
-      try {
-        // First check current allowance
-        const currentAllowance = await publicClient.readContract({
-          address: tokenContractAddress,
-          abi: tokenABI,
-          functionName: "allowance",
-          args: [address, rouletteContractAddress],
-        });
+      // Simulate the game locally (no blockchain interaction)
+      // Reset roll result for the new bet
+      setRollResult(-1);
+      
+      // Set notification to bet placed
+      setNotificationIndex(notificationSteps.BET_PLACED);
 
-        console.log("Current allowance:", currentAllowance.toString());
-
-        // If allowance is insufficient, request approval
-        if (BigInt(currentAllowance) < amount) {
-          console.log("Requesting token approval...");
-          const { request } = await publicClient.simulateContract({
-            address: tokenContractAddress,
-            abi: tokenABI,
-            functionName: "approve",
-            args: [rouletteContractAddress, amount],
-            account: address,
-          });
-
-          const approvalHash = await walletClient.writeContract(request);
-          
-          if (!approvalHash) {
-            throw new Error("Approval transaction failed - no hash returned");
-          }
-
-          console.log("Token approval submitted, hash:", approvalHash);
-          setWriteContractResult({ hash: approvalHash });
-          setNotificationIndex(notificationSteps.BET_PLACED);
-
-          // Wait for approval confirmation
-          console.log("Waiting for approval confirmation...");
-          const approvalReceipt = await publicClient.waitForTransactionReceipt({
-            hash: approvalHash,
-          });
-
-          if (!approvalReceipt) {
-            throw new Error("Approval transaction receipt not received");
-          }
-
-          console.log("Approval confirmed:", approvalReceipt);
-        }
-
-        // Then place the bet
-        console.log("Placing bet...");
-        const { request: betRequest } = await publicClient.simulateContract({
-          address: rouletteContractAddress,
-          abi: rouletteABI,
-          functionName: "placeBet",
-          args: [betType, betValue, amount, numbers],
-          account: address,
-        });
-
-        const betHash = await walletClient.writeContract(betRequest);
-
-        if (!betHash) {
-          throw new Error("Bet transaction failed - no hash returned");
-        }
-
-        console.log("Bet placed, hash:", betHash);
-        setWriteContractResult({ hash: betHash });
+      // Simulate wheel spinning and result after delay
+      setTimeout(() => {
+        // Generate random winning number (0-36)
+        const winningNumber = Math.floor(Math.random() * 37);
+        setRollResult(winningNumber);
         
-        // Wait for bet confirmation
-        console.log("Waiting for bet confirmation...");
-        const betReceipt = await publicClient.waitForTransactionReceipt({
-          hash: betHash,
-        });
-
-        if (!betReceipt) {
-          throw new Error("Bet transaction receipt not received");
-        }
-
-        console.log("Bet confirmed:", betReceipt);
-
-        // Reset roll result for the new bet
-        setRollResult(-1);
-
-        // Add a delay before allowing the next bet
-        setSubmitDisabled(true);
-        setTimeout(() => {
-          setSubmitDisabled(false);
-        }, 5000); // 5 second delay
-
-      } catch (error) {
-        console.error("Transaction failed:", error);
-        const errorMessage = error.message || error.toString();
-        console.error("Error details:", errorMessage);
+        // Calculate winnings based on the bet
+        const isWinner = checkWin(betType, betValue, winningNumber);
+        const payoutRatio = getPayoutRatio(betType);
+        const totalPayout = isWinner ? betAmount * (payoutRatio + 1) : 0; // +1 because payout includes original bet
+        const netWinnings = isWinner ? betAmount * payoutRatio : -betAmount;
         
-        if (errorMessage.includes("Wallet client not initialized")) {
-          alert("Please ensure your wallet is connected and try again.");
-        } else if (errorMessage.includes("Below minimum bet")) {
-          alert("Bet amount is below the minimum requirement of 1 APTC");
-        } else if (errorMessage.includes("Bet exceeds wallet balance")) {
-          alert("Insufficient balance for this bet");
-        } else if (errorMessage.includes("Must wait 3 seconds between bets")) {
-          alert("Please wait 3 seconds between bets");
-        } else if (errorMessage.includes("Must wait at least 1 block between bets")) {
-          alert("Please wait a moment before placing another bet");
-        } else if (errorMessage.includes("Insufficient allowance")) {
-          alert("Please approve the token spending first");
-        } else if (errorMessage.includes("HTTP request failed")) {
-          alert("Network error. Please wait a moment and try again.");
+        setWinnings(netWinnings);
+        
+        // Update user balance with winnings
+        if (isWinner && totalPayout > 0) {
+          const currentBalance = parseFloat(userBalance || '0');
+          const newBalance = (currentBalance + (totalPayout * 100000000)).toString(); // Convert to octas
+          dispatch(setBalance(newBalance));
+        }
+        
+        // Add to betting history
+        const newBet = {
+          id: Date.now(),
+          timestamp: new Date(),
+          betType: getBetTypeName(betType, betValue),
+          amount: betAmount,
+          numbers: betType === BetType.NUMBER ? [betValue] : [],
+          result: winningNumber,
+          win: isWinner,
+          payout: totalPayout,
+          multiplier: payoutRatio
+        };
+        
+        setBettingHistory(prev => [newBet, ...prev].slice(0, 50)); // Keep last 50 bets
+        
+        // Show result notification
+        if (isWinner) {
+          setNotificationMessage(`🎉 WINNER! Number ${winningNumber} - You won ${netWinnings.toFixed(4)} APT!`);
+          setNotificationSeverity("success");
+          setSnackbarMessage(`🎉 WINNER! Number ${winningNumber} - You won ${netWinnings.toFixed(4)} APT!`);
         } else {
-          alert(`Transaction failed: ${errorMessage}`);
+          setNotificationMessage(`💸 Number ${winningNumber} - Better luck next time!`);
+          setNotificationSeverity("error");
+          setSnackbarMessage(`💸 Number ${winningNumber} - Better luck next time!`);
         }
+        setSnackbarOpen(true);
         
-        setError(errorMessage);
-        setShowNotification(false);
+        // Re-enable betting
+        setSubmitDisabled(false);
         setWheelSpinning(false);
-      }
+        
+      }, 4000); // Wait 4 seconds for wheel animation
+
     } catch (error) {
       console.error("Error in lockBet:", error);
       setError(error.message || error.toString());
       setShowNotification(false);
       setWheelSpinning(false);
       alert(`Error: ${error.message || error.toString()}`);
+      
+      // Refund the deducted balance on error
+      dispatch(setBalance(userBalance));
     } finally {
-      setSubmitDisabled(false);
+      // Don't disable submit here since we removed the blockchain wait
+    }
+  };
+
+  // Helper function to get bet type name for history
+  const getBetTypeName = (betType, betValue) => {
+    switch(betType) {
+      case BetType.COLOR:
+        return betValue === 1 ? 'Red' : 'Black';
+      case BetType.ODDEVEN:
+        return betValue === 1 ? 'Odd' : 'Even';
+      case BetType.HIGHLOW:
+        return betValue === 1 ? 'High (19-36)' : 'Low (1-18)';
+      case BetType.DOZEN:
+        return `Dozen ${betValue + 1}`;
+      case BetType.COLUMN:
+        return `Column ${betValue + 1}`;
+      case BetType.NUMBER:
+        return `Straight ${betValue}`;
+      case BetType.SPLIT:
+        return `Split ${betValue}`;
+      case BetType.STREET:
+        return `Street ${betValue}`;
+      case BetType.CORNER:
+        return `Corner ${betValue}`;
+      default:
+        return 'Unknown';
     }
   };
 
@@ -1878,182 +1857,9 @@ export default function GameRoulette() {
     dispatchEvents({ type: "reset" });
   }, [playSound, menuClickRef]);
 
-  const handlePlaceBet = async (amountOctas, betKind, betValue) => {
-    if (!isWalletReady) {
-      throw new Error('Wallet not ready. Please connect your wallet first.');
-    }
-    
-    if (!signAndSubmitTransaction) {
-      throw new Error('Wallet signAndSubmitTransaction not available');
-    }
-    
-    try {
-      console.log("=== ROULETTE BET DEBUG ===");
-      console.log("Input parameters:", { amountOctas, betKind, betValue });
-      console.log("signAndSubmitTransaction available:", !!signAndSubmitTransaction);
-      console.log("CasinoGames available:", !!CasinoGames);
-      console.log("CasinoGames.roulette available:", !!CasinoGames?.roulette);
-      console.log("CasinoGames.roulette.userPlaceBet available:", !!CasinoGames?.roulette?.userPlaceBet);
-      
-      if (!CasinoGames?.roulette?.userPlaceBet) {
-        throw new Error('CasinoGames.roulette.userPlaceBet is not available');
-      }
-      
-      console.log("About to call userPlaceBet with:", { amountOctas, betKind, betValue });
-      const payload = CasinoGames.roulette.userPlaceBet(amountOctas, betKind, betValue);
-      console.log("Payload created:", JSON.stringify(payload, null, 2));
-      console.log("Payload type:", typeof payload);
-      console.log("Payload keys:", Object.keys(payload || {}));
-      
-      if (!payload || !payload.data || !payload.data.function) {
-        console.error("Payload validation failed - payload structure:", payload);
-        throw new Error('Invalid payload created');
-      }
-      
-      console.log("About to call signAndSubmitTransaction with payload:", payload);
-      const response = await signAndSubmitTransaction(payload);
-      console.log("Transaction submitted:", response);
-      console.log("Response keys:", Object.keys(response || {}));
-      console.log("Response hash:", response?.hash);
-      
-      // Wait for transaction using the imported aptosClient
-      const txHash = response?.hash || response;
-      console.log("Using transaction hash:", txHash);
-      
-      try {
-        await aptosClient.waitForTransaction({ transactionHash: txHash });
-        console.log("Transaction confirmed on blockchain");
-      } catch (waitError) {
-        console.warn("Could not wait for transaction confirmation, but transaction was submitted:", waitError.message);
-        // Transaction was still submitted successfully, so we continue
-      }
-      
-      console.log("Bet placed successfully");
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error("Failed to place bet:", errorMessage, error);
-      throw error;
-    }
-  };
+  // Removed handlePlaceBet function - now using lockBet with Redux balance
 
-  // This is the primary function called when the user clicks "Place Bet"
-  const placeAptBet = async () => {
-    if (!isWalletReady) {
-      alert("Please connect your wallet first");
-      return;
-    }
-
-    // --- 1. Collect all active bets from the board state ---
-    const activeBets = [];
-    const addBet = (amount, kind, value, name) => {
-      if (amount > 0) activeBets.push({ amount, kind, value, name });
-    };
-
-    addBet(red, 1, 0, "Red");
-    addBet(black, 1, 1, "Black");
-    addBet(odd, 2, 1, "Odd");
-    addBet(even, 2, 0, "Even");
-    addBet(under, 3, 0, "1-18"); // Using kind 3 for High/Low
-    addBet(over, 3, 1, "19-36");
-    dozens.forEach((amount, i) => addBet(amount, 4, i, `Dozen ${i+1}`));
-    columns.forEach((amount, i) => addBet(amount, 5, i, `Column ${i+1}`));
-    inside.forEach((amount, i) => addBet(amount, 0, i, `Number ${i}`));
-
-    if (activeBets.length === 0) {
-      alert("Please place a bet");
-      return;
-    }
-
-    // For now, only allow single bets
-    if (activeBets.length > 1) {
-      alert(`You have ${activeBets.length} bets selected. Please select only one bet type for now.`);
-      return;
-    }
-
-    const bet = activeBets[0];
-    console.log(`Placing single bet: ${bet.name} - ${bet.amount} APT`);
-
-    setSubmitDisabled(true);
-    setWheelSpinning(true);
-
-    try {
-      const amountOctas = parseAptAmount(bet.amount.toString());
-      await handlePlaceBet(amountOctas, bet.kind, bet.value);
-      
-      console.log(`Bet placed successfully: ${bet.name}`);
-      
-      // Update balance after bet
-      setTimeout(() => {
-        fetchRealBalance();
-      }, 2000); // Wait 2 seconds for blockchain to update
-      
-      // Wait for blockchain result - for now simulate
-      setTimeout(() => {
-        // Simulate blockchain result (in real app, this comes from contract events)
-        const winningNumber = Math.floor(Math.random() * 37);
-        setRollResult(winningNumber);
-        
-        // Calculate winnings based on the bet
-        const isWinner = checkWin(bet.kind, bet.value, winningNumber);
-        const payoutRatio = getPayoutRatio(bet.kind);
-        const totalPayout = isWinner ? bet.amount * (payoutRatio + 1) : 0; // +1 because payout includes original bet
-        const netWinnings = isWinner ? bet.amount * payoutRatio : -bet.amount;
-        
-        setWinnings(netWinnings);
-        
-        // Add to betting history
-        const newBet = {
-          id: Date.now(),
-          timestamp: new Date(),
-          betType: bet.name,
-          amount: bet.amount,
-          numbers: bet.kind === 0 ? [bet.value] : [],
-          result: winningNumber,
-          win: isWinner,
-          payout: totalPayout,
-          multiplier: payoutRatio
-        };
-        
-        setBettingHistory(prev => [newBet, ...prev].slice(0, 50)); // Keep last 50 bets
-        
-        // Update user balance with winnings
-        if (isWinner && totalPayout > 0) {
-          const currentBalance = parseFloat(userBalance || '0');
-          const newBalance = (currentBalance + (totalPayout * 100000000)).toString(); // Convert to octas
-          dispatch(setBalance(newBalance));
-        }
-        
-        // Show result notification
-        if (isWinner) {
-          setNotificationMessage(`🎉 WINNER! Number ${winningNumber} - You won ${netWinnings.toFixed(4)} APT!`);
-          setNotificationSeverity("success");
-          setSnackbarMessage(`🎉 WINNER! Number ${winningNumber} - You won ${netWinnings.toFixed(4)} APT!`);
-        } else {
-          setNotificationMessage(`💸 Number ${winningNumber} - Better luck next time!`);
-          setNotificationSeverity("error");
-          setSnackbarMessage(`💸 Number ${winningNumber} - Better luck next time!`);
-        }
-        setSnackbarOpen(true);
-        
-      }, 3000); // Wait 3 seconds for suspense
-      
-      setNotificationMessage(`🎲 ${bet.name} bet placed! Waiting for result...`);
-      setNotificationSeverity("info");
-      setSnackbarMessage(`🎲 ${bet.name} bet placed! Waiting for result...`);
-      setSnackbarOpen(true);
-
-    } catch (e) {
-      console.error("Bet error:", e);
-      const errorMessage = e?.message || e?.toString() || "Unknown error occurred";
-      setNotificationMessage(`❌ Bet failed: ${errorMessage}`);
-      setNotificationSeverity("error");
-      setSnackbarMessage(`❌ Bet failed: ${errorMessage}`);
-      setSnackbarOpen(true);
-    } finally {
-      setSubmitDisabled(false);
-      setWheelSpinning(false);
-    }
-  };
+  // Removed placeAptBet function - now using lockBet with Redux balance
 
   // Helper function to get payout ratio based on bet kind
   const getPayoutRatio = (kind) => {
@@ -2632,12 +2438,12 @@ export default function GameRoulette() {
                     </Typography>
                   </Box>
                 </Box>
-              ) : isWalletReady ? (
+              ) : (
                 <Box sx={{ display: "flex", flexDirection: "column" }}>
                   <Button
                     disabled={total === 0 || submitDisabled}
                     loading={submitDisabled}
-                    onClick={placeAptBet}
+                    onClick={lockBet}
                   >
                     {total > 0 ? `Place Bet (${total.toFixed(2)} APT)` : 'Place Bet (APT)'}
                   </Button>
@@ -2654,17 +2460,11 @@ export default function GameRoulette() {
                                               columns.filter(x => x > 0).length +
                                               inside.filter(x => x > 0).length;
                         return activeBetCount > 1 
-                          ? `${activeBetCount} bets selected - Please select only one bet type`
+                          ? `${activeBetCount} bets selected`
                           : `1 bet selected`;
                       })()}
                     </Typography>
                   )}
-                </Box>
-              ) : (
-                <Box sx={{ display: "flex", flexDirection: "column" }}>
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, textAlign: 'center' }}>
-                    Connect wallet from header to place bets
-                  </Typography>
                 </Box>
               )}
             </Box>
