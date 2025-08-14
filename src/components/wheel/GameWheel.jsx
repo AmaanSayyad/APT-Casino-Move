@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
 import { cn } from "@/lib/utils.jsx";
 import arrow from "../../../public/arrow.svg";
+import ColorDetector from "./ColorDetector";
 
 
 function selectSegmentIndexByProbability(wheelData) {
@@ -69,6 +70,7 @@ const GameWheel = ({
   risk = "medium",
   hasSpun = false,
 }) => {
+  const [detectedSegment, setDetectedSegment] = useState(null);
   const canvasRef = useRef(null);
   // Dynamically generate segments based on noOfSegments and risk
   const baseWheelData = useMemo(() => {
@@ -330,6 +332,16 @@ const GameWheel = ({
   };
 
   const currentSegment = getCurrentSegmentUnderPointer();
+  
+  // Handle color detection callback
+  const handleColorDetected = (segmentData) => {
+    setDetectedSegment(segmentData);
+    
+    // If we're not spinning and have spun before, update the multiplier
+    if (!isSpinning && hasSpun && segmentData) {
+      handleSelectMultiplier(segmentData.multiplier);
+    }
+  };
 
   return (
     <div className="flex flex-col justify-between items-center h-full w-full">
@@ -351,35 +363,61 @@ const GameWheel = ({
         />
         
         {!isSpinning && hasSpun && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-4xl font-bold text-white animate-bounce">
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <div className="text-4xl font-bold text-white animate-bounce mb-2">
               {currentSegment.multiplier.toFixed(2)}x
             </div>
+            {currentSegment.multiplier > 0 && (
+              <div className="text-lg text-green-400 bg-black/50 px-3 py-1 rounded-lg">
+                Winnings: {(currentSegment.multiplier).toFixed(2)} × bet
+              </div>
+            )}
           </div>
         )}
       </div>
 
+      {/* Hidden ColorDetector for background processing */}
+      <div className="hidden">
+        <ColorDetector 
+          wheelPosition={wheelPosition}
+          wheelData={wheelData}
+          segments={segments}
+          onColorDetected={handleColorDetected}
+        />
+      </div>
+      
       {/* Current Segment Display */}
-      <div className="w-full max-w-md mx-auto mb-4 p-4 bg-[#1a1a1a] rounded-lg border border-[#333947]">
-        <div className="text-center">
-          <div className="text-sm text-gray-400 mb-2">Current Position</div>
-          <div className="flex items-center justify-center gap-4">
-            <div 
-              className="w-8 h-8 rounded-full border-2 border-white"
-              style={{ backgroundColor: currentSegment.color }}
-            ></div>
-            <div className="text-2xl font-bold text-white">
-              {currentSegment.multiplier.toFixed(2)}x
+      <div className="w-full max-w-md mx-auto mb-4">
+        <div className="p-4 bg-[#1a1a1a] rounded-lg border border-[#333947]">
+          <div className="text-center">
+            <div className="text-sm text-gray-400 mb-2">Current Position</div>
+            <div className="flex items-center justify-center gap-4">
+              <div 
+                className="w-8 h-8 rounded-full border-2 border-white"
+                style={{ backgroundColor: currentSegment.color }}
+              ></div>
+              <div className="text-2xl font-bold text-white">
+                {currentSegment.multiplier.toFixed(2)}x
+              </div>
+              <div className="text-sm text-gray-400">
+                ({(currentSegment.probability * 100).toFixed(1)}% chance)
+              </div>
             </div>
-            <div className="text-sm text-gray-400">
-              ({(currentSegment.probability * 100).toFixed(1)}% chance)
+            
+            {currentSegment.multiplier > 0 && hasSpun && !isSpinning && (
+              <div className="mt-2 p-2 bg-green-900/20 border border-green-700/30 rounded-md">
+                <div className="text-sm text-green-300">
+                  Bet × {currentSegment.multiplier.toFixed(2)} = Winnings
+                </div>
+              </div>
+            )}
+            
+            {/* Debug info */}
+            <div className="text-xs text-gray-500 mt-2">
+              Position: {(wheelPosition % (Math.PI * 2)).toFixed(3)} | 
+              Segment: {Math.floor(((wheelPosition % (Math.PI * 2)) + Math.PI/2 + Math.PI) / ((Math.PI * 2) / segments)) % segments} | 
+              Total: {segments}
             </div>
-          </div>
-          {/* Debug info */}
-          <div className="text-xs text-gray-500 mt-2">
-            Position: {(wheelPosition % (Math.PI * 2)).toFixed(3)} | 
-            Segment: {Math.floor(((wheelPosition % (Math.PI * 2)) + Math.PI/2 + Math.PI) / ((Math.PI * 2) / segments)) % segments} | 
-            Total: {segments}
           </div>
         </div>
       </div>

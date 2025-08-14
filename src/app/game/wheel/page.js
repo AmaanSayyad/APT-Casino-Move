@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import GameWheel from "../../../components/wheel/GameWheel";
+import GameWheel, { wheelDataByRisk, getHighRiskMultiplier, getHighRiskProbability } from "../../../components/wheel/GameWheel";
 import BettingPanel from "../../../components/wheel/BettingPanel";
 import GameHistory from "../../../components/wheel/GameHistory";
 import { calculateResult } from "../../../lib/gameLogic";
@@ -113,10 +113,48 @@ export default function Home() {
       setTimeout(() => {
         // Random result for demo
         const result = Math.floor(Math.random() * noOfSegments);
-        const multiplier = result === 0 ? 2 : result === 1 ? 3 : result === 2 ? 4 : 5;
-        const winAmount = betAmount * (multiplier / 2);
         
-        setCurrentMultiplier(multiplier / 2);
+        // Get the wheel data based on risk level to determine proper multipliers
+        let wheelSegmentData;
+        if (risk === "high") {
+          const highRiskData = wheelDataByRisk.high(noOfSegments);
+          const zeroSegments = Math.round((1 - getHighRiskProbability(noOfSegments)) * noOfSegments);
+          wheelSegmentData = result < zeroSegments ? 
+            { multiplier: 0.0, color: "#333947" } : 
+            { multiplier: getHighRiskMultiplier(noOfSegments), color: "#D72E60" };
+        } else if (risk === "medium") {
+          // For medium risk, alternate between zero and non-zero multipliers
+          if (result % 2 === 0) {
+            wheelSegmentData = { multiplier: 0.0, color: "#333947" };
+          } else {
+            // Pick one of the non-zero multipliers based on result
+            const nonZeroOptions = [
+              { multiplier: 1.5, color: "#00E403" },
+              { multiplier: 1.7, color: "#D9D9D9" },
+              { multiplier: 2.0, color: "#FDE905" },
+              { multiplier: 3.0, color: "#7F46FD" },
+              { multiplier: 4.0, color: "#FCA32F" }
+            ];
+            const nonZeroIndex = Math.floor(result / 2) % nonZeroOptions.length;
+            wheelSegmentData = nonZeroOptions[nonZeroIndex];
+          }
+        } else {
+          // Low risk
+          if (result % 2 === 0) {
+            wheelSegmentData = { multiplier: 1.2, color: "#D9D9D9" };
+          } else {
+            wheelSegmentData = result % 4 === 1 ? 
+              { multiplier: 0.0, color: "#333947" } : 
+              { multiplier: 1.5, color: "#00E403" };
+          }
+        }
+        
+        // Use the actual multiplier from the wheel segment
+        const actualMultiplier = wheelSegmentData.multiplier;
+        const winAmount = betAmount * actualMultiplier;
+        
+        // Set the current multiplier and position
+        setCurrentMultiplier(actualMultiplier);
         setWheelPosition(result);
         
         // Add to game history
@@ -125,9 +163,10 @@ export default function Home() {
           game: 'Wheel',
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           betAmount: betAmount,
-          multiplier: `${(multiplier / 2).toFixed(2)}x`,
+          multiplier: `${actualMultiplier.toFixed(2)}x`,
           payout: winAmount,
-          result: result
+          result: result,
+          color: wheelSegmentData.color
         };
         setGameHistory(prev => [newHistoryItem, ...prev]);
         
@@ -135,8 +174,8 @@ export default function Home() {
         setHasSpun(true);
         
         // Show result
-        if (winAmount > betAmount) {
-          notification.success(`Congratulations! You won ${winAmount.toFixed(8)} APT!`);
+        if (actualMultiplier > 0) {
+          notification.success(`Congratulations! ${betAmount} APT × ${actualMultiplier.toFixed(2)} = ${winAmount.toFixed(8)} APT won!`);
           
           // Debug: Check current values
           console.log('=== BALANCE UPDATE DEBUG ===');
@@ -144,6 +183,7 @@ export default function Home() {
           console.log('userBalance type:', typeof userBalance);
           console.log('winAmount:', winAmount);
           console.log('winAmount type:', typeof winAmount);
+          console.log('actualMultiplier:', actualMultiplier);
           
           // Update local balance immediately with winnings
           const currentBalance = parseFloat(userBalance || "0") / 100000000; // Convert from octas to APT
@@ -161,7 +201,7 @@ export default function Home() {
           
           console.log('Local balance updated successfully!');
         } else {
-          notification.info(`Game over. Result: ${result}, Multiplier: ${(multiplier / 2).toFixed(2)}x`);
+          notification.info(`Game over. Result: ${result}, Multiplier: ${actualMultiplier.toFixed(2)}x`);
         }
       }, 1500);
       
@@ -192,14 +232,52 @@ export default function Home() {
       setHasSpun(false);
       // setBalance(prev => prev - currentBet); // This line is no longer needed
 
-      // Calculate result (you have this function)
-      const result = calculateResult(risk, noOfSegments);
+      // Calculate result position
+      const resultPosition = Math.floor(Math.random() * noOfSegments);
+      
+      // Get the wheel data based on risk level to determine proper multipliers
+      let wheelSegmentData;
+      if (risk === "high") {
+        const highRiskData = wheelDataByRisk.high(noOfSegments);
+        const zeroSegments = Math.round((1 - getHighRiskProbability(noOfSegments)) * noOfSegments);
+        wheelSegmentData = resultPosition < zeroSegments ? 
+          { multiplier: 0.0, color: "#333947" } : 
+          { multiplier: getHighRiskMultiplier(noOfSegments), color: "#D72E60" };
+      } else if (risk === "medium") {
+        // For medium risk, alternate between zero and non-zero multipliers
+        if (resultPosition % 2 === 0) {
+          wheelSegmentData = { multiplier: 0.0, color: "#333947" };
+        } else {
+          // Pick one of the non-zero multipliers based on result
+          const nonZeroOptions = [
+            { multiplier: 1.5, color: "#00E403" },
+            { multiplier: 1.7, color: "#D9D9D9" },
+            { multiplier: 2.0, color: "#FDE905" },
+            { multiplier: 3.0, color: "#7F46FD" },
+            { multiplier: 4.0, color: "#FCA32F" }
+          ];
+          const nonZeroIndex = Math.floor(resultPosition / 2) % nonZeroOptions.length;
+          wheelSegmentData = nonZeroOptions[nonZeroIndex];
+        }
+      } else {
+        // Low risk
+        if (resultPosition % 2 === 0) {
+          wheelSegmentData = { multiplier: 1.2, color: "#D9D9D9" };
+        } else {
+          wheelSegmentData = resultPosition % 4 === 1 ? 
+            { multiplier: 0.0, color: "#333947" } : 
+            { multiplier: 1.5, color: "#00E403" };
+        }
+      }
+      
+      // Use the actual multiplier from the wheel segment
+      const actualMultiplier = wheelSegmentData.multiplier;
 
       // Simulate spin delay
       await new Promise((r) => setTimeout(r, 3000)); // spin animation time
 
-      setCurrentMultiplier(result.multiplier);
-      setWheelPosition(result.position);
+      setCurrentMultiplier(actualMultiplier);
+      setWheelPosition(resultPosition);
 
       setIsSpinning(false);
       setHasSpun(true);
@@ -208,7 +286,7 @@ export default function Home() {
       await new Promise((r) => setTimeout(r, 2000));
 
       // Calculate win amount
-      const winAmount = currentBet * result.multiplier;
+      const winAmount = currentBet * actualMultiplier;
 
       // Update balance with win
       // setBalance(prev => prev + winAmount); // This line is no longer needed
@@ -216,6 +294,11 @@ export default function Home() {
       // Update total profit
       const profit = winAmount - currentBet;
       totalProfit += profit;
+      
+      // Show notification for win
+      if (actualMultiplier > 0) {
+        notification.success(`Congratulations! ${currentBet} APT × ${actualMultiplier.toFixed(2)} = ${winAmount.toFixed(8)} APT won!`);
+      }
 
       // Store history entry
       const newHistoryItem = {
@@ -223,14 +306,16 @@ export default function Home() {
         game: "Wheel",
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         betAmount: currentBet,
-        multiplier: `${result.multiplier.toFixed(2)}x`,
+        multiplier: `${actualMultiplier.toFixed(2)}x`,
         payout: winAmount,
+        result: resultPosition,
+        color: wheelSegmentData.color
       };
 
       setGameHistory(prev => [newHistoryItem, ...prev]);
 
       // Adjust bet for next round based on win/loss increase
-      if (result.multiplier > 1) {
+      if (actualMultiplier > 1) {
         currentBet = currentBet + (currentBet * winIncrease);
       } else {
         currentBet = currentBet + (currentBet * lossIncrease);
@@ -421,6 +506,7 @@ export default function Home() {
               targetMultiplier={targetMultiplier}
               handleSelectMultiplier={handleSelectMultiplier}
               wheelPosition={wheelPosition}
+              setWheelPosition={setWheelPosition}
               hasSpun={hasSpun}
             />
           </div>
@@ -439,43 +525,6 @@ export default function Home() {
               autoBet={autoBet}
               isSpinning={isSpinning}
             />
-            
-            {/* Wallet Status */}
-            <div className="mt-4 p-3 bg-gradient-to-r from-blue-900/20 to-blue-800/10 rounded-lg border border-blue-800/30">
-              <div className="flex items-center justify-between text-sm mb-2">
-                <span className="text-gray-300">Wallet Status:</span>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  isWalletReady 
-                    ? 'bg-green-600/30 text-green-300 border border-green-500/30' 
-                    : 'bg-red-600/30 text-red-300 border border-red-500/30'
-                }`}>
-                  {isWalletReady ? 'Ready' : 'Not Connected'}
-                </span>
-              </div>
-              
-              {isWalletReady && (
-                <div className="space-y-2 text-xs">
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Wallet Address:</span>
-                    <span className="text-blue-300 text-xs">
-                      {address && typeof address === 'string' ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Not connected'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">System Balance:</span>
-                    <span className="text-green-300">{(parseFloat(userBalance || "0") / 100000000).toFixed(8)} APT</span>
-                  </div>
-                </div>
-              )}
-              
-              {!isWalletReady && (
-                <p className="text-xs text-gray-400 mt-2 text-center">
-                  Please connect your wallet to play
-                </p>
-              )}
-            </div>
-
-
           </div>
         </div>
       </div>
