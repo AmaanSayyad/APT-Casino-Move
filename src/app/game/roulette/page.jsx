@@ -78,6 +78,20 @@ const BetType = {
   LINE: 9       // Six numbers (5:1)
 };
 
+// Bet payout multipliers
+const BetPayouts = {
+  [BetType.NUMBER]: 35,    // 35:1
+  [BetType.COLOR]: 1,      // 1:1
+  [BetType.ODDEVEN]: 1,    // 1:1
+  [BetType.HIGHLOW]: 1,    // 1:1
+  [BetType.DOZEN]: 2,      // 2:1
+  [BetType.COLUMN]: 2,     // 2:1
+  [BetType.SPLIT]: 17,     // 17:1
+  [BetType.STREET]: 11,    // 11:1
+  [BetType.CORNER]: 8,     // 8:1
+  [BetType.LINE]: 5        // 5:1
+};
+
 
 function BetBox({ betValue = 0, betType = "", position = "top-right", ...props }) {
   // Calculate position based on the position prop
@@ -1363,13 +1377,51 @@ export default function GameRoulette() {
         betAmount = columns[betValue];
         numbers = [];
       } else {
-        // Handle straight up bets
+        // Handle inside bets (straight up, split, street, corner)
         const straightUpIndex = inside.findIndex(val => val > 0);
         if (straightUpIndex >= 0) {
-          betType = BetType.NUMBER;
-          betValue = Math.floor(straightUpIndex / 4); // Convert to actual number
-          betAmount = inside[straightUpIndex];
-          numbers = []; // Add the number to the numbers array
+          const betPosition = straightUpIndex % 4; // 1=straight, 2=split-left, 3=split-bottom, 4=corner
+          const numberBase = Math.floor(straightUpIndex / 4);
+          
+          if (betPosition === 1) {
+            // Straight up bet
+            betType = BetType.NUMBER;
+            betValue = numberBase; // The specific number
+            betAmount = inside[straightUpIndex];
+            numbers = [];
+          } else if (betPosition === 2) {
+            // Split bet (left/right)
+            betType = BetType.SPLIT;
+            betValue = numberBase - 1; // Lower number of the pair
+            betAmount = inside[straightUpIndex];
+            numbers = [];
+          } else if (betPosition === 3) {
+            // Split bet (top/bottom) or Street bet
+            if (numberBase % 3 === 1) {
+              // Street bet (3 numbers in a row)
+              betType = BetType.STREET;
+              betValue = numberBase; // First number of the street
+              betAmount = inside[straightUpIndex];
+              numbers = [];
+            } else {
+              // Vertical split bet
+              betType = BetType.SPLIT;
+              betValue = numberBase; // Lower number of the vertical pair
+              betAmount = inside[straightUpIndex];
+              numbers = [];
+            }
+          } else if (betPosition === 4) {
+            // Corner bet (4 numbers)
+            betType = BetType.CORNER;
+            betValue = numberBase; // Top-left number of the corner
+            betAmount = inside[straightUpIndex];
+            numbers = [];
+          } else {
+            alert("Invalid inside bet position");
+            setSubmitDisabled(false);
+            setShowNotification(false);
+            return;
+          }
         } else {
           alert("Invalid bet configuration");
           setSubmitDisabled(false);

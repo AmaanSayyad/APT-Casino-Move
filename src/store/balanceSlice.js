@@ -5,8 +5,18 @@ const loadInitialState = () => {
   if (typeof window !== 'undefined') {
     const savedBalance = localStorage.getItem('userBalance');
     const savedLoading = localStorage.getItem('isLoading');
+    
+    // Normal balance validation (restored)
+    let cleanBalance = "0";
+    if (savedBalance && !isNaN(savedBalance) && parseFloat(savedBalance) >= 0) {
+      cleanBalance = savedBalance;
+    } else {
+      // Reset invalid balance to 0
+      localStorage.setItem('userBalance', "0");
+    }
+    
     return {
-      userBalance: savedBalance || "0",
+      userBalance: cleanBalance,
       isLoading: savedLoading === 'true' || false,
     };
   }

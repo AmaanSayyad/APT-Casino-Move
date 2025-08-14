@@ -80,6 +80,12 @@ module apt_casino::roulette {
     ///   0 = single number (0-36), payout 35x
     ///   1 = color (0=Red,1=Black) using parity rule (even=Black, odd=Red) for demo, payout 2x
     ///   2 = odd/even (0=Even,1=Odd), payout 2x
+    ///   3 = high/low (0=Low 1-18, 1=High 19-36), payout 2x
+    ///   4 = dozen (0=1st, 1=2nd, 2=3rd), payout 3x
+    ///   5 = column (0=1st, 1=2nd, 2=3rd), payout 3x
+    ///   6 = split bet (adjacent numbers), payout 18x
+    ///   7 = street bet (3 numbers in row), payout 12x
+    ///   8 = corner bet (4 numbers), payout 9x
     #[randomness]
     entry fun house_place_bet(admin: &signer, player: address, amount: u64, bet_kind: u8, bet_value: u8) acquires House, Balance {
         assert!(signer::address_of(admin) == get_admin_addr(), error::permission_denied(E_NOT_ADMIN));
@@ -150,6 +156,36 @@ module apt_casino::roulette {
                 else if (bet_value == 1 && roll % 3 == 2) { (true, amount * 3) }
                 else if (bet_value == 2 && roll % 3 == 0) { (true, amount * 3) }
                 else { (false, 0) }
+            } else { (false, 0) }
+        } else if (bet_kind == 6) { // Split bet (2 adjacent numbers)
+            // For split, bet_value represents the lower number of the pair
+            // Check if roll matches either bet_value or bet_value+1 (or +3 for vertical splits)
+            let matches = false;
+            if (bet_value > 0 && bet_value <= 35) {
+                // Horizontal split (consecutive numbers)
+                if (roll == bet_value || roll == bet_value + 1) {
+                    matches = true;
+                };
+                // Vertical split (numbers 3 apart)
+                if (roll == bet_value || roll == bet_value + 3) {
+                    matches = true;
+                };
+            };
+            if (matches) { (true, amount * 18) } else { (false, 0) }
+        } else if (bet_kind == 7) { // Street bet (3 numbers in a row)
+            // bet_value represents the first number of the street
+            if (bet_value > 0 && bet_value <= 34 && bet_value % 3 == 1) {
+                if (roll >= bet_value && roll <= bet_value + 2) {
+                    (true, amount * 12)
+                } else { (false, 0) }
+            } else { (false, 0) }
+        } else if (bet_kind == 8) { // Corner bet (4 numbers)
+            // bet_value represents the top-left number of the corner
+            if (bet_value > 0 && bet_value <= 32) {
+                if (roll == bet_value || roll == bet_value + 1 || 
+                   roll == bet_value + 3 || roll == bet_value + 4) {
+                    (true, amount * 9)
+                } else { (false, 0) }
             } else { (false, 0) }
         } else {
             abort error::invalid_argument(E_INVALID_BET)

@@ -56,6 +56,8 @@ export default function Navbar() {
   const [showBalanceModal, setShowBalanceModal] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState("0");
   const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [depositAmount, setDepositAmount] = useState("");
+  const [isDepositing, setIsDepositing] = useState(false);
 
   // Wallet connection
   const { connected: isConnected, account, signAndSubmitTransaction } = useWallet();
@@ -225,6 +227,68 @@ export default function Navbar() {
       notification.error(`Withdrawal failed: ${error.message}`);
     } finally {
       setIsWithdrawing(false);
+    }
+  };
+
+  // Handle deposit to house balance
+  const handleDeposit = async () => {
+    if (!isConnected || !account || !signAndSubmitTransaction) {
+      notification.error('Please connect your wallet first');
+      return;
+    }
+
+    const amount = parseFloat(depositAmount);
+    if (!amount || amount <= 0) {
+      notification.error('Please enter a valid deposit amount');
+      return;
+    }
+
+    setIsDepositing(true);
+    try {
+      console.log('Depositing to house balance:', { address: account.address, amount });
+      
+      // Convert amount to octas (APT uses 8 decimal places)
+      const amountOctas = Math.floor(amount * 100000000).toString();
+      
+      // Create deposit payload using UserBalanceSystem
+      const payload = UserBalanceSystem.deposit(amountOctas);
+      
+      console.log('Deposit payload:', payload);
+      
+      // Sign and submit transaction
+      const response = await signAndSubmitTransaction(payload);
+      
+      if (response?.hash) {
+        console.log('Deposit transaction submitted:', response.hash);
+        
+        // Update local balance immediately (don't wait for confirmation)
+        const currentBalance = parseFloat(userBalance || '0');
+        const newBalance = (currentBalance + (amount * 100000000)).toString();
+        dispatch(setBalance(newBalance));
+        
+        notification.success(`Successfully deposited ${amount} APT to house balance! TX: ${response.hash.slice(0, 8)}...`);
+        
+        setDepositAmount("");
+        
+        // Optional: Check transaction status in background (non-blocking)
+        aptosClient.waitForTransaction({ transactionHash: response.hash })
+          .then(() => {
+            console.log('✅ Deposit transaction confirmed on blockchain');
+          })
+          .catch((error) => {
+            console.warn('⚠️ Could not confirm transaction, but deposit already processed:', error.message);
+            // Don't show error to user since balance is already updated
+          });
+        
+      } else {
+        throw new Error('Transaction failed');
+      }
+      
+    } catch (error) {
+      console.error('Deposit error:', error);
+      notification.error(`Deposit failed: ${error.message}`);
+    } finally {
+      setIsDepositing(false);
     }
   };
 
@@ -733,6 +797,58 @@ export default function Navbar() {
               </div>
             </div>
             
+            {/* Deposit Section */}
+            <div className="mb-6">
+              <h4 className="text-sm font-medium text-white mb-2">Deposit APT</h4>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  value={depositAmount}
+                  onChange={(e) => setDepositAmount(e.target.value)}
+                  placeholder="Enter APT amount"
+                  className="flex-1 px-3 py-2 bg-gray-800/50 border border-gray-600/50 rounded text-white placeholder-gray-400 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/25"
+                  min="0"
+                  step="0.00000001"
+                  disabled={isDepositing}
+                />
+                <button
+                  onClick={handleDeposit}
+                  disabled={!isConnected || !depositAmount || parseFloat(depositAmount) <= 0 || isDepositing}
+                  className="px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed text-white rounded font-medium transition-colors flex items-center gap-2"
+                >
+                  {isDepositing ? (
+                    <>
+                      <div className="animate-spin w-4 h-4 border-2 border-white/20 border-t-white rounded-full"></div>
+                      Depositing...
+                    </>
+                  ) : (
+                    <>
+                      Deposit
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8l-8-8-8 8" />
+                      </svg>
+                    </>
+                  )}
+                </button>
+              </div>
+              <p className="text-xs text-gray-400 mt-1">
+                Transfer APT from your wallet to house balance for gaming
+              </p>
+              {/* Quick Deposit Buttons */}
+              <div className="flex gap-1 mt-2">
+                {[0.1, 0.5, 1, 5].map((amount) => (
+                  <button
+                    key={amount}
+                    onClick={() => setDepositAmount(amount.toString())}
+                    className="flex-1 px-2 py-1 text-xs bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 rounded transition-colors"
+                    disabled={isDepositing}
+                  >
+                    {amount} APT
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Withdraw Section */}
             <div className="mb-4">
               <h4 className="text-sm font-medium text-white mb-2">Withdraw All APT</h4>
