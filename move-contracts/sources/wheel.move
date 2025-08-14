@@ -82,8 +82,33 @@ module apt_casino::wheel {
         
         // Calculate result and payout
         let result: u8 = (randomness::u64_range(0, (sectors as u64)) as u8);
-        let multiplier = if (result == 0) 2 else if (result == 1) 3 else if (result == 2) 4 else 5;
-        let payout = amount * (multiplier as u64) / 2; // simple demo
+        
+        // Define multipliers based on risk level
+        let multiplier = if (sectors == 2) {
+            // Low risk: 1 winning sector out of 2, 1.98x multiplier
+            198 // 1.98x as integer (multiply by 100)
+        } else if (sectors == 4) {
+            // Medium risk: 1 winning sector out of 4, 3.96x multiplier  
+            396 // 3.96x as integer
+        } else if (sectors == 8) {
+            // High risk: 1 winning sector out of 8, 7.92x multiplier
+            792 // 7.92x as integer
+        } else {
+            // Default case - should not happen with proper validation
+            100 // 1x (no win)
+        };
+        
+        // Randomly select winning sector for fairness (different from result)
+        let winning_sector = (randomness::u64_range(0, (sectors as u64)) as u8);
+        
+        // Check if result is a winning sector
+        let is_winner = result == winning_sector;
+        
+        let payout = if (is_winner) {
+            amount * multiplier / 100 // Convert back from integer multiplier
+        } else {
+            0 // Player loses, no payout
+        };
         
         if (payout > 0) { 
             // Transfer winnings to main user_balance system

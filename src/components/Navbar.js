@@ -9,6 +9,7 @@ import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { setBalance, setLoading, loadBalanceFromStorage } from '@/store/balanceSlice';
 import AptosConnectWalletButton from "./AptosConnectWalletButton";
+import WithdrawModal from "./WithdrawModal";
 
 
 import { useNotification } from './NotificationSystem';
@@ -47,12 +48,14 @@ export default function Navbar() {
   const searchPanelRef = useRef(null);
   const notification = useNotification();
   const isDev = process.env.NODE_ENV === 'development';
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const dispatch = useDispatch();
   const { userBalance, isLoading: isLoadingBalance } = useSelector((state) => state.balance);
 
   // User balance management
   const [showBalanceModal, setShowBalanceModal] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState("0");
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
 
   // Wallet connection
   const { connected: isConnected, account, signAndSubmitTransaction } = useWallet();
@@ -174,7 +177,51 @@ export default function Navbar() {
 
   // Handle withdraw from house account
   const handleWithdraw = async () => {
-    notification.info('Withdraw functionality coming soon! Your APT is safe in the house account.');
+    if (!isConnected || !account) {
+      notification.error('Please connect your wallet first');
+      return;
+    }
+
+    try {
+      setIsWithdrawing(true);
+      const balanceInApt = parseFloat(userBalance || '0') / 100000000;
+      if (balanceInApt <= 0) {
+        notification.error('No balance to withdraw');
+        return;
+      }
+
+      // Call backend API to process withdrawal from treasury
+      const response = await fetch('/api/withdraw', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userAddress: account.address,
+          amount: balanceInApt
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Withdrawal failed');
+      }
+
+      // Update user balance to 0 after successful withdrawal
+      dispatch(setBalance('0'));
+      
+      notification.success(`Successfully withdrew ${balanceInApt.toFixed(4)} APT! TX: ${result.transactionHash.slice(0, 8)}...`);
+      
+      // Close the modal
+      setShowBalanceModal(false);
+      
+    } catch (error) {
+      console.error('Withdraw error:', error);
+      notification.error(`Withdrawal failed: ${error.message}`);
+    } finally {
+      setIsWithdrawing(false);
+    }
   };
 
   // Handle search input
@@ -687,10 +734,28 @@ export default function Navbar() {
               <h4 className="text-sm font-medium text-white mb-2">Withdraw All APT</h4>
               <button
                 onClick={handleWithdraw}
-                className="w-full px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded font-medium transition-colors"
+                disabled={!isConnected || parseFloat(userBalance || '0') <= 0 || isWithdrawing}
+                className="w-full px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed text-white rounded font-medium transition-colors flex items-center justify-center gap-2"
               >
-                Coming Soon
+                {isWithdrawing ? (
+                  <>
+                    <div className="animate-spin w-4 h-4 border-2 border-white/20 border-t-white rounded-full"></div>
+                    Processing...
+                  </>
+                ) : isConnected ? (
+                  parseFloat(userBalance || '0') > 0 ? 'Withdraw All APT' : 'No Balance'
+                ) : 'Connect Wallet'}
+                {isConnected && parseFloat(userBalance || '0') > 0 && !isWithdrawing && (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  </svg>
+                )}
               </button>
+              {isConnected && parseFloat(userBalance || '0') > 0 && (
+                <p className="text-xs text-gray-400 mt-1 text-center">
+                  Withdraw {parseFloat(userBalance || '0') / 100000000} APT to your wallet
+                </p>
+              )}
             </div>
             
             {/* Refresh Balance */}

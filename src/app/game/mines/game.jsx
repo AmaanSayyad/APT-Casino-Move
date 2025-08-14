@@ -179,10 +179,20 @@ const Game = ({ betSettings = {} }) => {
     return table;
   }, [minesCount, safeTiles, totalTiles]);
 
-  // Play sound helper function (disabled for now to avoid errors)
+  // Play sound helper function
   const playSound = (sound) => {
-    // Temporarily disabled to avoid audio errors
-    return;
+    if (isMuted || !audioRefs[sound]?.current) return;
+    
+    try {
+      const audio = audioRefs[sound].current;
+      audio.currentTime = 0; // Reset to start
+      audio.volume = 0.3; // Set volume to 30%
+      audio.play().catch(error => {
+        console.warn(`Could not play sound ${sound}:`, error);
+      });
+    } catch (error) {
+      console.warn(`Error playing sound ${sound}:`, error);
+    }
   };
   
   // Initialize the grid
@@ -310,7 +320,7 @@ const Game = ({ betSettings = {} }) => {
             
             toast.success(`Bet placed successfully! Transaction: ${response.hash.slice(0, 8)}...`);
             
-            // Start the game after successful bet placement
+            // Start the game immediately after successful bet placement
             setIsPlaying(true);
             setHasPlacedBet(true);
             playSound('bet');
@@ -325,13 +335,13 @@ const Game = ({ betSettings = {} }) => {
               toast.info(`Bet placed: ${settings.betAmount} APT, ${settings.mines} mines`);
             }
             
-            // If auto-betting is enabled, automatically reveal tiles after a short delay
+            // If auto-betting is enabled, automatically reveal tiles with minimal delay
             if (settings.isAutoBetting) {
               const tilesToReveal = settings.tilesToReveal || 5;
               
               setTimeout(() => {
                 autoRevealTiles(tilesToReveal);
-              }, 800);
+              }, 200); // Reduced from 800ms to 200ms
             }
           } else {
             toast.error('Failed to place bet on blockchain');
@@ -814,15 +824,17 @@ const Game = ({ betSettings = {} }) => {
           <div className="flex gap-3">
             <button
               onClick={cashout}
-              disabled={!isPlaying || revealedCount === 0}
+              disabled={!isPlaying || revealedCount === 0 || gameOver}
               className={`flex-1 py-3 ${
-                isPlaying && revealedCount > 0 
+                isPlaying && revealedCount > 0 && !gameOver
                   ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700' 
                   : 'bg-gray-700 cursor-not-allowed'
               } rounded-lg text-white font-bold shadow-lg transition-all flex items-center justify-center gap-2`}
             >
               <FaCoins className="text-yellow-300" />
-              <span>CASH OUT ({calculatePayout()} APT)</span>
+              <span>
+                {gameOver ? 'GAME OVER' : `CASH OUT (${calculatePayout()} APT)`}
+              </span>
             </button>
             
             <button

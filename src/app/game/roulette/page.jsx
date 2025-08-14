@@ -2426,8 +2426,7 @@ export default function GameRoulette() {
                     <Button
                       size="small"
                       onClick={() => {
-                        // Show balance modal functionality can be added here
-                        console.log('Manage balance clicked');
+                        setShowWithdrawModal(true);
                       }}
                       sx={{
                         ml: 1,
@@ -2442,7 +2441,7 @@ export default function GameRoulette() {
                         minWidth: 'auto'
                       }}
                     >
-                      Manage
+                      Withdraw
                     </Button>
                   </Box>
                 </Box>
@@ -2724,21 +2723,29 @@ export default function GameRoulette() {
                     }}
                   >
                   </Box>
-                  <iframe
-                    style={{
+                  <Box
+                    sx={{
                       position: 'absolute',
                       top: 0,
                       left: 0,
                       width: '100%',
                       height: '100%',
-                      border: 'none',
+                      borderRadius: '12px',
+                      background: 'linear-gradient(135deg, rgba(220, 38, 38, 0.1), rgba(239, 68, 68, 0.05))',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '1px solid rgba(220, 38, 38, 0.2)',
                       zIndex: 1
                     }}
-                    src={gameData.youtube}
-                    title="Roulette Masterclass Tutorial"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
+                  >
+                    <Typography variant="h6" color="white" textAlign="center">
+                      🎰 Roulette Tutorial<br/>
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                        Learn the basics of European Roulette and master your betting strategy
+                      </Typography>
+                    </Typography>
+                  </Box>
                 </Box>
               </Grid>
               

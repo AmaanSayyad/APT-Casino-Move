@@ -9,7 +9,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "fund-treasury": "node scripts/fund-treasury.js"
   },
   "dependencies": {
     "@aptos-labs/ts-sdk": "^3.1.3",
@@ -35,6 +36,7 @@
     "autoprefixer": "10.4.19",
     "clsx": "^2.1.1",
     "currency.js": "^2.0.4",
+    "dotenv": "^17.2.1",
     "eslint": "8.57.0",
     "eslint-config-next": "14.2.3",
     "framer-motion": "^12.10.1",
