@@ -1987,13 +1987,59 @@ export default function GameRoulette() {
         fetchRealBalance();
       }, 2000); // Wait 2 seconds for blockchain to update
       
-      // Simulate visual result
-      const winningNumber = Math.floor(Math.random() * 37);
-      setRollResult(winningNumber);
+      // Wait for blockchain result - for now simulate
+      setTimeout(() => {
+        // Simulate blockchain result (in real app, this comes from contract events)
+        const winningNumber = Math.floor(Math.random() * 37);
+        setRollResult(winningNumber);
+        
+        // Calculate winnings based on the bet
+        const isWinner = checkWin(bet.kind, bet.value, winningNumber);
+        const payoutRatio = getPayoutRatio(bet.kind);
+        const totalPayout = isWinner ? bet.amount * (payoutRatio + 1) : 0; // +1 because payout includes original bet
+        const netWinnings = isWinner ? bet.amount * payoutRatio : -bet.amount;
+        
+        setWinnings(netWinnings);
+        
+        // Add to betting history
+        const newBet = {
+          id: Date.now(),
+          timestamp: new Date(),
+          betType: bet.name,
+          amount: bet.amount,
+          numbers: bet.kind === 0 ? [bet.value] : [],
+          result: winningNumber,
+          win: isWinner,
+          payout: totalPayout,
+          multiplier: payoutRatio
+        };
+        
+        setBettingHistory(prev => [newBet, ...prev].slice(0, 50)); // Keep last 50 bets
+        
+        // Update user balance with winnings
+        if (isWinner && totalPayout > 0) {
+          const currentBalance = parseFloat(userBalance || '0');
+          const newBalance = (currentBalance + (totalPayout * 100000000)).toString(); // Convert to octas
+          dispatch(setBalance(newBalance));
+        }
+        
+        // Show result notification
+        if (isWinner) {
+          setNotificationMessage(`🎉 WINNER! Number ${winningNumber} - You won ${netWinnings.toFixed(4)} APT!`);
+          setNotificationSeverity("success");
+          setSnackbarMessage(`🎉 WINNER! Number ${winningNumber} - You won ${netWinnings.toFixed(4)} APT!`);
+        } else {
+          setNotificationMessage(`💸 Number ${winningNumber} - Better luck next time!`);
+          setNotificationSeverity("error");
+          setSnackbarMessage(`💸 Number ${winningNumber} - Better luck next time!`);
+        }
+        setSnackbarOpen(true);
+        
+      }, 3000); // Wait 3 seconds for suspense
       
-      setNotificationMessage(`🎲 ${bet.name} bet placed successfully! Wagered: ${bet.amount} APT`);
-      setNotificationSeverity("success");
-      setSnackbarMessage(`🎲 ${bet.name} bet placed successfully! Wagered: ${bet.amount} APT`);
+      setNotificationMessage(`🎲 ${bet.name} bet placed! Waiting for result...`);
+      setNotificationSeverity("info");
+      setSnackbarMessage(`🎲 ${bet.name} bet placed! Waiting for result...`);
       setSnackbarOpen(true);
 
     } catch (e) {
@@ -2012,12 +2058,15 @@ export default function GameRoulette() {
   // Helper function to get payout ratio based on bet kind
   const getPayoutRatio = (kind) => {
     switch (kind) {
-      case 0: return 35; // Single Number
-      case 1: return 2;  // Color
-      case 2: return 2;  // Odd/Even
-      case 3: return 2;  // High/Low
-      case 4: return 3;  // Dozen
-      case 5: return 3;  // Column
+      case 0: return 35; // Single Number (35:1)
+      case 1: return 1;  // Color (1:1)
+      case 2: return 1;  // Odd/Even (1:1)
+      case 3: return 1;  // High/Low (1:1)
+      case 4: return 2;  // Dozen (2:1)
+      case 5: return 2;  // Column (2:1)
+      case 6: return 17; // Split Bet (17:1)
+      case 7: return 11; // Street Bet (11:1)
+      case 8: return 8;  // Corner Bet (8:1)
       default: return 0;
     }
   };
@@ -2027,13 +2076,30 @@ export default function GameRoulette() {
     if (winningNumber === 0 && kind !== 0) return false;
 
     const redNumbers = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
+    
     switch (kind) {
       case 0: return value === winningNumber; // Single Number
-      case 1: return value === 0 ? redNumbers.includes(winningNumber) : !redNumbers.includes(winningNumber); // Color
-      case 2: return value === 1 ? winningNumber % 2 !== 0 : winningNumber % 2 === 0; // Odd/Even
-      case 3: return value === 0 ? winningNumber >= 1 && winningNumber <= 18 : winningNumber >= 19 && winningNumber <= 36; // High/Low
-      case 4: return (value === 0 && winningNumber <= 12) || (value === 1 && winningNumber > 12 && winningNumber <= 24) || (value === 2 && winningNumber > 24 && winningNumber <= 36); // Dozen
-      case 5: return (value === 0 && winningNumber % 3 === 1) || (value === 1 && winningNumber % 3 === 2) || (value === 2 && winningNumber % 3 === 0); // Column
+      case 1: return value === 0 ? redNumbers.includes(winningNumber) : !redNumbers.includes(winningNumber); // Color (0=Red, 1=Black)
+      case 2: return value === 1 ? winningNumber % 2 !== 0 : winningNumber % 2 === 0; // Odd/Even (0=Even, 1=Odd)
+      case 3: return value === 0 ? winningNumber >= 1 && winningNumber <= 18 : winningNumber >= 19 && winningNumber <= 36; // High/Low (0=Low, 1=High)
+      case 4: // Dozen bets (0=1st dozen, 1=2nd dozen, 2=3rd dozen)
+        return (value === 0 && winningNumber >= 1 && winningNumber <= 12) || 
+               (value === 1 && winningNumber >= 13 && winningNumber <= 24) || 
+               (value === 2 && winningNumber >= 25 && winningNumber <= 36);
+      case 5: // Column bets (0=1st column, 1=2nd column, 2=3rd column)
+        return (value === 0 && winningNumber % 3 === 1) || 
+               (value === 1 && winningNumber % 3 === 2) || 
+               (value === 2 && winningNumber % 3 === 0);
+      case 6: // Split bet - check if winning number matches either of two adjacent numbers
+        // For split bets, value represents the lower number
+        return winningNumber === value || winningNumber === value + 1 || winningNumber === value + 3;
+      case 7: // Street bet - check if winning number is in the row of 3 numbers
+        // value represents the first number of the street (must be 1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34)
+        return winningNumber >= value && winningNumber <= value + 2;
+      case 8: // Corner bet - check if winning number is one of 4 corner numbers
+        // value represents the top-left number
+        return winningNumber === value || winningNumber === value + 1 || 
+               winningNumber === value + 3 || winningNumber === value + 4;
       default: return false;
     }
   };
