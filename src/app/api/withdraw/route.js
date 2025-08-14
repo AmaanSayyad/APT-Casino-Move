@@ -13,6 +13,8 @@ export async function POST(request) {
   try {
     const { userAddress, amount } = await request.json();
     
+    console.log('📥 Received withdrawal request:', { userAddress, amount, type: typeof userAddress });
+    
     // Validate input
     if (!userAddress || !amount || amount <= 0) {
       return NextResponse.json(
@@ -59,9 +61,25 @@ export async function POST(request) {
     }
     
     // Transfer APT from treasury to user
+    // Convert userAddress to hex string if it's an object
+    let formattedUserAddress;
+    if (typeof userAddress === 'object' && userAddress.data) {
+      // Convert Uint8Array-like object to hex string
+      const bytes = Object.values(userAddress.data);
+      formattedUserAddress = '0x' + bytes.map(b => b.toString(16).padStart(2, '0')).join('');
+    } else if (typeof userAddress === 'string') {
+      formattedUserAddress = userAddress.startsWith('0x') ? userAddress : `0x${userAddress}`;
+    } else {
+      throw new Error(`Invalid userAddress format: ${typeof userAddress}`);
+    }
+    
+    console.log('🔧 Formatted user address:', formattedUserAddress);
+    console.log('🔧 Treasury account:', treasuryAccount.address().hex());
+    console.log('🔧 Amount in octas:', amountOctas);
+    
     const txnHash = await coinClient.transfer(
       treasuryAccount,
-      userAddress,
+      formattedUserAddress,
       amountOctas
     );
     
@@ -80,6 +98,11 @@ export async function POST(request) {
     
   } catch (error) {
     console.error('Withdraw API error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     return NextResponse.json(
       { error: 'Withdrawal failed: ' + error.message },
       { status: 500 }

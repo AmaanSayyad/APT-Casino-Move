@@ -191,6 +191,10 @@ export default function Navbar() {
       }
 
       // Call backend API to process withdrawal from treasury
+      console.log('🔍 Account object:', account);
+      console.log('🔍 Account address:', account.address);
+      console.log('🔍 Account address type:', typeof account.address);
+      
       const response = await fetch('/api/withdraw', {
         method: 'POST',
         headers: {
