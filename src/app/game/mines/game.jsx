@@ -309,21 +309,13 @@ const Game = ({ betSettings = {} }) => {
           const response = await signAndSubmitTransaction(payload);
           
           if (response?.hash) {
-            // Wait for transaction confirmation
-            try {
-              await aptosClient.waitForTransaction({ transactionHash: response.hash });
-              console.log("Transaction confirmed on blockchain");
-            } catch (waitError) {
-              console.warn("Could not wait for transaction confirmation, but transaction was submitted:", waitError.message);
-              // Transaction was still submitted successfully, so we continue
-            }
-            
-            toast.success(`Bet placed successfully! Transaction: ${response.hash.slice(0, 8)}...`);
-            
-            // Start the game immediately after successful bet placement
+            // Start the game immediately after transaction submission (don't wait for confirmation)
             setIsPlaying(true);
             setHasPlacedBet(true);
             playSound('bet');
+            
+            toast.success(`Bet submitted! Transaction: ${response.hash.slice(0, 8)}...`);
+            toast.info(`Game starting... (Transaction processing in background)`);
             
             // Special message if AI-assisted auto betting
             if (settings.isAutoBetting && settings.aiAssist) {
@@ -341,8 +333,19 @@ const Game = ({ betSettings = {} }) => {
               
               setTimeout(() => {
                 autoRevealTiles(tilesToReveal);
-              }, 200); // Reduced from 800ms to 200ms
+              }, 100); // Reduced to 100ms for faster response
             }
+            
+            // Check transaction status in background (non-blocking)
+            aptosClient.waitForTransaction({ transactionHash: response.hash })
+              .then(() => {
+                console.log("Transaction confirmed on blockchain");
+                toast.success(`Transaction confirmed on blockchain!`);
+              })
+              .catch((waitError) => {
+                console.warn("Could not confirm transaction, but game continues:", waitError.message);
+                // Game continues even if confirmation fails
+              });
           } else {
             toast.error('Failed to place bet on blockchain');
           }
