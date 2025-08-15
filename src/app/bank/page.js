@@ -84,8 +84,8 @@ export default function Bank() {
           available: "$320,000"
         },
         {
-          symbol: "MNT",
-          name: "Mantle",
+          symbol: "APT",
+          name: "Aptos",
           iconColor: "#2196F3",
           address: null,
           apr: "4.8%",
