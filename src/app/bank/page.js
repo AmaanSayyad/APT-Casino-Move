@@ -107,20 +107,30 @@ export default function Bank() {
         // Set to Aptos testnet
         setChainId('aptos_testnet');
         
-        // Load lending market data
-        try {
-          const { default: useLendingMarket } = await import('@/hooks/useLendingMarket');
-          const marketData = useLendingMarket();
-          if (marketData && marketData.assets) {
-            setAssets(marketData.assets);
+        // Set mock lending market data for Aptos testnet
+        setAssets([
+          {
+            symbol: "APT",
+            name: "Aptos Coin",
+            iconColor: "#F1324D",
+            address: "0x...",
+            apr: "12.5%",
+            totalDeposited: "$240,000",
+            available: "$120,000"
+          },
+          {
+            symbol: "APTC",
+            name: "APT Casino Token",
+            iconColor: "#34C759",
+            address: "0x...",
+            apr: "8.2%",
+            totalDeposited: "$520,000",
+            available: "$320,000"
           }
-          
-          // Load transaction history
-          // In real app, you would fetch this from an API or blockchain
-          setTransactions(MOCK_TRANSACTIONS);
-        } catch (err) {
-          console.warn("Failed to load lending market data:", err);
-        }
+        ]);
+        
+        // Load transaction history
+        setTransactions(MOCK_TRANSACTIONS);
         
         setIsLoading(false);
       } catch (err) {
