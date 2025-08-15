@@ -123,38 +123,38 @@ module apt_casino::roulette {
     /// Payout calculation
     fun settle(amount: u64, bet_kind: u8, bet_value: u8, roll: u8): (bool, u64) {
         if (bet_kind == 0) {
-            // Single number - 35:1 payout (36x total)
-            if (bet_value <= 36 && roll == bet_value) (true, amount * 36) else (false, 0)
+            // Single number - 35:1 payout (only winnings, not 36x total)
+            if (bet_value <= 36 && roll == bet_value) (true, amount * 35) else (false, 0)
         } else if (bet_kind == 1) {
             // Color by parity: even=Black(1), odd=Red(0). This is a demo mapping.
             let is_red = (roll % 2) == 1; // odd
             let bv_is_red = (bet_value == 0);
-            if (roll != 0 && ((is_red && bv_is_red) || (!is_red && !bv_is_red))) (true, amount * 2) else (false, 0)
+            if (roll != 0 && ((is_red && bv_is_red) || (!is_red && !bv_is_red))) (true, amount * 1) else (false, 0)
         } else if (bet_kind == 2) {
             // Odd / Even
             if (roll != 0) {
                 let is_odd = (roll % 2) == 1;
                 let want_odd = (bet_value == 1);
-                if ((is_odd && want_odd) || (!is_odd && !want_odd)) (true, amount * 2) else (false, 0)
+                if ((is_odd && want_odd) || (!is_odd && !want_odd)) (true, amount * 1) else (false, 0)
             } else (false, 0)
         } else if (bet_kind == 3) { // High/Low bet
             if (roll > 0) {
-                if (bet_value == 0 && roll <= 18) { (true, amount * 2) } // Low (1-18)
-                else if (bet_value == 1 && roll > 18 && roll <= 36) { (true, amount * 2) } // High (19-36)
+                if (bet_value == 0 && roll <= 18) { (true, amount * 1) } // Low (1-18)
+                else if (bet_value == 1 && roll > 18 && roll <= 36) { (true, amount * 1) } // High (19-36)
                 else { (false, 0) }
             } else { (false, 0) }
         } else if (bet_kind == 4) { // Dozen bet
             if (roll > 0) {
-                if (bet_value == 0 && roll <= 12) { (true, amount * 3) }
-                else if (bet_value == 1 && roll > 12 && roll <= 24) { (true, amount * 3) }
-                else if (bet_value == 2 && roll > 24 && roll <= 36) { (true, amount * 3) }
+                if (bet_value == 0 && roll <= 12) { (true, amount * 2) }
+                else if (bet_value == 1 && roll > 12 && roll <= 24) { (true, amount * 2) }
+                else if (bet_value == 2 && roll > 24 && roll <= 36) { (true, amount * 2) }
                 else { (false, 0) }
             } else { (false, 0) }
         } else if (bet_kind == 5) { // Column bet
             if (roll > 0) {
-                if (bet_value == 0 && roll % 3 == 1) { (true, amount * 3) }
-                else if (bet_value == 1 && roll % 3 == 2) { (true, amount * 3) }
-                else if (bet_value == 2 && roll % 3 == 0) { (true, amount * 3) }
+                if (bet_value == 0 && roll % 3 == 1) { (true, amount * 2) }
+                else if (bet_value == 1 && roll % 3 == 2) { (true, amount * 2) }
+                else if (bet_value == 2 && roll % 3 == 0) { (true, amount * 2) }
                 else { (false, 0) }
             } else { (false, 0) }
         } else if (bet_kind == 6) { // Split bet (2 adjacent numbers)
@@ -166,25 +166,27 @@ module apt_casino::roulette {
                 if (roll == bet_value || roll == bet_value + 1) {
                     matches = true;
                 };
-                // Vertical split (numbers 3 apart)
-                if (roll == bet_value || roll == bet_value + 3) {
+                // Vertical split (numbers 3 apart) - only valid for numbers <= 33
+                if (bet_value <= 33 && (roll == bet_value || roll == bet_value + 3)) {
                     matches = true;
                 };
             };
-            if (matches) { (true, amount * 18) } else { (false, 0) }
+            if (matches) { (true, amount * 17) } else { (false, 0) }
         } else if (bet_kind == 7) { // Street bet (3 numbers in a row)
             // bet_value represents the first number of the street
             if (bet_value > 0 && bet_value <= 34 && bet_value % 3 == 1) {
                 if (roll >= bet_value && roll <= bet_value + 2) {
-                    (true, amount * 12)
+                    (true, amount * 11)
                 } else { (false, 0) }
             } else { (false, 0) }
-        } else if (bet_kind == 8) { // Corner bet (4 numbers) - 8:1 payout (9x total)
+        } else if (bet_kind == 8) { // Corner bet (4 numbers) - 8:1 payout (only winnings)
             // bet_value represents the top-left number of the corner
-            if (bet_value > 0 && bet_value <= 32) {
+            // Corner bet is only valid for specific positions where 4 numbers form a square
+            // Valid corner positions: bet_value must be in left column (bet_value % 3 == 1) and not in last row (bet_value <= 32)
+            if (bet_value > 0 && bet_value <= 32 && bet_value % 3 == 1) {
                 if (roll == bet_value || roll == bet_value + 1 || 
                    roll == bet_value + 3 || roll == bet_value + 4) {
-                    (true, amount * 9)
+                    (true, amount * 8)
                 } else { (false, 0) }
             } else { (false, 0) }
         } else {

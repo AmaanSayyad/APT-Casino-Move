@@ -604,17 +604,23 @@ const RouletteWheel = ({ spinning, result, onSpinComplete, onSpinStart, onWin, i
 // Add betting statistics tracking
 const BettingStats = ({ history }) => {
   const stats = useMemo(() => {
+    console.log("BettingStats - history:", history); // Debug log
     if (!history || history.length === 0) return null;
     
-    // Calculate win rate
-    const winCount = history.filter(bet => bet.won).length;
-    const winRate = history.length > 0 ? (winCount / history.length * 100).toFixed(1) : 0;
+    // Calculate session total bets (sum of all totalBets from each round)
+    const statTotal = history.reduce((sum, bet) => sum + bet.totalBets, 0);
+    
+    // Calculate session total winnings (sum of all winningBets from each round)
+    const statWinnings = history.reduce((sum, bet) => sum + bet.winningBets, 0);
+    
+    // Calculate win rate using statWinnings/statTotal
+    const winRate = statTotal > 0 ? (statWinnings / statTotal * 100).toFixed(1) : 0;
     
     // Calculate most common numbers
     const numberFrequency = {};
     history.forEach(bet => {
-      if (bet.roll >= 0) {
-        numberFrequency[bet.roll] = (numberFrequency[bet.roll] || 0) + 1;
+      if (bet.result >= 0) {
+        numberFrequency[bet.result] = (numberFrequency[bet.result] || 0) + 1;
       }
     });
     
@@ -625,17 +631,44 @@ const BettingStats = ({ history }) => {
     
     // Calculate profit/loss
     const totalWagered = history.reduce((sum, bet) => sum + bet.amount, 0);
-    const totalWon = history.reduce((sum, bet) => sum + (bet.won ? bet.payout : 0), 0);
-    const profitLoss = totalWon - totalWagered;
+    const totalWon = history.reduce((sum, bet) => sum + (bet.win ? bet.payout : 0), 0);
+    // profitLoss = totalWagered - totalWon (bahis miktarı - kazanç)
+    const profitLoss = totalWagered - totalWon;
     
-    return {
+    // New profit/loss calculation: profitLoss2 = -totalWagered + profitLoss
+    const profitLoss2 = -totalWagered + profitLoss;
+    
+    console.log("Stats calculation details:", {
+      historyLength: history.length,
+      betDetails: history.map(bet => ({
+        win: bet.win,
+        amount: bet.amount,
+        payout: bet.payout,
+        totalBets: bet.totalBets,
+        winningBets: bet.winningBets
+      })),
+      totalWagered,
+      totalWon,
+      profitLoss,
+      profitLoss2,
+      statTotal,
+      statWinnings
+    });
+    
+    const result = {
       winRate,
       mostCommonNumbers,
       totalWagered,
       totalWon,
       profitLoss,
-      sessionBets: history.length
+      profitLoss2,
+      totalBets: history.length,
+      statTotal,
+      statWinnings
     };
+    
+    console.log("BettingStats - calculated stats:", result); // Debug log
+    return result;
   }, [history]);
   
   if (!stats) return null;
@@ -655,12 +688,12 @@ const BettingStats = ({ history }) => {
         </Grid>
         <Grid xs={6} md={4}>
           <Typography variant="body2" color="text.secondary">Total Bets</Typography>
-          <Typography variant="h5">{stats.sessionBets}</Typography>
+          <Typography variant="h5">{stats.statTotal}</Typography>
         </Grid>
         <Grid xs={6} md={4}>
           <Typography variant="body2" color="text.secondary">P/L</Typography>
-          <Typography variant="h5" color={stats.profitLoss >= 0 ? 'success.main' : 'error.main'}>
-            {stats.profitLoss >= 0 ? '+' : ''}{stats.profitLoss.toFixed(2)}
+          <Typography variant="h5" color={stats.profitLoss2 >= 0 ? 'success.main' : 'error.main'}>
+            {stats.profitLoss2 >= 0 ? '+' : ''}{stats.profitLoss2.toFixed(2)}
           </Typography>
         </Grid>
         <Grid xs={12}>
@@ -1350,10 +1383,10 @@ export default function GameRoulette() {
       
       // Add outside bets
       if (red > 0) {
-        allBets.push({ type: BetType.COLOR, value: 1, amount: red, name: "Red" }); // Red
+        allBets.push({ type: BetType.COLOR, value: 0, amount: red, name: "Red" }); // Red = 0
       }
       if (black > 0) {
-        allBets.push({ type: BetType.COLOR, value: 0, amount: black, name: "Black" }); // Black
+        allBets.push({ type: BetType.COLOR, value: 1, amount: black, name: "Black" }); // Black = 1
       }
       if (odd > 0) {
         allBets.push({ type: BetType.ODDEVEN, value: 1, amount: odd, name: "Odd" }); // Odd
@@ -1442,8 +1475,8 @@ export default function GameRoulette() {
           const payoutRatio = getPayoutRatio(bet.type);
           
           if (isWinner) {
-            const betPayout = bet.amount * (payoutRatio + 1); // +1 because payout includes original bet
-            const betWinnings = bet.amount * payoutRatio;
+            const betPayout = bet.amount * payoutRatio; // Payout ratio already includes the multiplier
+            const betWinnings = bet.amount * (payoutRatio - 1); // Net winnings only (exclude original bet)
             totalPayout += betPayout;
             totalWinnings += betWinnings;
             winningBets.push({ ...bet, payout: betPayout, winnings: betWinnings, multiplier: payoutRatio });
@@ -1452,7 +1485,10 @@ export default function GameRoulette() {
           }
         });
         
-        const netWinnings = totalWinnings - (totalBetAmount - totalPayout);
+        // netWinnings should be: totalWinnings - total losses
+        // Since totalWinnings is already net (excludes original bet), we just need to subtract losing bets
+        const totalLosses = losingBets.reduce((sum, bet) => sum + bet.loss, 0);
+        const netWinnings = totalWinnings - totalLosses;
         setWinnings(netWinnings);
         
         console.log("Bet results:", {
@@ -1462,15 +1498,22 @@ export default function GameRoulette() {
           losingBets: losingBets.length,
           totalPayout,
           totalWinnings,
-          netWinnings
+          netWinnings,
+          totalBetAmount
         });
         
-        // Update user balance with winnings
-        if (totalPayout > 0) {
-          const currentBalance = parseFloat(userBalance || '0');
-          const newBalance = (currentBalance + (totalPayout * 100000000)).toString(); // Convert to octas
-          dispatch(setBalance(newBalance));
-        }
+        // Update user balance with net winnings (includes losses)
+        const currentBalance = parseFloat(userBalance || '0');
+        // netWinnings = totalWinnings - total losses, so this gives us the correct final balance
+        const newBalance = (currentBalance + (netWinnings * 100000000)).toString(); // Convert to octas
+        dispatch(setBalance(newBalance));
+        
+        console.log("Balance update:", {
+          currentBalance: currentBalance / 100000000,
+          totalWinnings: totalWinnings,
+          netWinnings: netWinnings,
+          newBalance: newBalance / 100000000
+        });
         
         // Add to betting history
         const newBet = {
@@ -1480,16 +1523,29 @@ export default function GameRoulette() {
           amount: totalBetAmount,
           numbers: [],
           result: winningNumber,
-          win: totalPayout > 0,
-          payout: totalPayout,
-          multiplier: totalPayout > 0 ? (totalPayout / totalBetAmount).toFixed(2) : 0,
+          win: netWinnings > 0,  // Use netWinnings to determine if it's a win
+          payout: netWinnings,   // Use netWinnings (includes losses)
+          multiplier: netWinnings > 0 ? (netWinnings / totalBetAmount).toFixed(2) : 0,
+          totalBets: allBets.length, // Add totalBets field
+          winningBets: winningBets.length, // Add winningBets field
           details: {
             winningBets: winningBets.map(bet => `${bet.name}: ${bet.amount} × ${bet.multiplier}x`),
             losingBets: losingBets.map(bet => `${bet.name}: -${bet.amount}`)
           }
         };
         
+        console.log("newBet object created:", {
+          win: newBet.win,
+          payout: newBet.payout,
+          netWinnings,
+          totalWinnings,
+          totalBetAmount
+        });
+        
         setBettingHistory(prev => [newBet, ...prev].slice(0, 50)); // Keep last 50 bets
+        
+        console.log("New bet added to history:", newBet); // Debug log
+        console.log("Updated bettingHistory:", [newBet, ...bettingHistory].slice(0, 50)); // Debug log
         
         // Show result notification
         if (totalPayout > 0) {
@@ -1908,12 +1964,29 @@ export default function GameRoulette() {
                (value === 2 && winningNumber % 3 === 0);
       case 6: // Split bet - check if winning number matches either of two adjacent numbers
         // For split bets, value represents the lower number
-        return winningNumber === value || winningNumber === value + 1 || winningNumber === value + 3;
+        // Horizontal split: value and value+1 (same row)
+        // Vertical split: value and value+3 (same column, but only if valid)
+        if (winningNumber === value || winningNumber === value + 1) {
+          return true; // Horizontal split
+        }
+        // Vertical split: only valid for numbers that can have a number 3 below them
+        if (value <= 33 && winningNumber === value + 3) {
+          return true; // Vertical split
+        }
+        return false;
       case 7: // Street bet - check if winning number is in the row of 3 numbers
         // value represents the first number of the street (must be 1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34)
         return winningNumber >= value && winningNumber <= value + 2;
       case 8: // Corner bet - check if winning number is one of 4 corner numbers
         // value represents the top-left number
+        // Corner bet is only valid for specific positions where 4 numbers form a square
+        // Check if the value is a valid corner position
+        if (value <= 0 || value > 32) return false;
+        
+        // Valid corner positions: value must be in left column (value % 3 === 1) and not in last row (value <= 32)
+        if (value % 3 !== 1 || value > 32) return false;
+        
+        // Check if winning number matches any of the 4 corner numbers
         return winningNumber === value || winningNumber === value + 1 || 
                winningNumber === value + 3 || winningNumber === value + 4;
       default: return false;
