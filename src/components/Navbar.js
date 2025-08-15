@@ -60,7 +60,7 @@ export default function Navbar() {
   const [isDepositing, setIsDepositing] = useState(false);
 
   // Wallet connection
-  const { connected: isConnected, account, signAndSubmitTransaction } = useWallet();
+  const { connected: isConnected, account, signAndSubmitTransaction, wallet } = useWallet();
   const address = account?.address;
   const isWalletReady = isConnected && account && signAndSubmitTransaction;
 
@@ -112,6 +112,19 @@ export default function Navbar() {
       }
     }
   }, [isWalletReady, address]);
+
+  // Check if wallet was previously connected on page load
+  useEffect(() => {
+    const checkWalletConnection = async () => {
+      // Check if Aptos wallet extension is available
+      if (window.aptos && window.aptos.account) {
+        console.log('Wallet already connected on page load');
+        // The wallet adapter should automatically reconnect
+      }
+    };
+    
+    checkWalletConnection();
+  }, []);
 
   useEffect(() => {
     setIsClient(true);

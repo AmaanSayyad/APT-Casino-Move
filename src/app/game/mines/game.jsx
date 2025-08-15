@@ -8,8 +8,6 @@ import Confetti from 'react-confetti';
 import useWindowSize from 'react-use/lib/useWindowSize';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useWallet } from '@aptos-labs/wallet-adapter-react';
-import { aptosClient, CASINO_MODULE_ADDRESS, parseAptAmount, CasinoGames } from '@/lib/aptos';
 import { useDispatch, useSelector } from 'react-redux';
 import { setBalance } from '@/store/balanceSlice';
 
@@ -38,12 +36,9 @@ const SOUNDS = {
 };
 
 const Game = ({ betSettings = {} }) => {
-  // Aptos wallet integration
-  const { account, connected, signAndSubmitTransaction } = useWallet();
+  // Redux integration
   const dispatch = useDispatch();
   const { userBalance } = useSelector((state) => state.balance);
-  const address = account?.address;
-  const isWalletReady = connected && account && signAndSubmitTransaction;
 
   // Game Settings
   const defaultSettings = {
@@ -286,78 +281,72 @@ const Game = ({ betSettings = {} }) => {
       setBetAmount(settings.betAmount);
       setIsAutoBetting(settings.isAutoBetting);
       
-      // Place bet on blockchain and start game
+      // Place bet using Redux balance
       const startGameWithBet = async () => {
-        if (!isWalletReady) {
+        // Check if wallet is connected first
+        if (!window.aptos || !window.aptos.account) {
           toast.error('Please connect your Aptos wallet first');
+          return;
+        }
+        
+        // Check Redux balance
+        const currentBalance = parseFloat(userBalance || '0') / 100000000; // Convert from octas to APT
+        
+        if (currentBalance < settings.betAmount) {
+          toast.error(`Insufficient balance. You have ${currentBalance.toFixed(8)} APT but need ${settings.betAmount} APT`);
           return;
         }
 
         try {
-          // Convert bet amount to octas (Aptos uses 8 decimal places)
-          const betAmountOctas = parseAptAmount(settings.betAmount.toString());
+          // Deduct bet amount from Redux balance
+          const betAmountInOctas = settings.betAmount * 100000000; // Convert to octas
+          const newBalance = (parseFloat(userBalance || '0') - betAmountInOctas).toString();
+          dispatch(setBalance(newBalance));
           
-          // Call the mines contract to place bet
-          // For now, we'll use a random pick (0-24) since the contract expects a tile pick
-          const randomPick = Math.floor(Math.random() * 25);
-          const payload = CasinoGames.mines.userPlay(
-            betAmountOctas.toString(),
-            randomPick.toString()
-          );
-
-          // Sign and submit transaction
-          const response = await signAndSubmitTransaction(payload);
+          console.log('=== STARTING MINES BET WITH REDUX BALANCE ===');
+          console.log('Bet amount (APT):', settings.betAmount);
+          console.log('Current balance (APT):', currentBalance);
+          console.log('Mines count:', settings.mines);
+          console.log('Balance deducted. New balance:', (parseFloat(newBalance) / 100000000).toFixed(8), 'APT');
           
-          if (response?.hash) {
-            // Start the game immediately after transaction submission (don't wait for confirmation)
-            setIsPlaying(true);
-            setHasPlacedBet(true);
-            playSound('bet');
-            
-            toast.success(`Bet submitted! Transaction: ${response.hash.slice(0, 8)}...`);
-            toast.info(`Game starting... (Transaction processing in background)`);
-            
-            // Special message if AI-assisted auto betting
-            if (settings.isAutoBetting && settings.aiAssist) {
-              toast.info(`AI-assisted auto betting activated`);
-              toast.info(`Using advanced pattern recognition algorithms`);
-            } else if (settings.isAutoBetting) {
-              toast.info(`Auto betting mode: Will reveal ${settings.tilesToReveal || 5} tiles`);
-            } else {
-              toast.info(`Bet placed: ${settings.betAmount} APT, ${settings.mines} mines`);
-            }
-            
-            // If auto-betting is enabled, automatically reveal tiles with minimal delay
-            if (settings.isAutoBetting) {
-              const tilesToReveal = settings.tilesToReveal || 5;
-              
-              setTimeout(() => {
-                autoRevealTiles(tilesToReveal);
-              }, 100); // Reduced to 100ms for faster response
-            }
-            
-            // Check transaction status in background (non-blocking)
-            aptosClient.waitForTransaction({ transactionHash: response.hash })
-              .then(() => {
-                console.log("Transaction confirmed on blockchain");
-                toast.success(`Transaction confirmed on blockchain!`);
-              })
-              .catch((waitError) => {
-                console.warn("Could not confirm transaction, but game continues:", waitError.message);
-                // Game continues even if confirmation fails
-              });
+          // Start the game immediately
+          setIsPlaying(true);
+          setHasPlacedBet(true);
+          playSound('bet');
+          
+          toast.success(`Bet placed! ${settings.betAmount} APT deducted from balance`);
+          toast.info(`Game starting...`);
+          
+          // Special message if AI-assisted auto betting
+          if (settings.isAutoBetting && settings.aiAssist) {
+            toast.info(`AI-assisted auto betting activated`);
+            toast.info(`Using advanced pattern recognition algorithms`);
+          } else if (settings.isAutoBetting) {
+            toast.info(`Auto betting mode: Will reveal ${settings.tilesToReveal || 5} tiles`);
           } else {
-            toast.error('Failed to place bet on blockchain');
+            toast.info(`Bet placed: ${settings.betAmount} APT, ${settings.mines} mines`);
+          }
+          
+          // If auto-betting is enabled, automatically reveal tiles with minimal delay
+          if (settings.isAutoBetting) {
+            const tilesToReveal = settings.tilesToReveal || 5;
+            
+            setTimeout(() => {
+              autoRevealTiles(tilesToReveal);
+            }, 100); // Reduced to 100ms for faster response
           }
         } catch (error) {
           console.error('Error placing bet:', error);
           toast.error(`Bet placement failed: ${error.message}`);
+          
+          // Refund the deducted balance on error
+          dispatch(setBalance(userBalance));
         }
       };
       
       startGameWithBet();
     }
-  }, [settings, isWalletReady]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [settings, userBalance, dispatch]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle cell hover (for desktop)
   const handleCellHover = (row, col, isHovering) => {

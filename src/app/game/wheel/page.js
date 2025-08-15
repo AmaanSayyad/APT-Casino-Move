@@ -78,7 +78,13 @@ export default function Home() {
   const manulBet = async () => {
     if (betAmount <= 0 || isSpinning) return;
 
-    // Check Redux balance instead of wallet
+    // Check if wallet is connected first
+    if (!window.aptos || !window.aptos.account) {
+      alert('Please connect your Aptos wallet first');
+      return;
+    }
+
+    // Check Redux balance
     const currentBalance = parseFloat(userBalance || '0') / 100000000; // Convert from octas to APT
     
     if (currentBalance < betAmount) {
@@ -225,6 +231,12 @@ export default function Home() {
     risk,
     noOfSegments,
   }) => {
+    // Check if wallet is connected first
+    if (!window.aptos || !window.aptos.account) {
+      alert('Please connect your Aptos wallet first');
+      return;
+    }
+    
     if (isSpinning) return; // Prevent overlapping spins
 
     let currentBet = initialBetAmount;

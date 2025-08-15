@@ -25,7 +25,7 @@ export default function Providers({ children }) {
   return (
     <Provider store={store}>
       <AptosWalletAdapterProvider
-        autoConnect={false}
+        autoConnect={true}
         onError={(error) => {
           console.error("Aptos wallet error:", error ? (error.message || error) : "Unknown error");
         }}
