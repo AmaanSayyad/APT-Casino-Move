@@ -69,6 +69,7 @@ const GameWheel = ({
   setWheelPosition,
   risk = "medium",
   hasSpun = false,
+  onColorDetected,
 }) => {
   const [detectedSegment, setDetectedSegment] = useState(null);
   const canvasRef = useRef(null);
@@ -214,7 +215,8 @@ const GameWheel = ({
   }, [risk, noOfSegments]);
 
 
-  useEffect(() => {
+  // Canvas drawing function
+  const drawWheel = (position = wheelPosition) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -239,7 +241,7 @@ const GameWheel = ({
     
     // Move to center and rotate the entire wheel
     ctx.translate(centerX, centerY);
-    ctx.rotate(-wheelPosition); // Negative for clockwise rotation
+    ctx.rotate(-position); // Negative for clockwise rotation
     ctx.translate(-centerX, -centerY);
     
     // Draw segments - now each segment corresponds to wheelData[i]
@@ -270,12 +272,19 @@ const GameWheel = ({
 
     // Restore the context to draw the pointer without rotation
     ctx.restore();
-    
-  }, [wheelData, segments, wheelPosition]);
+  };
+
+  // Initial canvas draw
+  useEffect(() => {
+    drawWheel();
+  }, [wheelData, segments]); // Only redraw when wheel data changes
 
   // Render wheel rotation animation
   useEffect(() => {
     if (!isSpinning || !canvasRef.current) return;
+    
+    // Prevent multiple animations from starting
+    let animationStarted = false;
 
     const selectedIndex = selectSegmentIndexByProbability(wheelData);
     const segmentAngle = (Math.PI * 2) / segments;
@@ -284,7 +293,10 @@ const GameWheel = ({
     // Calculate target rotation to land on the selected segment
     // The pointer is at the top (12 o'clock), so we need to account for that
     const targetSegmentCenter = selectedIndex * segmentAngle + segmentAngle / 2;
-    const startRotation = wheelPosition % (Math.PI * 2);
+    
+    // Capture the current wheel position at the start of animation to avoid dependency issues
+    const currentPosition = wheelPosition;
+    const startRotation = currentPosition % (Math.PI * 2);
     
     // We want the selected segment to be at the top (under the pointer)
     // So we rotate until that segment's center is at 0 radians (top)
@@ -296,29 +308,45 @@ const GameWheel = ({
     const duration = 3000;
 
     const animate = (timestamp) => {
+      if (!animationStarted) return; // Safety check
+      
       if (!startTime) startTime = timestamp;
       const elapsed = timestamp - startTime;
       const progress = Math.min(elapsed / duration, 1);
       const easeOut = 1 - Math.pow(1 - progress, 3); // cubic easing out
 
       const newPosition = startRotation + finalRotation * easeOut;
-      setWheelPosition(newPosition);
+      
+      // Only draw canvas during animation, don't update state
+      drawWheel(newPosition);
 
       if (progress < 1) {
         rafId = requestAnimationFrame(animate);
       } else {
+        // Animation complete - NOW update state
+        animationStarted = false; // Mark animation as finished
+        setWheelPosition(newPosition); // Update state only at the end
+        
         // When animation completes, set the multiplier to the selected segment
         const landedMultiplier = wheelData[selectedIndex].multiplier;
         handleSelectMultiplier(landedMultiplier);
+        
+        // Also call the bet callback if it exists
+        if (window.wheelBetCallback) {
+          window.wheelBetCallback(landedMultiplier);
+        }
       }
     };
 
+    // Start animation only once
+    animationStarted = true;
     rafId = requestAnimationFrame(animate);
 
     return () => {
+      animationStarted = false;
       if (rafId) cancelAnimationFrame(rafId);
     };
-  }, [handleSelectMultiplier, isSpinning, segments, setWheelPosition, wheelData, wheelPosition]);
+  }, [handleSelectMultiplier, isSpinning, segments, wheelData]); // Removed wheelPosition to prevent infinite loop
 
   // Helper function to get the current segment under the pointer
   const getCurrentSegmentUnderPointer = () => {
@@ -382,7 +410,13 @@ const GameWheel = ({
           wheelPosition={wheelPosition}
           wheelData={wheelData}
           segments={segments}
-          onColorDetected={handleColorDetected}
+          onColorDetected={(segmentData) => {
+            handleColorDetected(segmentData);
+            // Also call parent callback if provided
+            if (onColorDetected) {
+              onColorDetected(segmentData);
+            }
+          }}
         />
       </div>
       

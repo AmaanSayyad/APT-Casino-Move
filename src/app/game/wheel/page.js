@@ -108,108 +108,76 @@ export default function Home() {
       
       console.log('Balance deducted. New balance:', (parseFloat(newBalance) / 100000000).toFixed(8), 'APT');
       
-      // Simulate game result (in real implementation, this would come from blockchain events)
-      setTimeout(() => {
-        // Random result for demo
-        const result = Math.floor(Math.random() * noOfSegments);
+      // Set up callback to handle wheel animation completion
+      window.wheelBetCallback = (landedMultiplier) => {
+        console.log('🎯 Wheel animation completed with multiplier:', landedMultiplier);
         
-        // Get the wheel data based on risk level to determine proper multipliers
-        let wheelSegmentData;
-        if (risk === "high") {
-          const highRiskData = wheelDataByRisk.high(noOfSegments);
-          const zeroSegments = Math.round((1 - getHighRiskProbability(noOfSegments)) * noOfSegments);
-          wheelSegmentData = result < zeroSegments ? 
-            { multiplier: 0.0, color: "#333947" } : 
-            { multiplier: getHighRiskMultiplier(noOfSegments), color: "#D72E60" };
-        } else if (risk === "medium") {
-          // For medium risk, alternate between zero and non-zero multipliers
-          if (result % 2 === 0) {
-            wheelSegmentData = { multiplier: 0.0, color: "#333947" };
-          } else {
-            // Pick one of the non-zero multipliers based on result
-            const nonZeroOptions = [
-              { multiplier: 1.5, color: "#00E403" },
-              { multiplier: 1.7, color: "#D9D9D9" },
-              { multiplier: 2.0, color: "#FDE905" },
-              { multiplier: 3.0, color: "#7F46FD" },
-              { multiplier: 4.0, color: "#FCA32F" }
-            ];
-            const nonZeroIndex = Math.floor(result / 2) % nonZeroOptions.length;
-            wheelSegmentData = nonZeroOptions[nonZeroIndex];
-          }
-        } else {
-          // Low risk
-          if (result % 2 === 0) {
-            wheelSegmentData = { multiplier: 1.2, color: "#D9D9D9" };
-          } else {
-            wheelSegmentData = result % 4 === 1 ? 
-              { multiplier: 0.0, color: "#333947" } : 
-              { multiplier: 1.5, color: "#00E403" };
-          }
-        }
-        
-        // Use the detected multiplier from ColorDetector if available, otherwise use wheel segment
-        const actualMultiplier = detectedMultiplier !== null ? detectedMultiplier : wheelSegmentData.multiplier;
-        const winAmount = betAmount * actualMultiplier;
-        
-        // Set the current multiplier and position
-        setCurrentMultiplier(actualMultiplier);
-        setWheelPosition(result);
-        
-        // Trigger color detection after a short delay to get the final result
-        setTimeout(() => {
-          if (window.triggerWheelColorDetection) {
-            window.triggerWheelColorDetection();
-          }
-        }, 100);
-        
-        // Add to game history
-        const newHistoryItem = {
-          id: Date.now(),
-          game: 'Wheel',
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          betAmount: betAmount,
-          multiplier: `${actualMultiplier.toFixed(2)}x`,
-          payout: winAmount,
-          result: result,
-          color: wheelSegmentData.color
-        };
-        setGameHistory(prev => [newHistoryItem, ...prev]);
-        
+        // Stop spinning immediately when animation completes
         setIsSpinning(false);
-        setHasSpun(true);
         
-        // Show result
-        if (actualMultiplier > 0) {
-          notification.success(`Congratulations! ${betAmount} APT × ${actualMultiplier.toFixed(2)} = ${winAmount.toFixed(8)} APT won!`);
+        // Wait a moment for color detection to update, then get the REAL result
+        setTimeout(() => {
+          let actualMultiplier = 0;
+          let detectedColor = "#333947";
           
-          // Debug: Check current values
-          console.log('=== BALANCE UPDATE DEBUG ===');
-          console.log('userBalance from Redux:', userBalance);
-          console.log('userBalance type:', typeof userBalance);
-          console.log('winAmount:', winAmount);
-          console.log('winAmount type:', typeof winAmount);
-          console.log('actualMultiplier:', actualMultiplier);
+          // Get the final result from color detection
+          if (window.triggerWheelColorDetection) {
+            const detectionResult = window.triggerWheelColorDetection();
+            if (detectionResult && detectionResult.multiplier !== null) {
+              actualMultiplier = detectionResult.multiplier;
+              detectedColor = detectionResult.color || "#333947";
+              console.log('🎯 Using DETECTED multiplier:', actualMultiplier, 'Color:', detectedColor);
+            } else {
+              console.log('⚠️ Color detection failed, using landed multiplier:', landedMultiplier);
+              actualMultiplier = landedMultiplier;
+            }
+          } else {
+            console.log('⚠️ Color detection not available, using landed multiplier:', landedMultiplier);
+            actualMultiplier = landedMultiplier;
+          }
           
-          // Update local balance immediately with winnings
-          const currentBalance = parseFloat(userBalance || "0") / 100000000; // Convert from octas to APT
-          const newBalance = currentBalance + winAmount;
-          const newBalanceOctas = Math.floor(newBalance * 100000000); // Convert back to octas
+          const winAmount = betAmount * actualMultiplier;
           
-          console.log('Calculated values:', {
-            currentBalance,
-            newBalance,
-            newBalanceOctas
-          });
+          // Add to game history
+          const newHistoryItem = {
+            id: Date.now(),
+            game: 'Wheel',
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            betAmount: betAmount,
+            multiplier: `${actualMultiplier.toFixed(2)}x`,
+            payout: winAmount,
+            result: 0,
+            color: detectedColor
+          };
+          setGameHistory(prev => [newHistoryItem, ...prev]);
           
-          console.log('Dispatching setBalance with:', newBalanceOctas.toString());
-          dispatch(setBalance(newBalanceOctas.toString()));
+          setIsSpinning(false);
+          setHasSpun(true);
           
-          console.log('Local balance updated successfully!');
-        } else {
-          notification.info(`Game over. Result: ${result}, Multiplier: ${actualMultiplier.toFixed(2)}x`);
-        }
-      }, 1500);
+          // Show result and update balance
+          if (actualMultiplier > 0) {
+            notification.success(`Congratulations! ${betAmount} APT × ${actualMultiplier.toFixed(2)} = ${winAmount.toFixed(8)} APT won!`);
+            
+            // Update balance with winnings
+            const currentBalanceOctas = parseFloat(userBalance || '0');
+            const winAmountOctas = Math.floor(winAmount * 100000000);
+            const newBalanceWithWin = currentBalanceOctas + winAmountOctas;
+            
+            console.log('💰 Adding winnings:', {
+              currentBalance: (currentBalanceOctas / 100000000).toFixed(8),
+              winAmount: winAmount.toFixed(8),
+              newBalance: (newBalanceWithWin / 100000000).toFixed(8)
+            });
+            
+            dispatch(setBalance(newBalanceWithWin.toString()));
+          } else {
+            notification.info(`Game over. Multiplier: ${actualMultiplier.toFixed(2)}x`);
+          }
+          
+          // Clean up callback
+          window.wheelBetCallback = null;
+        }, 300); // Wait for color detection to update
+      };
       
     } catch (e) {
       console.error('Bet failed:', e);
@@ -297,22 +265,31 @@ export default function Home() {
         }
       }
       
-      // Use the detected multiplier from ColorDetector if available, otherwise use wheel segment
-      const actualMultiplier = detectedMultiplier !== null ? detectedMultiplier : wheelSegmentData.multiplier;
+      // Set wheel position first
+      setWheelPosition(resultPosition);
 
       // Simulate spin delay
       await new Promise((r) => setTimeout(r, 3000)); // spin animation time
 
-      setCurrentMultiplier(actualMultiplier);
-      setWheelPosition(resultPosition);
-
-      // Trigger color detection after a short delay to get the final result
-      setTimeout(() => {
-        if (window.triggerWheelColorDetection) {
-          window.triggerWheelColorDetection();
+      // Now get the REAL multiplier from color detection
+      let actualMultiplier = 0;
+      
+      // Trigger color detection and get the REAL result
+      if (window.triggerWheelColorDetection) {
+        const detectionResult = window.triggerWheelColorDetection();
+        if (detectionResult && detectionResult.multiplier !== null) {
+          actualMultiplier = detectionResult.multiplier;
+          console.log('🎯 AutoBet - Using DETECTED multiplier:', actualMultiplier);
+        } else {
+          console.log('⚠️ AutoBet - Color detection failed!');
+          actualMultiplier = 0;
         }
-      }, 100);
+      } else {
+        console.log('⚠️ AutoBet - Color detection not available!');
+        actualMultiplier = 0;
+      }
 
+      setCurrentMultiplier(actualMultiplier);
       setIsSpinning(false);
       setHasSpun(true);
 
@@ -550,7 +527,7 @@ export default function Home() {
               onColorDetected={({ color, multiplier }) => {
                 setDetectedColor(color);
                 setDetectedMultiplier(multiplier);
-                console.log('Color detected:', color, 'Multiplier:', multiplier);
+                console.log('🎯 Color detected from GameWheel:', color, 'Multiplier:', multiplier);
               }}
             />
           </div>

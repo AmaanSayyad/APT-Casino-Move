@@ -34,14 +34,36 @@ const ColorDetector = ({ wheelPosition, wheelData, segments, onColorDetected }) 
 
   // Only call onColorDetected when explicitly requested (not on every position change)
   const triggerColorDetection = () => {
-    if (onColorDetected && currentColor && currentMultiplier !== null) {
-      const currentSegment = getCurrentSegmentUnderPointer();
-      onColorDetected({
-        color: currentColor,
-        multiplier: currentMultiplier,
-        probability: currentSegment?.probability || 0
-      });
+    // Always get fresh segment data
+    const currentSegment = getCurrentSegmentUnderPointer();
+    
+    if (currentSegment && currentSegment.color && currentSegment.multiplier !== null) {
+      const detectionResult = {
+        color: currentSegment.color,
+        multiplier: currentSegment.multiplier,
+        probability: currentSegment.probability || 0
+      };
+      
+      // Update local state
+      setCurrentColor(currentSegment.color);
+      setCurrentMultiplier(currentSegment.multiplier);
+      
+      // Call parent callback
+      if (onColorDetected) {
+        onColorDetected(detectionResult);
+      }
+      
+      // Call global callback if exists
+      if (window.onWheelColorDetected) {
+        window.onWheelColorDetected(currentSegment.color, currentSegment.multiplier);
+      }
+      
+      console.log('🎯 Color detection result:', detectionResult);
+      return detectionResult;
     }
+    
+    console.log('⚠️ Color detection failed - no valid segment data');
+    return null;
   };
 
   // Expose triggerColorDetection function to parent
@@ -49,7 +71,7 @@ const ColorDetector = ({ wheelPosition, wheelData, segments, onColorDetected }) 
     if (window) {
       window.triggerWheelColorDetection = triggerColorDetection;
     }
-  }, [currentColor, currentMultiplier]);
+  }, [currentColor, currentMultiplier, onColorDetected]);
 
   // Render a detailed preview of the detected color and multiplier
   return (
