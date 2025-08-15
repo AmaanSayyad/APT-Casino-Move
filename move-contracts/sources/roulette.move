@@ -6,7 +6,7 @@ module apt_casino::roulette {
     use aptos_framework::aptos_coin::AptosCoin;
     use aptos_framework::coin;
     use aptos_framework::randomness; // On-chain randomness (Aptos Roll)
-    use apt_casino::user_balance;
+
 
     /// Admin/House state
     struct House has key {
@@ -77,15 +77,15 @@ module apt_casino::roulette {
     /// instantly using on-chain randomness. The player's internal escrow is debited/credited.
     ///
     /// bet_kind:
-    ///   0 = single number (0-36), payout 35x
-    ///   1 = color (0=Red,1=Black) using parity rule (even=Black, odd=Red) for demo, payout 2x
-    ///   2 = odd/even (0=Even,1=Odd), payout 2x
-    ///   3 = high/low (0=Low 1-18, 1=High 19-36), payout 2x
-    ///   4 = dozen (0=1st, 1=2nd, 2=3rd), payout 3x
-    ///   5 = column (0=1st, 1=2nd, 2=3rd), payout 3x
-    ///   6 = split bet (adjacent numbers), payout 18x
-    ///   7 = street bet (3 numbers in row), payout 12x
-    ///   8 = corner bet (4 numbers), payout 9x
+    ///   0 = single number (0-36), payout 35:1 (36x total)
+    ///   1 = color (0=Red,1=Black) using parity rule (even=Black, odd=Red) for demo, payout 1:1 (2x total)
+    ///   2 = odd/even (0=Even,1=Odd), payout 1:1 (2x total)
+    ///   3 = high/low (0=Low 1-18, 1=High 19-36), payout 1:1 (2x total)
+    ///   4 = dozen (0=1st, 1=2nd, 2=3rd), payout 2:1 (3x total)
+    ///   5 = column (0=1st, 1=2nd, 2=3rd), payout 2:1 (3x total)
+    ///   6 = split bet (adjacent numbers), payout 17:1 (18x total)
+    ///   7 = street bet (3 numbers in row), payout 11:1 (12x total)
+    ///   8 = corner bet (4 numbers), payout 8:1 (9x total)
     #[randomness]
     entry fun house_place_bet(admin: &signer, player: address, amount: u64, bet_kind: u8, bet_value: u8) acquires House, Balance {
         assert!(signer::address_of(admin) == get_admin_addr(), error::permission_denied(E_NOT_ADMIN));
@@ -123,8 +123,8 @@ module apt_casino::roulette {
     /// Payout calculation
     fun settle(amount: u64, bet_kind: u8, bet_value: u8, roll: u8): (bool, u64) {
         if (bet_kind == 0) {
-            // Single number
-            if (bet_value <= 36 && roll == bet_value) (true, amount * 35) else (false, 0)
+            // Single number - 35:1 payout (36x total)
+            if (bet_value <= 36 && roll == bet_value) (true, amount * 36) else (false, 0)
         } else if (bet_kind == 1) {
             // Color by parity: even=Black(1), odd=Red(0). This is a demo mapping.
             let is_red = (roll % 2) == 1; // odd
@@ -179,7 +179,7 @@ module apt_casino::roulette {
                     (true, amount * 12)
                 } else { (false, 0) }
             } else { (false, 0) }
-        } else if (bet_kind == 8) { // Corner bet (4 numbers)
+        } else if (bet_kind == 8) { // Corner bet (4 numbers) - 8:1 payout (9x total)
             // bet_value represents the top-left number of the corner
             if (bet_value > 0 && bet_value <= 32) {
                 if (roll == bet_value || roll == bet_value + 1 || 
@@ -217,8 +217,7 @@ module apt_casino::roulette {
         if (win && payout > 0) {
             bal.amount = bal.amount + payout;
             
-            // Also add winnings to main user_balance system
-            user_balance::add_winnings_with_signer(user, payout);
+
         };
         
         event::emit<BetResult>(BetResult { player: user_addr, win, roll, payout });
@@ -273,7 +272,7 @@ module apt_casino::roulette {
         // --- 4. Handle Payouts ---
         if (overall_win && total_payout > 0) {
             bal.amount = bal.amount + total_payout;
-            user_balance::add_winnings_with_signer(user, total_payout);
+
         };
 
         event::emit<BetResult>(BetResult { player: user_addr, win: overall_win, roll, payout: total_payout });

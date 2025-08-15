@@ -66,30 +66,31 @@ const enhancedTooltip = {
 };
 
 const BetType = {
-  NUMBER: 0,    // Single number (35:1)
-  COLOR: 1,     // Red/Black (1:1)
-  ODDEVEN: 2,   // Odd/Even (1:1)
-  HIGHLOW: 3,   // 1-18/19-36 (1:1)
-  DOZEN: 4,     // 1-12, 13-24, 25-36 (2:1)
-  COLUMN: 5,    // First, Second, Third column (2:1)
-  SPLIT: 6,     // Two adjacent numbers (17:1)
-  STREET: 7,    // Three numbers horizontal (11:1)
-  CORNER: 8,    // Four numbers (8:1)
-  LINE: 9       // Six numbers (5:1)
+  NUMBER: 0,    // Single number (35:1) - bahsinizi 36'ya katlar
+  COLOR: 1,     // Red/Black (1:1) - bahsinizi 2'ye katlar
+  ODDEVEN: 2,   // Odd/Even (1:1) - bahsinizi 2'ye katlar
+  HIGHLOW: 3,   // 1-18/19-36 (1:1) - bahsinizi 2'ye katlar
+  DOZEN: 4,     // 1-12, 13-24, 25-36 (2:1) - bahsinizi 3'e katlar
+  COLUMN: 5,    // First, Second, Third column (2:1) - bahsinizi 3'e katlar
+  SPLIT: 6,     // Two adjacent numbers (17:1) - bahsinizi 18'e katlar
+  STREET: 7,    // Three numbers horizontal (11:1) - bahsinizi 12'ye katlar
+  CORNER: 8,    // Four numbers (8:1) - bahsinizi 9'a katlar
+  LINE: 9       // Six numbers (5:1) - bahsinizi 6'ya katlar
 };
 
-// Bet payout multipliers
+// Bet payout multipliers - Doğru payout mantığı ile
+// Payout = bahsinizi kaç katına çıkarır (1:1 = 2x, 2:1 = 3x, 35:1 = 36x)
 const BetPayouts = {
-  [BetType.NUMBER]: 35,    // 35:1
-  [BetType.COLOR]: 1,      // 1:1
-  [BetType.ODDEVEN]: 1,    // 1:1
-  [BetType.HIGHLOW]: 1,    // 1:1
-  [BetType.DOZEN]: 2,      // 2:1
-  [BetType.COLUMN]: 2,     // 2:1
-  [BetType.SPLIT]: 17,     // 17:1
-  [BetType.STREET]: 11,    // 11:1
-  [BetType.CORNER]: 8,     // 8:1
-  [BetType.LINE]: 5        // 5:1
+  [BetType.NUMBER]: 36,    // 35:1 - bahsinizi 36'ya katlar
+  [BetType.COLOR]: 2,      // 1:1 - bahsinizi 2'ye katlar
+  [BetType.ODDEVEN]: 2,    // 1:1 - bahsinizi 2'ye katlar
+  [BetType.HIGHLOW]: 2,    // 1:1 - bahsinizi 2'ye katlar
+  [BetType.DOZEN]: 3,      // 2:1 - bahsinizi 3'e katlar
+  [BetType.COLUMN]: 3,     // 2:1 - bahsinizi 3'e katlar
+  [BetType.SPLIT]: 18,     // 17:1 - bahsinizi 18'e katlar
+  [BetType.STREET]: 12,    // 11:1 - bahsinizi 12'ye katlar
+  [BetType.CORNER]: 9,     // 8:1 - bahsinizi 9'a katlar
+  [BetType.LINE]: 6        // 5:1 - bahsinizi 6'ya katlar
 };
 
 
@@ -1376,26 +1377,28 @@ export default function GameRoulette() {
       // Add inside bets
       inside.forEach((amount, index) => {
         if (amount > 0) {
+          // inside array structure: 37 numbers × 4 bet types = 148 positions
+          // But we have 145, so let's calculate correctly
           const betPosition = (index % 4) + 1; // 1=straight, 2=split-left, 3=split-bottom, 4=corner
           const numberBase = Math.floor(index / 4);
           
           if (betPosition === 1) {
-            // Straight up bet
+            // Straight up bet - numberBase is the actual number (0-36)
             allBets.push({ type: BetType.NUMBER, value: numberBase, amount, name: `Number ${numberBase}` });
           } else if (betPosition === 2) {
-            // Split bet (left/right)
-            allBets.push({ type: BetType.SPLIT, value: numberBase - 1, amount, name: `Split ${numberBase-1}/${numberBase}` });
+            // Split bet (left/right) - numberBase is the left number
+            allBets.push({ type: BetType.SPLIT, value: numberBase, amount, name: `Split ${numberBase}/${numberBase+1}` });
           } else if (betPosition === 3) {
             // Split bet (top/bottom) or Street bet
             if (numberBase % 3 === 1) {
-              // Street bet (3 numbers in a row)
+              // Street bet (3 numbers in a row) - numberBase is the first number
               allBets.push({ type: BetType.STREET, value: numberBase, amount, name: `Street ${numberBase}-${numberBase+2}` });
             } else {
-              // Vertical split bet
+              // Vertical split bet - numberBase is the top number
               allBets.push({ type: BetType.SPLIT, value: numberBase, amount, name: `Split ${numberBase}/${numberBase+3}` });
             }
           } else if (betPosition === 4) {
-            // Corner bet (4 numbers)
+            // Corner bet (4 numbers) - numberBase is the top-left number
             allBets.push({ type: BetType.CORNER, value: numberBase, amount, name: `Corner ${numberBase},${numberBase+1},${numberBase+3},${numberBase+4}` });
           }
         }
@@ -1858,17 +1861,18 @@ export default function GameRoulette() {
   // Removed placeAptBet function - now using lockBet with Redux balance
 
   // Helper function to get payout ratio based on bet kind
+  // Payout ratio = bahsinizi kaç katına çıkarır (1:1 = 2x, 2:1 = 3x, 35:1 = 36x)
   const getPayoutRatio = (kind) => {
     switch (kind) {
-      case 0: return 35; // Single Number (35:1)
-      case 1: return 1;  // Color (1:1)
-      case 2: return 1;  // Odd/Even (1:1)
-      case 3: return 1;  // High/Low (1:1)
-      case 4: return 2;  // Dozen (2:1)
-      case 5: return 2;  // Column (2:1)
-      case 6: return 17; // Split Bet (17:1)
-      case 7: return 11; // Street Bet (11:1)
-      case 8: return 8;  // Corner Bet (8:1)
+      case 0: return 36; // Single Number (35:1) 
+      case 1: return 2;  // Color (1:1) 
+      case 2: return 2;  // Odd/Even (1:1) 
+      case 3: return 2;  // High/Low (1:1)
+      case 4: return 3;  // Dozen (2:1) 
+      case 5: return 3;  // Column (2:1)
+      case 6: return 18; // Split Bet (17:1)
+      case 7: return 12; // Street Bet (11:1) 
+      case 8: return 9;  // Corner Bet (8:1) 
       default: return 0;
     }
   };

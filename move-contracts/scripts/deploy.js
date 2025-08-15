@@ -12,7 +12,7 @@ async function main() {
   const config = new AptosConfig({ network: NetworkToNetworkName.TESTNET });
   const aptos = new Aptos(config);
 
-  const deployer = Account.fromPrivateKey({ privateKeyHex });
+  const deployer = Account.fromPrivateKey({ privateKeyHex: privateKeyHex });
 
   const packageDir = path.resolve(process.cwd());
 
