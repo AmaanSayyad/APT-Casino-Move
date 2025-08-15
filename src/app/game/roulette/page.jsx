@@ -2045,7 +2045,7 @@ export default function GameRoulette() {
                 width: '100%',
                 height: '100%',
                 background: 'rgba(0,0,0,0.95)',
-                zIndex: 9999,
+                zIndex: 999999,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -2053,6 +2053,10 @@ export default function GameRoulette() {
                 color: 'white',
                 textAlign: 'center',
                 padding: '20px',
+                // Ensure overlay is on top of everything
+                '& *': {
+                  zIndex: 'inherit !important'
+                }
               }}
             >
               <Box sx={{ fontSize: '48px', marginBottom: '20px' }}>📱 ↻</Box>
@@ -2065,6 +2069,12 @@ export default function GameRoulette() {
               <Typography variant="body1" sx={{ opacity: 0.8, maxWidth: '300px' }}>
                 The roulette table is optimized for landscape mode on mobile devices for better visibility
               </Typography>
+              
+              {/* Desktop Site Mode Instructions */}
+              <Typography variant="body1" sx={{ opacity: 0.8, maxWidth: '300px', mt: 2, color: '#FFD700' }}>
+                💻 Please open your browser's desktop site mode for better experience
+              </Typography>
+              
               <Box sx={{ 
                 mt: 3, 
                 p: 2, 
@@ -2084,6 +2094,8 @@ export default function GameRoulette() {
             sx={{
               width: '100%',
               maxWidth: '100vw', // Full viewport width
+              // Hide content when portrait overlay is shown
+              display: isPortrait ? 'none' : 'block',
               ...(isSmallScreen && !isPortrait && {
                 overflowX: 'auto',
                 overflowY: 'hidden',
@@ -2352,7 +2364,7 @@ export default function GameRoulette() {
           <Box
             sx={{
               mt: 2,
-              display: "flex",
+              display: isPortrait ? 'none' : 'flex', // Hide when portrait
               flexDirection: { xs: isSmallScreen && !isPortrait ? 'row' : 'column', md: 'row' },
               alignItems: { xs: 'center', md: 'flex-start' },
               justifyContent: "center",
@@ -2607,7 +2619,8 @@ export default function GameRoulette() {
             mt: 8, 
             px: { xs: 2, md: 8 },
             mx: 'auto',
-            maxWidth: '1600px'
+            maxWidth: '1600px',
+            display: isPortrait ? 'none' : 'block' // Hide when portrait
           }}>
             {/* Section Header */}
             <Typography 
