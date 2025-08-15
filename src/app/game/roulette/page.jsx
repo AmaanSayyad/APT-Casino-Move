@@ -16,10 +16,10 @@ import { muiStyles } from "./styles";
 import Image from "next/image";
 import MuiAlert from "@mui/material/Alert";
 import Snackbar from "@mui/material/Snackbar";
-import GameDetail from "../../../components/GameDetail";
+
 import { gameData, bettingTableData } from "./config/gameDetail";
 import { useToken } from "@/hooks/useToken";
-import BettingHistory from '@/components/BettingHistory';
+
 import useWalletStatus from '@/hooks/useWalletStatus';
 
 import { FaVolumeMute, FaVolumeUp, FaChartLine, FaCoins, FaTrophy, FaDice, FaBalanceScale, FaRandom, FaPercentage, FaPlayCircle } from "react-icons/fa";
@@ -525,7 +525,7 @@ const notificationSteps = {
 };
 
 // Custom animated wheel component for visual feedback
-const RouletteWheel = ({ spinning, result, onSpinComplete, onSpinStart, onWin }) => {
+const RouletteWheel = ({ spinning, result, onSpinComplete, onSpinStart, onWin, isSmallScreen, isPortrait }) => {
   const wheelRef = useRef(null);
   const [spinComplete, setSpinComplete] = useState(false);
   const [rotation, setRotation] = useState(0);
@@ -552,11 +552,13 @@ const RouletteWheel = ({ spinning, result, onSpinComplete, onSpinStart, onWin })
     }
   }, [spinning, result, onSpinComplete, onSpinStart, onWin]);
   
+  const wheelSize = isSmallScreen && !isPortrait ? '120px' : '200px';
+  
   return (
     <Box 
       sx={{ 
-        width: '200px', 
-        height: '200px', 
+        width: wheelSize, 
+        height: wheelSize, 
         borderRadius: '50%',
         position: 'relative',
         overflow: 'hidden',
@@ -915,8 +917,9 @@ export default function GameRoulette() {
   const [showHelp, setShowHelp] = useState(false);
   const [recentResults, setRecentResults] = useState([]);
   const [wheelSpinning, setWheelSpinning] = useState(false);
-  const [showBettingStats, setShowBettingStats] = useState(false);
+
   const [isSmallScreen, setIsSmallScreen] = useState(false);
+  const [isPortrait, setIsPortrait] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [bettingHistory, setBettingHistory] = useState([]);
   const [error, setError] = useState(null);
@@ -1078,16 +1081,23 @@ export default function GameRoulette() {
     console.log('Environment:', process.env.NODE_ENV);
   }, []);
 
-  // Check screen size for responsive layout
+  // Check screen size and orientation for responsive layout
   useEffect(() => {
     const checkScreenSize = () => {
-      setIsSmallScreen(window.innerWidth < 768);
+      // Check if it's a mobile device (touch screen + small width)
+      const isMobile = window.innerWidth < 1024 && 'ontouchstart' in window;
+      setIsSmallScreen(isMobile);
+      setIsPortrait(window.innerHeight > window.innerWidth);
     };
     
     checkScreenSize();
     window.addEventListener('resize', checkScreenSize);
+    window.addEventListener('orientationchange', checkScreenSize);
     
-    return () => window.removeEventListener('resize', checkScreenSize);
+    return () => {
+      window.removeEventListener('resize', checkScreenSize);
+      window.removeEventListener('orientationchange', checkScreenSize);
+    };
   }, []);
   
   // Track recent results
@@ -1948,6 +1958,9 @@ export default function GameRoulette() {
             pt: { xs: 0, md: 1 },
             position: "relative",
             zIndex: 1,
+            width: "100%",
+            maxWidth: "100vw",
+            px: 0, // Remove any padding
           }}
         >
 
@@ -1966,7 +1979,7 @@ export default function GameRoulette() {
               border: '1px solid rgba(255,255,255,0.05)',
               borderRadius: '8px',
               gap: 1,
-              maxWidth: '90%',
+              maxWidth: '98%', // Increased from 90% to 98%
               mx: 'auto'
             }}
           >
@@ -2022,12 +2035,93 @@ export default function GameRoulette() {
             )}
           </Box>
           
+          {/* Mobile Landscape Overlay */}
+          {isPortrait && (
+            <Box
+              sx={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                background: 'rgba(0,0,0,0.95)',
+                zIndex: 9999,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexDirection: 'column',
+                color: 'white',
+                textAlign: 'center',
+                padding: '20px',
+              }}
+            >
+              <Box sx={{ fontSize: '48px', marginBottom: '20px' }}>📱 ↻</Box>
+              <Typography variant="h4" sx={{ marginBottom: '16px', fontWeight: 'bold' }}>
+                For Better Gaming Experience
+              </Typography>
+              <Typography variant="h6" sx={{ marginBottom: '12px' }}>
+                Please rotate your device
+              </Typography>
+              <Typography variant="body1" sx={{ opacity: 0.8, maxWidth: '300px' }}>
+                The roulette table is optimized for landscape mode on mobile devices for better visibility
+              </Typography>
+              <Box sx={{ 
+                mt: 3, 
+                p: 2, 
+                border: '1px solid rgba(255,255,255,0.3)', 
+                borderRadius: '8px',
+                backgroundColor: 'rgba(255,255,255,0.1)'
+              }}>
+                <Typography variant="body2">
+                  💡 Tip: Make sure auto-rotation is enabled on your device
+                </Typography>
+              </Box>
+            </Box>
+          )}
+
           {/* Responsive Grid Layout */}
-          <Grid 
-            container 
-            sx={{ mt: { xs: 1.5, md: 4 }, mx: { xs: 1, sm: 5, md: 10 } }}
-            columns={isSmallScreen ? 7 : 14}
+          <Box
+            sx={{
+              width: '100%',
+              maxWidth: '100vw', // Full viewport width
+              ...(isSmallScreen && !isPortrait && {
+                overflowX: 'auto',
+                overflowY: 'hidden',
+                pb: 2,
+                '&::-webkit-scrollbar': {
+                  height: '8px',
+                },
+                '&::-webkit-scrollbar-track': {
+                  background: 'rgba(255,255,255,0.1)',
+                  borderRadius: '4px',
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  background: 'rgba(255,255,255,0.3)',
+                  borderRadius: '4px',
+                  '&:hover': {
+                    background: 'rgba(255,255,255,0.5)',
+                  },
+                },
+              })
+            }}
           >
+            <Grid 
+              container 
+              sx={{ 
+                mt: { xs: 1.5, md: 4 }, 
+                mx: { xs: 2, sm: 4, md: 6 }, // Increased margins for better spacing
+                px: { xs: 1, sm: 2 }, // Added padding back
+                minWidth: isSmallScreen && !isPortrait ? '700px' : 'auto',
+                width: 'auto', // Auto width instead of 100%
+                ...(isSmallScreen && !isPortrait && {
+                  transform: 'scale(0.85)', 
+                  transformOrigin: 'top center',
+                  width: '120%',
+                  mx: '-10%', 
+                })
+              }}
+              columns={isSmallScreen ? 7 : 14} // Back to 14 columns
+            >
             <Grid md={1}>
               <GridZero inside={inside} placeBet={placeBet} />
             </Grid>
@@ -2251,6 +2345,7 @@ export default function GameRoulette() {
               }}
             />
           </Grid>
+          </Box>
 
 
 
@@ -2258,17 +2353,30 @@ export default function GameRoulette() {
             sx={{
               mt: 2,
               display: "flex",
-              flexDirection: { xs: 'column', md: 'row' },
+              flexDirection: { xs: isSmallScreen && !isPortrait ? 'row' : 'column', md: 'row' },
               alignItems: { xs: 'center', md: 'flex-start' },
               justifyContent: "center",
               mb: 5,
-              gap: 4,
+              gap: isSmallScreen && !isPortrait ? 2 : 4,
+              ...(isSmallScreen && !isPortrait && {
+                flexWrap: 'wrap',
+                px: 2,
+              })
             }}
           >
             <Box
-              sx={{ display: "flex", flexDirection: "column", mb: { xs: 3, md: 0 } }}
+              sx={{ 
+                display: "flex", 
+                flexDirection: "column", 
+                mb: { xs: isSmallScreen && !isPortrait ? 1 : 3, md: 0 },
+                alignItems: isSmallScreen && !isPortrait ? 'center' : 'flex-start'
+              }}
             >
-              <Typography variant="h3" color="text.accent">
+              <Typography 
+                variant={isSmallScreen && !isPortrait ? "h4" : "h3"} 
+                color="text.accent"
+                sx={{ mb: isSmallScreen && !isPortrait ? 1 : 0 }}
+              >
                 Roulette
               </Typography>
               <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
@@ -2308,6 +2416,8 @@ export default function GameRoulette() {
                 onSpinComplete={handleSpinComplete}
                 onSpinStart={() => playSound(spinSoundRef)}
                 onWin={() => playSound(winSoundRef)}
+                isSmallScreen={isSmallScreen}
+                isPortrait={isPortrait}
               />
             </Box>
             
@@ -2315,8 +2425,9 @@ export default function GameRoulette() {
             <Box sx={{ 
               display: "flex", 
               flexDirection: "column",
-              width: { xs: '100%', md: 'auto' },
-              maxWidth: { xs: '400px', md: 'none' }
+              width: { xs: isSmallScreen && !isPortrait ? 'auto' : '100%', md: 'auto' },
+              maxWidth: { xs: isSmallScreen && !isPortrait ? '300px' : '400px', md: 'none' },
+              minWidth: isSmallScreen && !isPortrait ? '250px' : 'auto',
             }}>
               <TextFieldCurrency
                 label="Bet Amount"
@@ -2324,52 +2435,7 @@ export default function GameRoulette() {
                 value={bet}
                 handleChange={handleBetChange}
               />
-              {/* User Balance Display */}
-              {isWalletReady && (
-                <Box sx={{ mt: 2, mb: 1 }}>
-                  <Box
-                    sx={{
-                      background: 'linear-gradient(to right, rgba(34, 197, 94, 0.2), rgba(22, 163, 74, 0.1))',
-                      borderRadius: '8px',
-                      border: '1px solid rgba(34, 197, 94, 0.3)',
-                      px: 1.5,
-                      py: 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between'
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
-                        Balance:
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: 'success.light', fontWeight: 'medium', fontSize: '0.875rem' }}>
-                        {isLoadingBalance ? 'Loading...' : `${(parseFloat(userBalance || "0") / 100000000).toFixed(8)} APT`}
-                      </Typography>
-                    </Box>
-                    <Button
-                      size="small"
-                      onClick={() => {
-                        setShowWithdrawModal(true);
-                      }}
-                      sx={{
-                        ml: 1,
-                        fontSize: '0.75rem',
-                        backgroundColor: 'rgba(34, 197, 94, 0.3)',
-                        color: 'success.light',
-                        '&:hover': {
-                          backgroundColor: 'rgba(34, 197, 94, 0.4)',
-                        },
-                        px: 1,
-                        py: 0.5,
-                        minWidth: 'auto'
-                      }}
-                    >
-                      Withdraw
-                    </Button>
-                  </Box>
-                </Box>
-              )}
+
               <Typography color="white" sx={{ opacity: 0.8 }}>
                 Current Bet Total: {currency(total, { pattern: "#" }).format()} APT
               </Typography>
@@ -2470,25 +2536,11 @@ export default function GameRoulette() {
             </Box>
           </Box>
             
-            {/* Toggle between History and Stats */}
+            {/* Stats Only */}
             <Box sx={{ width: { xs: '100%', md: '300px' }, mt: { xs: 4, md: 0 } }}>
-              <Box sx={{ display: 'flex', mb: 1 }}>
-                <Button 
-                  variant={showBettingStats ? "outlined" : "contained"}
-                  onClick={() => setShowBettingStats(false)}
-                  sx={{ mr: 1, minWidth: 80 }}
-                >
-                  History
-                </Button>
-                <Button 
-                  variant={showBettingStats ? "contained" : "outlined"}
-                  onClick={() => setShowBettingStats(true)}
-                  sx={{ minWidth: 80 }}
-                >
-                  Stats
-                </Button>
-              </Box>
-              
+              <Typography variant="h6" color="white" sx={{ mb: 2, fontWeight: 'bold' }}>
+                Stats
+              </Typography>
               <Box sx={{ 
                 backgroundColor: 'rgba(0,0,0,0.3)', 
                 borderRadius: 2, 
@@ -2496,18 +2548,7 @@ export default function GameRoulette() {
                 minHeight: 300,
                 border: '1px solid rgba(255,255,255,0.1)'
               }}>
-                {!showBettingStats ? (
-                  <Box>
-                    <Typography variant="h6" color="white" sx={{ mb: 2 }}>
-                      Betting History
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      No betting history yet
-                    </Typography>
-                  </Box>
-                ) : (
-                  <BettingStats history={bettingHistory} />
-                )}
+                <BettingStats history={bettingHistory} />
               </Box>
             </Box>
           </Box>
@@ -2669,16 +2710,16 @@ export default function GameRoulette() {
               
               {/* Description on right */}
               <Grid xs={12} md={6}>
-                                 <Box
-                   sx={{
-                     background: 'linear-gradient(135deg, rgba(9, 0, 5, 0.6) 0%, rgba(9, 0, 5, 0.3) 100%)',
-                     backdropFilter: 'blur(10px)',
-                     borderRadius: '16px',
-                     p: { xs: 2.5, md: 3 },
-                     minHeight: '280px',
-                     display: 'flex',
-                     flexDirection: 'column',
-                     justifyContent: 'center',
+                <Box
+                  sx={{
+                    background: 'linear-gradient(135deg, rgba(9, 0, 5, 0.6) 0%, rgba(9, 0, 5, 0.3) 100%)',
+                    backdropFilter: 'blur(10px)',
+                    borderRadius: '16px',
+                    p: { xs: 2.5, md: 3 },
+                    minHeight: '280px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
                     border: '1px solid rgba(104, 29, 219, 0.2)',
                     boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
                     position: 'relative',
@@ -2694,46 +2735,45 @@ export default function GameRoulette() {
                     }
                   }}
                 >
-                                     <Typography 
-                     variant="h6" 
-                     sx={{ 
-                       mb: 2,
-                       fontWeight: 'bold',
-                       background: 'linear-gradient(90deg, #FFFFFF, #FFA500)',
-                       WebkitBackgroundClip: 'text',
-                       WebkitTextFillColor: 'transparent',
-                       display: 'inline-block'
-                     }}
-                   >
-                     European Roulette
-                   </Typography>
+                  <Typography 
+                    variant="h6" 
+                    sx={{ 
+                      mb: 2,
+                      fontWeight: 'bold',
+                      background: 'linear-gradient(90deg, #FFFFFF, #FFA500)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      display: 'inline-block'
+                    }}
+                  >
+                    European Roulette
+                  </Typography>
                   
-                                     {/* Only show first two paragraphs with condensed content */}
-                   <Typography 
-                     variant="body1" 
-                     sx={{ 
-                       mb: 2.5,
-                       lineHeight: 1.8,
-                       fontSize: '1rem',
-                       color: 'rgba(255, 255, 255, 0.92)',
-                       textShadow: '0 1px 2px rgba(0,0,0,0.3)',
-                     }}
-                   >
-                     European Roulette with a single zero and just 2.7% house edge - better odds than traditional casinos. Provably fair and powered by blockchain technology.
-                   </Typography>
-                   
-                   <Typography 
-                     variant="body1" 
-                     sx={{ 
-                       mb: 1,
-                       lineHeight: 1.8,
-                       fontSize: '1rem',
-                       color: 'rgba(255, 255, 255, 0.92)',
-                       textShadow: '0 1px 2px rgba(0,0,0,0.3)',
-                     }}
-                   >
-                     Bet on numbers, colors, or combinations for payouts up to 35:1. Every spin is secure and transparent on the blockchain.
-                   </Typography>
+                  <Typography 
+                    variant="body1" 
+                    sx={{ 
+                      mb: 2.5,
+                      lineHeight: 1.8,
+                      fontSize: '1rem',
+                      color: 'rgba(255, 255, 255, 0.92)',
+                      textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+                    }}
+                  >
+                    European Roulette with a single zero and just 2.7% house edge - better odds than traditional casinos. Provably fair and powered by blockchain technology.
+                  </Typography>
+                  
+                  <Typography 
+                    variant="body1" 
+                    sx={{ 
+                      mb: 1,
+                      lineHeight: 1.8,
+                      fontSize: '1rem',
+                      color: 'rgba(255, 255, 255, 0.92)',
+                      textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+                    }}
+                  >
+                    Bet on numbers, colors, or combinations for payouts up to 35:1. Every spin is secure and transparent on the blockchain.
+                  </Typography>
                 </Box>
               </Grid>
             </Grid>
@@ -2857,7 +2897,7 @@ export default function GameRoulette() {
           </MuiAlert>
         </Snackbar>
 
-        <GameDetail gameData={gameData} bettingTableData={bettingTableData} />
+
       </div>
     </ThemeProvider>
   );

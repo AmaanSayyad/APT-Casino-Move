@@ -8,7 +8,7 @@ import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { aptosClient } from '@/lib/aptos';
 import { toast } from 'react-toastify';
 
-// Kasa cüzdan adresi - gerçek uygulamada bu güvenli bir şekilde saklanmalı
+// Treasury wallet address - in production this should be stored securely
 const TREASURY_WALLET = "0x421055ba162a1f697532e79ea9a6852422d311f0993eb880c75110218d7f52c0";
 
 const WithdrawModal = ({ isOpen, onClose }) => {
@@ -21,9 +21,9 @@ const WithdrawModal = ({ isOpen, onClose }) => {
   const { account, connected, signAndSubmitTransaction } = useWallet();
   const dispatch = useDispatch();
   
-  // Balance'ı APT formatında göster
+  // Display balance in APT format
   const balanceInApt = parseFloat(userBalance || '0') / 100000000;
-  const maxWithdraw = Math.max(0, balanceInApt - 0.01); // 0.01 APT gas fee için ayır
+  const maxWithdraw = Math.max(0, balanceInApt - 0.01); // Reserve 0.01 APT for gas fees
   
   useEffect(() => {
     if (!isOpen) {
@@ -99,7 +99,7 @@ const WithdrawModal = ({ isOpen, onClose }) => {
         throw new Error(result.error || 'Withdrawal failed');
       }
       
-      // Kullanıcının balance'ından düş
+      // Deduct from user's balance
       const amountOctas = Math.floor(amount * 100000000);
       const currentBalanceOctas = parseInt(userBalance || '0');
       const newBalanceOctas = currentBalanceOctas - amountOctas;
@@ -108,7 +108,7 @@ const WithdrawModal = ({ isOpen, onClose }) => {
       setStep('success');
       toast.success(`Successfully withdrew ${amount} APT! TX: ${result.transactionHash.slice(0, 8)}...`);
       
-      // 3 saniye sonra modal'ı kapat
+      // Close modal after 3 seconds
       setTimeout(() => {
         onClose();
       }, 3000);
