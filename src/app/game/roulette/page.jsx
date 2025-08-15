@@ -1334,114 +1334,76 @@ export default function GameRoulette() {
       const newBalance = (parseFloat(userBalance || '0') - betAmountInOctas).toString();
       dispatch(setBalance(newBalance));
 
-      // Convert the bets into the format for game simulation
-      let betType, betValue, betAmount, numbers;
+            // Convert ALL bets into an array for multiple bet processing
+      const allBets = [];
       
-      // Handle different bet types
+      // Add outside bets
       if (red > 0) {
-        betType = BetType.COLOR;
-        betValue = 1; // Red
-        betAmount = red;
-        numbers = [];
-      } else if (black > 0) {
-        betType = BetType.COLOR;
-        betValue = 0; // Black
-        betAmount = black;
-        numbers = [];
-      } else if (odd > 0) {
-        betType = BetType.ODDEVEN;
-        betValue = 1; // Odd
-        betAmount = odd;
-        numbers = [];
-      } else if (even > 0) {
-        betType = BetType.ODDEVEN;
-        betValue = 0; // Even
-        betAmount = even;
-        numbers = [];
-      } else if (over > 0) {
-        betType = BetType.HIGHLOW;
-        betValue = 1; // High (19-36)
-        betAmount = over;
-        numbers = [];
-      } else if (under > 0) {
-        betType = BetType.HIGHLOW;
-        betValue = 0; // Low (1-18)
-        betAmount = under;
-        numbers = [];
-      } else if (dozens.some(d => d > 0)) {
-        betType = BetType.DOZEN;
-        betValue = dozens.findIndex(d => d > 0);
-        betAmount = dozens[betValue];
-        numbers = [];
-      } else if (columns.some(c => c > 0)) {
-        betType = BetType.COLUMN;
-        betValue = columns.findIndex(c => c > 0);
-        betAmount = columns[betValue];
-        numbers = [];
-      } else {
-        // Handle inside bets (straight up, split, street, corner)
-        const straightUpIndex = inside.findIndex(val => val > 0);
-        if (straightUpIndex >= 0) {
-          const betPosition = straightUpIndex % 4; // 1=straight, 2=split-left, 3=split-bottom, 4=corner
-          const numberBase = Math.floor(straightUpIndex / 4);
+        allBets.push({ type: BetType.COLOR, value: 1, amount: red, name: "Red" }); // Red
+      }
+      if (black > 0) {
+        allBets.push({ type: BetType.COLOR, value: 0, amount: black, name: "Black" }); // Black
+      }
+      if (odd > 0) {
+        allBets.push({ type: BetType.ODDEVEN, value: 1, amount: odd, name: "Odd" }); // Odd
+      }
+      if (even > 0) {
+        allBets.push({ type: BetType.ODDEVEN, value: 0, amount: even, name: "Even" }); // Even
+      }
+      if (over > 0) {
+        allBets.push({ type: BetType.HIGHLOW, value: 1, amount: over, name: "High (19-36)" }); // High
+      }
+      if (under > 0) {
+        allBets.push({ type: BetType.HIGHLOW, value: 0, amount: under, name: "Low (1-18)" }); // Low
+      }
+      
+      // Add dozen bets
+      dozens.forEach((amount, index) => {
+        if (amount > 0) {
+          const dozenNames = ["1st Dozen (1-12)", "2nd Dozen (13-24)", "3rd Dozen (25-36)"];
+          allBets.push({ type: BetType.DOZEN, value: index, amount, name: dozenNames[index] });
+        }
+      });
+      
+      // Add column bets
+      columns.forEach((amount, index) => {
+        if (amount > 0) {
+          const columnNames = ["1st Column", "2nd Column", "3rd Column"];
+          allBets.push({ type: BetType.COLUMN, value: index, amount, name: columnNames[index] });
+        }
+      });
+      
+      // Add inside bets
+      inside.forEach((amount, index) => {
+        if (amount > 0) {
+          const betPosition = (index % 4) + 1; // 1=straight, 2=split-left, 3=split-bottom, 4=corner
+          const numberBase = Math.floor(index / 4);
           
           if (betPosition === 1) {
             // Straight up bet
-            betType = BetType.NUMBER;
-            betValue = numberBase; // The specific number
-            betAmount = inside[straightUpIndex];
-            numbers = [];
+            allBets.push({ type: BetType.NUMBER, value: numberBase, amount, name: `Number ${numberBase}` });
           } else if (betPosition === 2) {
             // Split bet (left/right)
-            betType = BetType.SPLIT;
-            betValue = numberBase - 1; // Lower number of the pair
-            betAmount = inside[straightUpIndex];
-            numbers = [];
+            allBets.push({ type: BetType.SPLIT, value: numberBase - 1, amount, name: `Split ${numberBase-1}/${numberBase}` });
           } else if (betPosition === 3) {
             // Split bet (top/bottom) or Street bet
             if (numberBase % 3 === 1) {
               // Street bet (3 numbers in a row)
-              betType = BetType.STREET;
-              betValue = numberBase; // First number of the street
-              betAmount = inside[straightUpIndex];
-              numbers = [];
+              allBets.push({ type: BetType.STREET, value: numberBase, amount, name: `Street ${numberBase}-${numberBase+2}` });
             } else {
               // Vertical split bet
-              betType = BetType.SPLIT;
-              betValue = numberBase; // Lower number of the vertical pair
-              betAmount = inside[straightUpIndex];
-              numbers = [];
+              allBets.push({ type: BetType.SPLIT, value: numberBase, amount, name: `Split ${numberBase}/${numberBase+3}` });
             }
           } else if (betPosition === 4) {
             // Corner bet (4 numbers)
-            betType = BetType.CORNER;
-            betValue = numberBase; // Top-left number of the corner
-            betAmount = inside[straightUpIndex];
-            numbers = [];
-          } else {
-            alert("Invalid inside bet position");
-            setSubmitDisabled(false);
-            setShowNotification(false);
-            // Refund the deducted balance
-            dispatch(setBalance(userBalance));
-            return;
+            allBets.push({ type: BetType.CORNER, value: numberBase, amount, name: `Corner ${numberBase},${numberBase+1},${numberBase+3},${numberBase+4}` });
           }
-        } else {
-          alert("Invalid bet configuration");
-          setSubmitDisabled(false);
-          setShowNotification(false);
-          // Refund the deducted balance
-          dispatch(setBalance(userBalance));
-          return;
         }
-      }
-
-      console.log("Game simulation with:", {
-        betType,
-        betValue,
-        betAmount,
-        numbers
       });
+      
+      console.log("All bets to process:", allBets);
+
+      console.log("Game simulation with multiple bets:", allBets);
 
       // Simulate the game locally (no blockchain interaction)
       // Reset roll result for the new bet
@@ -1456,16 +1418,42 @@ export default function GameRoulette() {
         const winningNumber = Math.floor(Math.random() * 37);
         setRollResult(winningNumber);
         
-        // Calculate winnings based on the bet
-        const isWinner = checkWin(betType, betValue, winningNumber);
-        const payoutRatio = getPayoutRatio(betType);
-        const totalPayout = isWinner ? betAmount * (payoutRatio + 1) : 0; // +1 because payout includes original bet
-        const netWinnings = isWinner ? betAmount * payoutRatio : -betAmount;
+        // Process ALL bets and calculate total winnings
+        let totalWinnings = 0;
+        let totalPayout = 0;
+        let winningBets = [];
+        let losingBets = [];
         
+        allBets.forEach(bet => {
+          const isWinner = checkWin(bet.type, bet.value, winningNumber);
+          const payoutRatio = getPayoutRatio(bet.type);
+          
+          if (isWinner) {
+            const betPayout = bet.amount * (payoutRatio + 1); // +1 because payout includes original bet
+            const betWinnings = bet.amount * payoutRatio;
+            totalPayout += betPayout;
+            totalWinnings += betWinnings;
+            winningBets.push({ ...bet, payout: betPayout, winnings: betWinnings, multiplier: payoutRatio });
+          } else {
+            losingBets.push({ ...bet, loss: bet.amount });
+          }
+        });
+        
+        const netWinnings = totalWinnings - (totalBetAmount - totalPayout);
         setWinnings(netWinnings);
         
+        console.log("Bet results:", {
+          winningNumber,
+          totalBets: allBets.length,
+          winningBets: winningBets.length,
+          losingBets: losingBets.length,
+          totalPayout,
+          totalWinnings,
+          netWinnings
+        });
+        
         // Update user balance with winnings
-        if (isWinner && totalPayout > 0) {
+        if (totalPayout > 0) {
           const currentBalance = parseFloat(userBalance || '0');
           const newBalance = (currentBalance + (totalPayout * 100000000)).toString(); // Convert to octas
           dispatch(setBalance(newBalance));
@@ -1475,22 +1463,30 @@ export default function GameRoulette() {
         const newBet = {
           id: Date.now(),
           timestamp: new Date(),
-          betType: getBetTypeName(betType, betValue),
-          amount: betAmount,
-          numbers: betType === BetType.NUMBER ? [betValue] : [],
+          betType: `Multiple Bets (${allBets.length})`,
+          amount: totalBetAmount,
+          numbers: [],
           result: winningNumber,
-          win: isWinner,
+          win: totalPayout > 0,
           payout: totalPayout,
-          multiplier: payoutRatio
+          multiplier: totalPayout > 0 ? (totalPayout / totalBetAmount).toFixed(2) : 0,
+          details: {
+            winningBets: winningBets.map(bet => `${bet.name}: ${bet.amount} × ${bet.multiplier}x`),
+            losingBets: losingBets.map(bet => `${bet.name}: -${bet.amount}`)
+          }
         };
         
         setBettingHistory(prev => [newBet, ...prev].slice(0, 50)); // Keep last 50 bets
         
         // Show result notification
-        if (isWinner) {
-          setNotificationMessage(`🎉 WINNER! Number ${winningNumber} - You won ${netWinnings.toFixed(4)} APT!`);
+        if (totalPayout > 0) {
+          const winMessage = winningBets.length === 1 
+            ? `🎉 WINNER! ${winningBets[0].name} - You won ${totalWinnings.toFixed(4)} APT!`
+            : `🎉 MULTIPLE WINNERS! ${winningBets.length} bets won - Total: ${totalWinnings.toFixed(4)} APT!`;
+          
+          setNotificationMessage(winMessage);
           setNotificationSeverity("success");
-          setSnackbarMessage(`🎉 WINNER! Number ${winningNumber} - You won ${netWinnings.toFixed(4)} APT!`);
+          setSnackbarMessage(winMessage);
         } else {
           setNotificationMessage(`💸 Number ${winningNumber} - Better luck next time!`);
           setNotificationSeverity("error");
