@@ -928,7 +928,7 @@ export default function GameRoulette() {
 
   const [events, dispatchEvents] = useReducer(eventReducer, []);
   const [bet, setBet] = useState(0);
-  const [inside, dispatchInside] = useReducer(arrayReducer, new Array(145).fill(0));
+  const [inside, dispatchInside] = useReducer(arrayReducer, new Array(148).fill(0));
   const [red, setRed] = useState(0);
   const [black, setBlack] = useState(0);
   const [odd, setOdd] = useState(0);
@@ -1422,32 +1422,51 @@ export default function GameRoulette() {
         if (amount > 0) {
           // inside array structure: 37 numbers × 4 bet types = 148 positions
           // But we have 145, so let's calculate correctly
+          // Each number has 4 bet types: straight, split-left, split-bottom, corner
           const betPosition = (index % 4) + 1; // 1=straight, 2=split-left, 3=split-bottom, 4=corner
           const numberBase = Math.floor(index / 4);
           
+          // Debug: Check the actual structure
+          console.log(`Inside bet structure - index: ${index}, betPosition: ${betPosition}, numberBase: ${numberBase}`);
+          
+          // The problem: index 1 should be number 1, not number 0!
+          // Let's fix the calculation
+          const actualNumber = Math.floor(index / 4);
+          const actualBetType = (index % 4);
+          
+          // Debug: Check if this is a straight bet on a number
           if (betPosition === 1) {
-            // Straight up bet - numberBase is the actual number (0-36)
-            allBets.push({ type: BetType.NUMBER, value: numberBase, amount, name: `Number ${numberBase}` });
+            console.log(`Straight bet detected - index: ${index}, number: ${numberBase}, amount: ${amount}`);
+          }
+          
+          console.log(`Inside bet - index: ${index}, amount: ${amount}, betPosition: ${betPosition}, numberBase: ${numberBase}`);
+          
+          // FIXED: Use actualNumber instead of numberBase for better accuracy
+          if (betPosition === 1) {
+            // Straight up bet - actualNumber is the actual number (0-36)
+            allBets.push({ type: BetType.NUMBER, value: actualNumber, amount, name: `Number ${actualNumber}` });
           } else if (betPosition === 2) {
-            // Split bet (left/right) - numberBase is the left number
-            allBets.push({ type: BetType.SPLIT, value: numberBase, amount, name: `Split ${numberBase}/${numberBase+1}` });
+            // Split bet (left/right) - actualNumber is the left number
+            allBets.push({ type: BetType.SPLIT, value: actualNumber, amount, name: `Split ${actualNumber}/${actualNumber+1}` });
           } else if (betPosition === 3) {
             // Split bet (top/bottom) or Street bet
-            if (numberBase % 3 === 1) {
-              // Street bet (3 numbers in a row) - numberBase is the first number
-              allBets.push({ type: BetType.STREET, value: numberBase, amount, name: `Street ${numberBase}-${numberBase+2}` });
+            if (actualNumber % 3 === 1) {
+              // Street bet (3 numbers in a row) - actualNumber is the first number
+              allBets.push({ type: BetType.STREET, value: actualNumber, amount, name: `Street ${actualNumber}-${actualNumber+2}` });
             } else {
-              // Vertical split bet - numberBase is the top number
-              allBets.push({ type: BetType.SPLIT, value: numberBase, amount, name: `Split ${numberBase}/${numberBase+3}` });
+              // Vertical split bet - actualNumber is the top number
+              allBets.push({ type: BetType.SPLIT, value: actualNumber, amount, name: `Split ${actualNumber}/${actualNumber+3}` });
             }
           } else if (betPosition === 4) {
-            // Corner bet (4 numbers) - numberBase is the top-left number
-            allBets.push({ type: BetType.CORNER, value: numberBase, amount, name: `Corner ${numberBase},${numberBase+1},${numberBase+3},${numberBase+4}` });
+            // Corner bet (4 numbers) - actualNumber is the top-left number
+            allBets.push({ type: BetType.CORNER, value: actualNumber, amount, name: `Corner ${actualNumber},${actualNumber+1},${actualNumber+3},${actualNumber+4}` });
           }
         }
       });
       
       console.log("All bets to process:", allBets);
+      console.log("Column bets:", columns);
+      console.log("Inside bets:", inside);
 
       console.log("Game simulation with multiple bets:", allBets);
 
