@@ -1,8 +1,8 @@
 "use client";
 import React, { useState } from 'react';
 import { Box, Typography, Paper, Avatar, Chip, Tooltip, LinearProgress, IconButton, Collapse } from '@mui/material';
-import { FaTrophy, FaFire, FaMedal, FaCrown, FaChevronRight, FaChevronDown, FaChevronUp, FaGlobe, FaUserFriends, FaStar } from 'react-icons/fa';
-import { GiPokerChips } from 'react-icons/gi';
+import { FaTrophy, FaFire, FaMedal, FaCrown, FaChevronRight, FaChevronDown, FaChevronUp, FaGlobe, FaUserFriends, FaStar, FaCoins } from 'react-icons/fa';
+// import { GiPokerChip } from 'react-icons/gi'; // Not available, using FaCoins instead
 
 // Sample data - in real application this would come from API
 const leaderboardData = [
@@ -422,7 +422,7 @@ const RouletteLeaderboard = () => {
                   
                   {/* Best Strategy */}
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <GiPokerChips color="#d82633" size={16} />
+                    <FaCoins color="#d82633" size={16} />
                     <Typography variant="body2" color="rgba(255,255,255,0.7)">
                       Favorite: <span style={{ color: 'white', fontWeight: 500 }}>{player.bestBet}</span>
                     </Typography>

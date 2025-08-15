@@ -44,7 +44,7 @@ export const wheelDataByRisk = {
 };
 
 
-function getHighRiskMultiplier(noOfSegments) {
+export function getHighRiskMultiplier(noOfSegments) {
   if (noOfSegments <= 10) return 9.90;
   if (noOfSegments <= 20) return 19.80;
   if (noOfSegments <= 30) return 29.70;
@@ -52,7 +52,7 @@ function getHighRiskMultiplier(noOfSegments) {
   return 49.50;
 }
 
-function getHighRiskProbability(noOfSegments) {
+export function getHighRiskProbability(noOfSegments) {
   if (noOfSegments <= 10) return 0.2;
   if (noOfSegments <= 20) return 0.15;
   if (noOfSegments <= 30) return 0.1;
