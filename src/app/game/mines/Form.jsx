@@ -4,7 +4,7 @@ import CustomSelect from "@/components/CustomSelect";
 import CustomInput from "@/components/CustomInput";
 import { motion, AnimatePresence } from "framer-motion";
 
-const DynamicForm = ({ config, onSubmit }) => {
+const DynamicForm = ({ config, onSubmit, gameStatus = { isPlaying: false, hasPlacedBet: false } }) => {
   // State to manage form values
   const [formData, setFormData] = useState({});
   const [expanded, setExpanded] = useState(true);
@@ -152,6 +152,7 @@ const DynamicForm = ({ config, onSubmit }) => {
                       label={field.label}
                       options={field.options}
                       className="pl-11 bg-black/20 border-purple-800/30 focus:border-purple-600/50"
+                      disabled={gameStatus.isPlaying || gameStatus.hasPlacedBet}
                     />
                   )}
 
@@ -165,6 +166,7 @@ const DynamicForm = ({ config, onSubmit }) => {
                       onChange={handleChange}
                       placeholder={field.placeholder || ""}
                       className="pl-11 bg-black/20 border-purple-800/30 focus:border-purple-600/50"
+                      disabled={gameStatus.isPlaying || gameStatus.hasPlacedBet}
                     />
                   )}
 
@@ -178,6 +180,7 @@ const DynamicForm = ({ config, onSubmit }) => {
                       onChange={handleChange}
                       placeholder={field.placeholder || ""}
                       className="pl-11 bg-black/20 border-purple-800/30 focus:border-purple-600/50"
+                      disabled={gameStatus.isPlaying || gameStatus.hasPlacedBet}
                     />
                   )}
 
@@ -190,6 +193,7 @@ const DynamicForm = ({ config, onSubmit }) => {
                       value={formData[field.id] || false}
                       onChange={handleChange}
                       className="pl-11 bg-black/20 border-purple-800/30 focus:border-purple-600/50"
+                      disabled={gameStatus.isPlaying || gameStatus.hasPlacedBet}
                     />
                   )}
                 </motion.div>
@@ -229,6 +233,7 @@ const DynamicForm = ({ config, onSubmit }) => {
                           label={field.label}
                           options={field.options}
                           className="pl-11 bg-black/20 border-purple-800/30 focus:border-purple-600/50"
+                          disabled={gameStatus.isPlaying || gameStatus.hasPlacedBet}
                         />
                       )}
 
@@ -242,11 +247,12 @@ const DynamicForm = ({ config, onSubmit }) => {
                           onChange={handleChange}
                           placeholder={field.placeholder || ""}
                           className="pl-11 bg-black/20 border-purple-800/30 focus:border-purple-600/50"
+                          disabled={gameStatus.isPlaying || gameStatus.hasPlacedBet}
                         />
                       )}
 
                       {field.type === "number" && (
-                        <CustomInput
+                        <CustomSelect
                           type="number"
                           label={field.label}
                           id={field.id}
@@ -255,6 +261,7 @@ const DynamicForm = ({ config, onSubmit }) => {
                           onChange={handleChange}
                           placeholder={field.placeholder || ""}
                           className="pl-11 bg-black/20 border-purple-800/30 focus:border-purple-600/50"
+                          disabled={gameStatus.isPlaying || gameStatus.hasPlacedBet}
                         />
                       )}
 
@@ -267,6 +274,7 @@ const DynamicForm = ({ config, onSubmit }) => {
                           value={formData[field.id] || false}
                           onChange={handleChange}
                           className="pl-11 bg-black/20 border-purple-800/30 focus:border-purple-600/50"
+                          disabled={gameStatus.isPlaying || gameStatus.hasPlacedBet}
                         />
                       )}
                     </motion.div>
@@ -279,13 +287,16 @@ const DynamicForm = ({ config, onSubmit }) => {
             <motion.button
               type="submit"
               onClick={handleSubmit}
+              disabled={gameStatus.isPlaying || gameStatus.hasPlacedBet}
               className={`w-full py-3.5 ${
-                isAutoMode 
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700' 
-                  : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700'
+                gameStatus.isPlaying || gameStatus.hasPlacedBet
+                  ? 'bg-gray-700 cursor-not-allowed opacity-50'
+                  : isAutoMode 
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700' 
+                    : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700'
               } rounded-lg text-white font-bold shadow-lg transition-all flex items-center justify-center mt-6`}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={{ scale: gameStatus.isPlaying || gameStatus.hasPlacedBet ? 1 : 1.02 }}
+              whileTap={{ scale: gameStatus.isPlaying || gameStatus.hasPlacedBet ? 1 : 0.98 }}
             >
               {isAutoMode ? (
                 <span className="inline-flex items-center mr-2 text-xl">
@@ -296,7 +307,12 @@ const DynamicForm = ({ config, onSubmit }) => {
                   <FaDice className="text-white text-xl" />
                 </span>
               )}
-              <span className="text-lg">{isAutoMode ? "START AUTO BETTING" : "START GAME"}</span>
+              <span className="text-lg">
+                {gameStatus.isPlaying || gameStatus.hasPlacedBet 
+                  ? "GAME IN PROGRESS" 
+                  : isAutoMode ? "START AUTO BETTING" : "START GAME"
+                }
+              </span>
               <FaArrowRight className="ml-2" />
             </motion.button>
             

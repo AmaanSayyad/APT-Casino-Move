@@ -32,6 +32,7 @@ export default function Mines() {
   const [gameInstance, setGameInstance] = useState(1); // Force re-render on new game
   const [showTutorial, setShowTutorial] = useState(false);
   const [isStatsExpanded, setIsStatsExpanded] = useState(false);
+  const [gameStatus, setGameStatus] = useState({ isPlaying: false, hasPlacedBet: false });
   
   // AI Auto Betting State
   const [isAIActive, setIsAIActive] = useState(false);
@@ -171,16 +172,16 @@ export default function Mines() {
     {
       label: "Manual",
       content: (
-        <DynamicForm config={manualFormConfig} onSubmit={handleFormSubmit} />
+        <DynamicForm config={manualFormConfig} onSubmit={handleFormSubmit} gameStatus={gameStatus} />
       ),
     },
     {
       label: "Auto",
       content: (
-        <DynamicForm config={autoFormConfig} onSubmit={handleFormSubmit} />
+        <DynamicForm config={autoFormConfig} onSubmit={handleFormSubmit} gameStatus={gameStatus} />
       ),
     },
-  ], []);
+  ], [gameStatus]);
 
   // Handle tab change
   const handleTabChange = (tabLabel) => {
@@ -372,7 +373,7 @@ export default function Mines() {
           transition={{ duration: 0.3 }}
           className="relative z-10"
         >
-          <Game betSettings={betSettings} />
+          <Game betSettings={betSettings} onGameStatusChange={setGameStatus} />
         </motion.div>
       </motion.div>
     </div>

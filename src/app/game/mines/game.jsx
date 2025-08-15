@@ -35,7 +35,7 @@ const SOUNDS = {
   bet: "/sounds/bet.mp3",
 };
 
-const Game = ({ betSettings = {} }) => {
+const Game = ({ betSettings = {}, onGameStatusChange }) => {
   // Redux integration
   const dispatch = useDispatch();
   const { userBalance } = useSelector((state) => state.balance);
@@ -50,6 +50,7 @@ const Game = ({ betSettings = {} }) => {
 
   const settings = { ...defaultSettings, ...betSettings };
   const processedSettingsRef = useRef(null); // Track if current settings have been processed
+  const isCashoutCompleteRef = useRef(false); // Track if user just cashed out
   
   // Game State
   const [grid, setGrid] = useState([]);
@@ -68,6 +69,7 @@ const Game = ({ betSettings = {} }) => {
   const [isGameInfoVisible, setIsGameInfoVisible] = useState(false);
   const [betAmount, setBetAmount] = useState(settings.betAmount);
   const [autoRevealInProgress, setAutoRevealInProgress] = useState(false);
+  const [isStartingGame, setIsStartingGame] = useState(false);
   
   // Audio refs
   const audioRefs = {
@@ -127,7 +129,8 @@ const Game = ({ betSettings = {} }) => {
   
   // Calculate current payout
   const calculatePayout = () => {
-    const currentBetAmount = settings.betAmount || betAmount || 0.1;
+    // Use the bet amount from settings (form) instead of local state
+    const currentBetAmount = settings.betAmount || 0.1;
     const payout = currentBetAmount * multiplier;
     console.log('Calculating payout:', { currentBetAmount, multiplier, payout });
     return payout;
@@ -239,6 +242,17 @@ const Game = ({ betSettings = {} }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Notify parent about game status changes
+  useEffect(() => {
+    if (onGameStatusChange) {
+      // Use a small delay to ensure state updates are complete
+      const notifyParent = () => {
+        onGameStatusChange({ isPlaying, hasPlacedBet });
+      };
+      setTimeout(notifyParent, 10);
+    }
+  }, [isPlaying, hasPlacedBet, onGameStatusChange]);
+
   // Reset the game state when gridSize or minesCount changes
   useEffect(() => {
     if (isPlaying) return; // Don't reset while playing
@@ -260,8 +274,15 @@ const Game = ({ betSettings = {} }) => {
       return;
     }
     
-    // Check if we actually have settings to process and if they're different from defaults
-    if (Object.keys(settings).length > 0 && settingsKey !== JSON.stringify(defaultSettings)) {
+    // Skip if user just cashed out - they should manually start new game
+    if (isCashoutCompleteRef.current) {
+      isCashoutCompleteRef.current = false; // Reset the flag
+      return;
+    }
+    
+    // Check if we actually have settings to process
+    // Only process if betSettings is not empty (form has been submitted)
+    if (Object.keys(betSettings).length > 0) {
       // Save current settings as processed
       processedSettingsRef.current = settingsKey;
       
@@ -371,9 +392,30 @@ const Game = ({ betSettings = {} }) => {
     setTimeout(() => {
     if (grid[row][col].isBomb) {
         playSound('explosion');
-      setGameOver(true);
-      revealAll();
         toast.error('Game Over! You hit a mine!');
+        
+        // Immediately reset critical states
+        setIsPlaying(false);
+        setHasPlacedBet(false);
+        
+        // Reset game state for mine hit
+        const resetAfterMine = () => {
+          setGameOver(true);
+          setMultiplier(1.0);
+          setProfit(0);
+          revealAll();
+          
+          // Mark game as completed to prevent auto-restart
+          isCashoutCompleteRef.current = true;
+          
+          // Force parent component to update immediately
+          if (onGameStatusChange) {
+            onGameStatusChange({ isPlaying: false, hasPlacedBet: false });
+          }
+        };
+        
+        // Use setTimeout to ensure state updates happen properly
+        setTimeout(resetAfterMine, 50);
     } else if (grid[row][col].isDiamond) {
         playSound('gem');
         
@@ -390,12 +432,33 @@ const Game = ({ betSettings = {} }) => {
           
           // Check if all safe tiles are revealed
           if (newCount === safeTiles) {
-          setGameWon(true);
-          revealAll();
             playSound('win');
             setShowConfetti(true);
             toast.success('Congratulations! You revealed all safe tiles!');
             setTimeout(() => setShowConfetti(false), 5000);
+            
+            // Immediately reset critical states
+            setIsPlaying(false);
+            setHasPlacedBet(false);
+            
+            // Reset game state for win
+            const resetAfterWin = () => {
+              setGameWon(true);
+              setMultiplier(1.0);
+              setProfit(0);
+              revealAll();
+              
+              // Mark game as completed to prevent auto-restart
+              isCashoutCompleteRef.current = true;
+              
+              // Force parent component to update immediately
+              if (onGameStatusChange) {
+                onGameStatusChange({ isPlaying: false, hasPlacedBet: false });
+              }
+            };
+            
+            // Use setTimeout to ensure state updates happen properly
+            setTimeout(resetAfterWin, 50);
         }
           
           return newCount;
@@ -484,8 +547,28 @@ const Game = ({ betSettings = {} }) => {
           setAutoRevealInProgress(false);
           if (gameOver) {
             toast.error("AI Agent: Mine detected - round lost");
+            // Reset game state after auto-reveal loss
+            const resetAfterAutoLoss = () => {
+              setIsPlaying(false);
+              setHasPlacedBet(false);
+              setMultiplier(1.0);
+              setProfit(0);
+              // Mark game as completed to prevent auto-restart
+              isCashoutCompleteRef.current = true;
+            };
+            setTimeout(resetAfterAutoLoss, 0);
           } else if (gameWon) {
             toast.success("AI Agent: Perfect game! All safe tiles revealed!");
+            // Reset game state after auto-reveal win
+            const resetAfterAutoWin = () => {
+              setIsPlaying(false);
+              setHasPlacedBet(false);
+              setMultiplier(1.0);
+              setProfit(0);
+              // Mark game as completed to prevent auto-restart
+              isCashoutCompleteRef.current = true;
+            };
+            setTimeout(resetAfterAutoWin, 0);
           }
         }
       }, aiDelay);
@@ -526,8 +609,10 @@ const Game = ({ betSettings = {} }) => {
     setRevealedCount(0);
     setAutoRevealInProgress(false);
     setShowConfetti(false);
+    setIsStartingGame(false);
     
-    // Don't reset hasPlacedBet here - we'll handle that in the Game Controls section
+    // Reset hasPlacedBet to allow user to go back to the form
+    setHasPlacedBet(false);
   };
   
   // Cashout function
@@ -541,7 +626,6 @@ const Game = ({ betSettings = {} }) => {
       // The actual payout was already handled in the initial bet transaction
       toast.success(`Cashed out: ${payout.toFixed(4)} APT (${multiplier.toFixed(2)}x)`);
       playSound('cashout');
-      setIsPlaying(false);
       
       // Update user balance in Redux store (add payout to current balance)
       const currentBalanceOctas = parseInt(userBalance || '0');
@@ -562,10 +646,37 @@ const Game = ({ betSettings = {} }) => {
         setTimeout(() => setShowConfetti(false), 3000);
       }
       
-      // Reset game state for next round
-      setGameWon(false);
-      setGameOver(false);
-      setRevealedCount(0);
+      // COMPLETELY RESET ALL GAME STATE for next round
+      // Immediately reset critical states
+      setIsPlaying(false);
+      setHasPlacedBet(false);
+      
+      // Then reset other states with a small delay
+      const resetGameState = () => {
+        setGameWon(false);
+        setGameOver(false);
+        setRevealedCount(0);
+        setMultiplier(1.0);
+        setProfit(0);
+        setAutoRevealInProgress(false);
+        setIsStartingGame(false);
+        
+        // Mark cashout as complete to prevent auto-restart
+        isCashoutCompleteRef.current = true;
+        // Keep the processed settings to prevent auto-restart
+        // processedSettingsRef.current = null; // Don't reset this
+        
+        // Force a complete game reset
+        setGrid(initializeGrid(minesCount));
+        
+        // Force parent component to update immediately
+        if (onGameStatusChange) {
+          onGameStatusChange({ isPlaying: false, hasPlacedBet: false });
+        }
+      };
+      
+      // Use setTimeout to ensure state updates happen after current render cycle
+      setTimeout(resetGameState, 50);
       
     } catch (error) {
       console.error('Error cashing out:', error);
@@ -584,7 +695,7 @@ const Game = ({ betSettings = {} }) => {
   };
   
   const adjustMinesCount = (delta) => {
-    if (isPlaying) return;
+    if (isPlaying || hasPlacedBet) return;
     
     // For 5x5 grid, allow up to 24 mines (with 1 safe tile)
     const newCount = Math.max(1, Math.min(minesCount + delta, 24));
@@ -727,7 +838,7 @@ const Game = ({ betSettings = {} }) => {
             <button 
               className="px-2 py-1 bg-red-900/30 hover:bg-red-900/50 text-white disabled:opacity-50"
               onClick={() => adjustMinesCount(-1)}
-              disabled={isPlaying || minesCount <= 1}
+              disabled={isPlaying || hasPlacedBet || minesCount <= 1}
             >
               -
             </button>
@@ -737,7 +848,7 @@ const Game = ({ betSettings = {} }) => {
             <button 
               className="px-2 py-1 bg-green-900/30 hover:bg-green-900/50 text-white disabled:opacity-50"
               onClick={() => adjustMinesCount(1)}
-              disabled={isPlaying || minesCount >= 24}
+              disabled={isPlaying || hasPlacedBet || minesCount >= 24}
             >
               +
             </button>
@@ -812,33 +923,33 @@ const Game = ({ betSettings = {} }) => {
       
       {/* Game Controls */}
       <div className="w-full space-y-2">
-        {hasPlacedBet && (
+        {/* Remove the Start Game button from here - it should only be in the left panel */}
+        
+        {/* Cashout button - only show when game is actively being played */}
+        {hasPlacedBet && isPlaying && !gameOver && !gameWon && (
           <div className="flex gap-3">
             <button
               onClick={cashout}
-              disabled={!isPlaying || revealedCount === 0 || gameOver}
-              className={`flex-1 py-3 ${
-                isPlaying && revealedCount > 0 && !gameOver
+              disabled={revealedCount === 0}
+              className={`w-full py-3 ${
+                revealedCount > 0
                   ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700' 
                   : 'bg-gray-700 cursor-not-allowed'
               } rounded-lg text-white font-bold shadow-lg transition-all flex items-center justify-center gap-2`}
             >
               <FaCoins className="text-yellow-300" />
-              <span>
-                {gameOver ? 'GAME OVER' : `CASH OUT (${calculatePayout()} APT)`}
-              </span>
+              <span>CASH OUT ({calculatePayout()} APT)</span>
             </button>
-            
-            <button
-              onClick={() => {
-                resetGame();
-                setHasPlacedBet(false); // Allow user to go back to the form
-              }}
-              className="flex-1 py-3 bg-gradient-to-r from-red-600 to-orange-600 rounded-lg text-white font-bold shadow-lg hover:from-red-700 hover:to-orange-700 transition-all flex items-center justify-center gap-2"
-            >
-              <FaDice className="text-white" />
-              <span>NEW GAME</span>
-            </button>
+          </div>
+        )}
+        
+        {/* Win message - shown when game is won */}
+        {gameWon && (
+          <div className="text-center py-3 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg text-white font-bold">
+            <span>🎉 CONGRATULATIONS! YOU WON! 🎉</span>
+            <div className="mt-2 text-sm opacity-90">
+              Winnings: {calculatePayout()} APT ({multiplier.toFixed(2)}x)
+            </div>
           </div>
         )}
         
