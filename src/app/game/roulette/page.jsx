@@ -1671,9 +1671,8 @@ export default function GameRoulette() {
             
             const splitNumbers = splitMap[actualNumber];
             if (splitNumbers) {
-              // Use 100+ numbers for left splits to avoid confusion with bottom splits
-              const splitNumber = actualNumber + 100;
-              allBets.push({ type: BetType.SPLIT, value: splitNumbers, amount, name: `Split ${splitNumber} (${splitNumbers})` });
+              // Use the actualNumber (where bet was placed) to get split definition
+              allBets.push({ type: BetType.SPLIT, value: splitNumbers, amount, name: `Split ${actualNumber} (${splitNumbers})` });
             }
           } else if (betPosition === 3) {
             // Bottom bet - can be either street bet or bottom split bet
@@ -1726,9 +1725,8 @@ export default function GameRoulette() {
             
             const horizontalSplitNumbers = horizontalSplitMap[actualNumber];
             if (horizontalSplitNumbers) {
-              // Use 200+ numbers for horizontal splits to avoid confusion
-              const splitNumber = actualNumber + 200;
-              allBets.push({ type: BetType.SPLIT, value: horizontalSplitNumbers, amount, name: `Split ${splitNumber} (${horizontalSplitNumbers})` });
+              // Use the actualNumber (where bet was placed) to get split definition
+              allBets.push({ type: BetType.SPLIT, value: horizontalSplitNumbers, amount, name: `Split ${actualNumber} (${horizontalSplitNumbers})` });
             }
           } else if (betPosition === 4) {
             // Corner bet (4 numbers) - predefined corner positions
@@ -1766,7 +1764,8 @@ export default function GameRoulette() {
 
             const cornerNumbers = cornerMap[actualNumber];
             if (cornerNumbers) {
-              allBets.push({ type: BetType.CORNER, value: cornerNumbers, amount, name: `Corner ${cornerNumbers}` });
+              // Use the actualNumber (where bet was placed) to get corner definition
+              allBets.push({ type: BetType.CORNER, value: cornerNumbers, amount, name: `Corner ${actualNumber} (${cornerNumbers})` });
             }
           }
         }
