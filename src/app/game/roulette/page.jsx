@@ -180,8 +180,6 @@ function GridInside({
     // Predefined corner positions for all numbers
     // FIXED: Correct corner values based on actual roulette table layout
     const cornerMap = {
-
-      
       2: "0,1,2",        // Middle-left corner
       5: "1,2,4,5",      // Middle-left corner (FIXED)
       8: "4,5,7,8",      // Middle-left corner (FIXED)
@@ -417,27 +415,64 @@ function GridInside({
                 />
               )}
             </Box>
-            <Box
-              sx={{
-                position: "relative",
-                height: "10px",
-                backgroundColor: (theme) => theme.palette.dark.card,
-                cursor: "pointer",
-              }}
-              id="left-corner-bet"
-              onClick={(e) => placeBet(e, "inside", (insideNumber - 1) * 4 + 4)}
-            >
-              {corner > 0 && (
-                <BetBox
-                  betValue={corner}
-                  betType={getCornerNumbers()}
-                  position="bottom-right"
-                  onClick={(e) =>
-                    placeBet(e, "inside", (insideNumber - 1) * 4 + 4)
-                  }
-                />
-              )}
-            </Box>
+            {(() => {
+              // Only show corner bet if this number has a corner definition
+              const cornerMap = {
+                2: "0,1,2",        // Middle-left corner
+                5: "1,2,4,5",      // Middle-left corner (FIXED)
+                8: "4,5,7,8",      // Middle-left corner (FIXED)
+                11: "8,9,11,12",   // Middle-left corner (FIXED)
+                14: "11,12,14,15", // Middle-left corner (FIXED)
+                17: "14,15,17,18", // Middle-left corner (FIXED)
+                20: "16,17,19,20", // Middle-left corner (FIXED)
+                23: "20,21,23,24", // Middle-left corner (FIXED)
+                26: "22,23,25,26", // Middle-left corner (FIXED)
+                29: "25,26,28,29", // Middle-left corner (FIXED)
+                32: "28,29,31,32", // Middle-left corner (FIXED)
+                35: "31,32,33,35", // Middle-right corner (FIXED)
+                
+                3: "2,3,0",        // Top-left corner
+                6: "2,3,5,6",      // Top-left corner (FIXED)
+                9: "5,6,8,9",      // Top-left corner (FIXED)
+                12: "8,9,11,12",   // Top-left corner (FIXED)
+                15: "12,14,15,18", // Top-left corner (FIXED)
+                18: "14,15,17,18", // Top-left corner (FIXED)
+                21: "17,18,20,21", // Top-left corner (FIXED)
+                24: "20,21,23,24", // Top-left corner (FIXED)
+                27: "23,24,26,27", // Top-left corner (FIXED)
+                30: "26,27,29,30", // Top-left corner (FIXED)
+                33: "29,30,32,33", // Top-left corner (FIXED)
+                36: "32,33,35,36"  // Top-right corner (FIXED)
+              };
+              
+              // Only render corner bet area if this number has a corner definition
+              if (cornerMap[insideNumber]) {
+                return (
+                  <Box
+                    sx={{
+                      position: "relative",
+                      height: "10px",
+                      backgroundColor: (theme) => theme.palette.dark.card,
+                      cursor: "pointer",
+                    }}
+                    id="left-corner-bet"
+                    onClick={(e) => placeBet(e, "inside", (insideNumber - 1) * 4 + 4)}
+                  >
+                    {corner > 0 && (
+                      <BetBox
+                        betValue={corner}
+                        betType={getCornerNumbers()}
+                        position="bottom-right"
+                        onClick={(e) =>
+                          placeBet(e, "inside", (insideNumber - 1) * 4 + 4)
+                        }
+                      />
+                    )}
+                  </Box>
+                );
+              }
+              return null; // Don't render corner bet area for bottom row numbers
+            })()}
           </Box>
           <Box sx={{ display: "flex", flexDirection: "column", flex: 1 }}>
             {topEdge && (
@@ -1733,8 +1768,6 @@ export default function GameRoulette() {
             // All possible corners in roulette table (22 corners total)
             // FIXED: Correct corner values based on actual roulette table layout
             const cornerMap = {
-              
-              
               2: "0,1,2",      // Middle-left corner
               5: "1,2,4,5",      // Middle-left corner (FIXED)
               8: "4,5,7,8",      // Middle-left corner (FIXED)
@@ -1752,14 +1785,14 @@ export default function GameRoulette() {
               6: "2,3,5,6",      // Top-left corner (FIXED)
               9: "5,6,8,9",     // Top-left corner (FIXED)
               12: "8,9,11,12",  // Top-left corner (FIXED)
-                    15: "12,14,15,18", // Top-left corner (FIXED)
-      18: "14,15,17,18", // Top-left corner (FIXED)
-      21: "17,18,20,21", // Top-left corner (FIXED)
-      24: "20,21,23,24", // Top-left corner (FIXED)
-      27: "23,24,26,27", // Top-left corner (FIXED)
-      30: "26,27,29,30", // Top-left corner (FIXED)
-      33: "29,30,32,33", // Top-left corner (FIXED)
-      36: "32,33,35,36"  // Top-right corner (FIXED)
+              15: "12,14,15,18", // Top-left corner (FIXED)
+              18: "14,15,17,18", // Top-left corner (FIXED)
+              21: "17,18,20,21", // Top-left corner (FIXED)
+              24: "20,21,23,24", // Top-left corner (FIXED)
+              27: "23,24,26,27", // Top-left corner (FIXED)
+              30: "26,27,29,30", // Top-left corner (FIXED)
+              33: "29,30,32,33", // Top-left corner (FIXED)
+              36: "32,33,35,36"  // Top-right corner (FIXED)
             };
 
             const cornerNumbers = cornerMap[actualNumber];
