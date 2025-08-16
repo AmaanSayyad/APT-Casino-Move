@@ -278,7 +278,7 @@ function GridInside({
       // Bottom row: street bet [n, n+1, n+2]
       const streetNumbers = [insideNumber, insideNumber + 1, insideNumber + 2];
       return `Street ${streetNumbers.join('-')}`;
-    } else if (insideNumber <= 33) {
+    } else {
       // Middle/Top row: bottom split bet - use predefined values
       const bottomSplitMap = {
         2: "1,2",      // Split 2: 1,2
@@ -302,7 +302,9 @@ function GridInside({
         29: "28,29",   // Split 29: 28,29
         30: "29,30",   // Split 30: 29,30
         32: "31,32",   // Split 32: 31,32
-        33: "32,33"    // Split 33: 32,33
+        33: "32,33",   // Split 33: 32,33
+        35: "34,35",   // Split 35: 34,35 - Changed from street to split
+        36: "35,36"    // Split 36: 35,36 - Changed from street to split
       };
       
       const splitNumbers = bottomSplitMap[insideNumber];
@@ -313,10 +315,6 @@ function GridInside({
       // Fallback to old calculation if not in map
       const bottomNumber = insideNumber + 3;
       return `Split ${insideNumber}-${bottomNumber}`;
-    } else {
-      // Top row numbers > 33: street bet [n-2, n-1, n]
-      const streetNumbers = [insideNumber - 2, insideNumber - 1, insideNumber];
-      return `Street ${streetNumbers.join('-')}`;
     }
   };
 
@@ -1719,21 +1717,48 @@ export default function GameRoulette() {
           } else if (betPosition === 3) {
             // Bottom bet - can be either street bet or bottom split bet
             const isBottomRow = [1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34].includes(actualNumber);
-            const isMiddleRow = [2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35].includes(actualNumber);
-            const isTopRow = [3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36].includes(actualNumber);
 
             if (isBottomRow) {
               // Bottom row: street bet [n, n+1, n+2]
               const streetNumbers = [actualNumber, actualNumber + 1, actualNumber + 2];
               allBets.push({ type: BetType.STREET, value: streetNumbers.join(','), amount, name: `Street ${streetNumbers.join('-')}` });
-            } else if (actualNumber <= 33) {
-              // Middle/Top row: bottom split bet [n, n+3]
-              const bottomNumber = actualNumber + 3;
-              allBets.push({ type: BetType.SPLIT, value: `${actualNumber},${bottomNumber}`, amount, name: `Split ${actualNumber}/${bottomNumber}` });
             } else {
-              // Top row numbers > 33: street bet [n-2, n-1, n]
-              const streetNumbers = [actualNumber - 2, actualNumber - 1, actualNumber];
-              allBets.push({ type: BetType.STREET, value: streetNumbers.join(','), amount, name: `Street ${streetNumbers.join('-')}` });
+              // Middle/Top row: bottom split bet - use predefined values
+              const bottomSplitMap = {
+                2: "1,2",      // Split 2: 1,2
+                3: "2,3",      // Split 3: 2,3
+                5: "4,5",      // Split 5: 4,5
+                6: "5,6",      // Split 6: 5,6
+                8: "7,8",      // Split 8: 7,8
+                9: "8,9",      // Split 9: 8,9
+                11: "10,11",   // Split 11: 10,11
+                12: "11,12",   // Split 12: 11,12
+                14: "13,14",   // Split 14: 13,14
+                15: "14,15",   // Split 15: 14,15
+                17: "16,17",   // Split 17: 16,17
+                18: "17,18",   // Split 18: 17,18
+                20: "19,20",   // Split 20: 19,20
+                21: "20,21",   // Split 21: 20,21
+                23: "22,23",   // Split 23: 22,23
+                24: "23,24",   // Split 24: 23,24
+                26: "25,26",   // Split 26: 25,26
+                27: "26,27",   // Split 27: 26,27
+                29: "28,29",   // Split 29: 28,29
+                30: "29,30",   // Split 30: 29,30
+                32: "31,32",   // Split 32: 31,32
+                33: "32,33",   // Split 33: 32,33
+                35: "34,35",   // Split 35: 34,35 - Changed from street to split
+                36: "35,36"    // Split 36: 35,36 - Changed from street to split
+              };
+              
+              const splitNumbers = bottomSplitMap[actualNumber];
+              if (splitNumbers) {
+                allBets.push({ type: BetType.SPLIT, value: splitNumbers, amount, name: `Split ${actualNumber} (${splitNumbers.replace(',', '-')})` });
+              } else {
+                // Fallback to old calculation if not in map
+                const bottomNumber = actualNumber + 3;
+                allBets.push({ type: BetType.SPLIT, value: `${actualNumber},${bottomNumber}`, amount, name: `Split ${actualNumber}/${bottomNumber}` });
+              }
             }
           } else if (betPosition === 5) {
             // Horizontal split bet - predefined split positions (same row, adjacent numbers)
