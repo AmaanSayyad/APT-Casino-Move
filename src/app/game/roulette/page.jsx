@@ -175,25 +175,45 @@ function GridInside({
   isWinner = false,
   ...props
 }) {
-  // Calculate corner bet numbers based on actual roulette table layout
+  // Get corner bet numbers from predefined map
   const getCornerNumbers = () => {
-    // Roulette table layout (3 rows x 12 columns):
-    // Row 1: 3,6,9,12,15,18,21,24,27,30,33,36
-    // Row 2: 2,5,8,11,14,17,20,23,26,29,32,35  
-    // Row 3: 1,4,7,10,13,16,19,22,25,28,31,34
+    // Predefined corner positions for all numbers
+    // FIXED: Correct corner values based on actual roulette table layout
+    const cornerMap = {
 
-    const isBottomRow = [1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34].includes(insideNumber);
-    const isMiddleRow = [2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35].includes(insideNumber);
+      
+      2: "0,1,2",        // Middle-left corner
+      5: "1,2,4,5",      // Middle-left corner (FIXED)
+      8: "4,5,7,8",      // Middle-left corner (FIXED)
+      11: "8,9,11,12",   // Middle-left corner (FIXED)
+      14: "11,12,14,15", // Middle-left corner (FIXED)
+      17: "14,15,17,18", // Middle-left corner (FIXED)
+      20: "16,17,19,20", // Middle-left corner (FIXED)
+      23: "20,21,23,24", // Middle-left corner (FIXED)
+      26: "22,23,25,26", // Middle-left corner (FIXED)
+      29: "25,26,28,29", // Middle-left corner (FIXED)
+      32: "28,29,31,32", // Middle-left corner (FIXED)
+      35: "31,32,33,35", // Middle-right corner (FIXED)
+      
+      3: "2,3,0",        // Top-left corner
+      6: "2,3,5,6",      // Top-left corner (FIXED)
+      9: "5,6,8,9",      // Top-left corner (FIXED)
+      12: "8,9,11,12",   // Top-left corner (FIXED)
+      15: "12,14,15,18", // Top-left corner (FIXED)
+      18: "14,15,17,18", // Top-left corner (FIXED)
+      21: "17,18,20,21", // Top-left corner (FIXED)
+      24: "20,21,23,24", // Top-left corner (FIXED)
+      27: "23,24,26,27", // Top-left corner (FIXED)
+      30: "26,27,29,30", // Top-left corner (FIXED)
+      33: "29,30,32,33", // Top-left corner (FIXED)
+      36: "32,33,35,36"  // Top-right corner (FIXED)
+    };
 
-    if (isBottomRow && insideNumber <= 31) {
-      // Bottom row corner: covers current and 3 adjacent numbers
-      return `Corner (${insideNumber}-${insideNumber + 1}-${insideNumber + 3}-${insideNumber + 4})`;
-    } else if (isMiddleRow && insideNumber <= 32) {
-      // Middle row corner: covers current and 3 adjacent numbers  
-      return `Corner (${insideNumber - 1}-${insideNumber}-${insideNumber + 2}-${insideNumber + 3})`;
+    const cornerNumbers = cornerMap[insideNumber];
+    if (cornerNumbers) {
+      return `Corner ${insideNumber} (${cornerNumbers})`;
     }
-
-    return `Corner (Invalid)`;
+    return `Corner ${insideNumber} (${insideNumber})`;
   };
 
   return (
@@ -1495,24 +1515,42 @@ export default function GameRoulette() {
               allBets.push({ type: BetType.STREET, value: streetNumbers.join(','), amount, name: `Street ${streetNumbers.join('-')}` });
             }
           } else if (betPosition === 4) {
-            // Corner bet (4 numbers) - calculate based on table position
-            const isBottomRow = [1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34].includes(actualNumber);
-            const isMiddleRow = [2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35].includes(actualNumber);
-            let cornerNumbers;
+            // Corner bet (4 numbers) - predefined corner positions
+            // All possible corners in roulette table (22 corners total)
+            // FIXED: Correct corner values based on actual roulette table layout
+            const cornerMap = {
+              
+              
+              2: "0,1,2",      // Middle-left corner
+              5: "1,2,4,5",      // Middle-left corner (FIXED)
+              8: "4,5,7,8",      // Middle-left corner (FIXED)
+              11: "8,9,11,12",  // Middle-left corner (FIXED)
+              14: "11,12,14,15", // Middle-left corner (FIXED)
+              17: "14,15,17,18", // Middle-left corner (FIXED)
+              20: "16,17,19,20", // Middle-left corner (FIXED)
+              23: "20,21,23,24", // Middle-left corner (FIXED)
+              26: "22,23,25,26", // Middle-left corner (FIXED)
+              29: "25,26,28,29", // Middle-left corner (FIXED)
+              32: "28,29,31,32", // Middle-left corner (FIXED)
+              35: "31,32,33,35", // Middle-right corner (FIXED)
+              
+              3: "2,3,0",      // Top-left corner
+              6: "2,3,5,6",      // Top-left corner (FIXED)
+              9: "5,6,8,9",     // Top-left corner (FIXED)
+              12: "8,9,11,12",  // Top-left corner (FIXED)
+                    15: "12,14,15,18", // Top-left corner (FIXED)
+      18: "14,15,17,18", // Top-left corner (FIXED)
+      21: "17,18,20,21", // Top-left corner (FIXED)
+      24: "20,21,23,24", // Top-left corner (FIXED)
+      27: "23,24,26,27", // Top-left corner (FIXED)
+      30: "26,27,29,30", // Top-left corner (FIXED)
+      33: "29,30,32,33", // Top-left corner (FIXED)
+      36: "32,33,35,36"  // Top-right corner (FIXED)
+            };
 
-            if (isBottomRow && actualNumber <= 31) {
-              // Bottom row corner: [n, n+1, n+3, n+4]
-              cornerNumbers = [actualNumber, actualNumber + 1, actualNumber + 3, actualNumber + 4];
-            } else if (isMiddleRow && actualNumber <= 32) {
-              // Middle row corner: [n-1, n, n+2, n+3]
-              cornerNumbers = [actualNumber - 1, actualNumber, actualNumber + 2, actualNumber + 3];
-            } else {
-              // Invalid corner position
-              cornerNumbers = null;
-            }
-
+            const cornerNumbers = cornerMap[actualNumber];
             if (cornerNumbers) {
-              allBets.push({ type: BetType.CORNER, value: cornerNumbers.join(','), amount, name: `Corner ${cornerNumbers.join(',')}` });
+              allBets.push({ type: BetType.CORNER, value: cornerNumbers, amount, name: `Corner ${cornerNumbers}` });
             }
           }
         }
