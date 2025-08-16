@@ -638,6 +638,8 @@ const BettingStats = ({ history }) => {
     // New profit/loss calculation: profitLoss2 = -totalWagered + profitLoss
     const profitLoss2 = -totalWagered + profitLoss;
     
+
+    
     console.log("Stats calculation details:", {
       historyLength: history.length,
       betDetails: history.map(bet => ({
@@ -651,6 +653,7 @@ const BettingStats = ({ history }) => {
       totalWon,
       profitLoss,
       profitLoss2,
+
       statTotal,
       statWinnings
     });
@@ -662,6 +665,7 @@ const BettingStats = ({ history }) => {
       totalWon,
       profitLoss,
       profitLoss2,
+
       totalBets: history.length,
       statTotal,
       statWinnings
@@ -696,6 +700,7 @@ const BettingStats = ({ history }) => {
             {stats.profitLoss2 >= 0 ? '+' : ''}{stats.profitLoss2.toFixed(2)}
           </Typography>
         </Grid>
+
         <Grid xs={12}>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>Hot Numbers</Typography>
           <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
@@ -1466,7 +1471,13 @@ export default function GameRoulette() {
       
       console.log("All bets to process:", allBets);
       console.log("Column bets:", columns);
+      console.log("Column bet positions:");
+      console.log(`  Index 0 (Top "2 To 1"): ${columns[0] > 0 ? `$${columns[0]} bet` : 'No bet'} → 3rd Column (3,6,9,12,15,18,21,24,27,30,33,36)`);
+      console.log(`  Index 1 (Middle "2 To 1"): ${columns[1] > 0 ? `$${columns[1]} bet` : 'No bet'} → 2nd Column (2,5,8,11,14,17,20,23,26,29,32,35)`);
+      console.log(`  Index 2 (Bottom "2 To 1"): ${columns[2] > 0 ? `$${columns[2]} bet` : 'No bet'} → 1st Column (1,4,7,10,13,16,19,22,25,28,31,34)`);
       console.log("Inside bets:", inside);
+      
+
 
       console.log("Game simulation with multiple bets:", allBets);
 
@@ -1482,6 +1493,21 @@ export default function GameRoulette() {
         // Generate random winning number (0-36)
         const winningNumber = Math.floor(Math.random() * 37);
         setRollResult(winningNumber);
+        
+        // Debug: Show which column the winning number belongs to
+        if (winningNumber > 0) {
+          const columnNumber = winningNumber % 3;
+          let columnName = "";
+          if (columnNumber === 1) columnName = "1st Column";
+          else if (columnNumber === 2) columnName = "2nd Column";
+          else if (columnNumber === 0) columnName = "3rd Column";
+          
+          console.log(`🎯 WINNING NUMBER: ${winningNumber}`);
+          console.log(`📊 COLUMN INFO: ${winningNumber} % 3 = ${columnNumber} → ${columnName}`);
+          console.log(`🔢 COLUMN NUMBERS: ${columnName} contains: ${getColumnNumbers(columnNumber)}`);
+        } else {
+          console.log(`🎯 WINNING NUMBER: 0 (Green - No column bet)`);
+        }
         
         // Process ALL bets and calculate total winnings
         let totalWinnings = 0;
@@ -1947,6 +1973,17 @@ export default function GameRoulette() {
 
   // Helper function to get payout ratio based on bet kind
   // Payout ratio = bahsinizi kaç katına çıkarır (1:1 = 2x, 2:1 = 3x, 35:1 = 36x)
+  // Helper function to get column numbers for debugging
+  const getColumnNumbers = (columnModulo) => {
+    const numbers = [];
+    for (let i = 1; i <= 36; i++) {
+      if (i % 3 === columnModulo) {
+        numbers.push(i);
+      }
+    }
+    return numbers.join(', ');
+  };
+
   const getPayoutRatio = (kind) => {
     switch (kind) {
       case 0: return 36; // Single Number (35:1) 
@@ -1977,10 +2014,10 @@ export default function GameRoulette() {
         return (value === 0 && winningNumber >= 1 && winningNumber <= 12) || 
                (value === 1 && winningNumber >= 13 && winningNumber <= 24) || 
                (value === 2 && winningNumber >= 25 && winningNumber <= 36);
-      case 5: // Column bets (0=1st column, 1=2nd column, 2=3rd column)
-        return (value === 0 && winningNumber % 3 === 1) || 
+      case 5: // Column bets (0=3rd column, 1=2nd column, 2=1st column) - REVERSED for UI
+        return (value === 0 && winningNumber % 3 === 0) || 
                (value === 1 && winningNumber % 3 === 2) || 
-               (value === 2 && winningNumber % 3 === 0);
+               (value === 2 && winningNumber % 3 === 1);
       case 6: // Split bet - check if winning number matches either of two adjacent numbers
         // For split bets, value represents the lower number
         // Horizontal split: value and value+1 (same row)
