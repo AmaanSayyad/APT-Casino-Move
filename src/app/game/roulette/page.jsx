@@ -181,30 +181,30 @@ function GridInside({
     // FIXED: Correct corner values based on actual roulette table layout
     const cornerMap = {
       2: "0,1,2",        // Middle-left corner
-      5: "1,2,4,5",      // Middle-left corner (FIXED)
-      8: "4,5,7,8",      // Middle-left corner (FIXED)
-      11: "8,9,11,12",   // Middle-left corner (FIXED)
-      14: "11,12,14,15", // Middle-left corner (FIXED)
-      17: "14,15,17,18", // Middle-left corner (FIXED)
-      20: "16,17,19,20", // Middle-left corner (FIXED)
-      23: "20,21,23,24", // Middle-left corner (FIXED)
-      26: "22,23,25,26", // Middle-left corner (FIXED)
-      29: "25,26,28,29", // Middle-left corner (FIXED)
-      32: "28,29,31,32", // Middle-left corner (FIXED)
-      35: "31,32,33,35", // Middle-right corner (FIXED)
+      5: "1,2,4,5",      // Middle-left corner
+      8: "4,5,7,8",      // Middle-left corner
+      11: "7,8,10,11",   // Middle-left corner - FIXED
+      14: "10,11,13,14", // Middle-left corner - FIXED
+      17: "13,14,16,17", // Middle-left corner - FIXED
+      20: "16,17,19,20", // Middle-left corner
+      23: "19,20,22,23", // Middle-left corner - FIXED
+      26: "22,23,25,26", // Middle-left corner
+      29: "25,26,28,29", // Middle-left corner
+      32: "28,29,31,32", // Middle-left corner
+      35: "31,32,33,35", // Middle-right corner
       
       3: "2,3,0",        // Top-left corner
-      6: "2,3,5,6",      // Top-left corner (FIXED)
-      9: "5,6,8,9",      // Top-left corner (FIXED)
-      12: "8,9,11,12",   // Top-left corner (FIXED)
-      15: "12,14,15,18", // Top-left corner (FIXED)
-      18: "14,15,17,18", // Top-left corner (FIXED)
-      21: "17,18,20,21", // Top-left corner (FIXED)
-      24: "20,21,23,24", // Top-left corner (FIXED)
-      27: "23,24,26,27", // Top-left corner (FIXED)
-      30: "26,27,29,30", // Top-left corner (FIXED)
-      33: "29,30,32,33", // Top-left corner (FIXED)
-      36: "32,33,35,36"  // Top-right corner (FIXED)
+      6: "2,3,5,6",      // Top-left corner
+      9: "5,6,8,9",      // Top-left corner
+      12: "8,9,11,12",   // Top-left corner
+      15: "11,12,14,15", // Top-left corner - FIXED
+      18: "14,15,17,18", // Top-left corner
+      21: "17,18,20,21", // Top-left corner
+      24: "20,21,23,24", // Top-left corner
+      27: "23,24,26,27", // Top-left corner
+      30: "26,27,29,30", // Top-left corner
+      33: "29,30,32,33", // Top-left corner
+      36: "32,33,35,36"  // Top-right corner
     };
 
     const cornerNumbers = cornerMap[insideNumber];
@@ -419,30 +419,30 @@ function GridInside({
               // Only show corner bet if this number has a corner definition
               const cornerMap = {
                 2: "0,1,2",        // Middle-left corner
-                5: "1,2,4,5",      // Middle-left corner (FIXED)
-                8: "4,5,7,8",      // Middle-left corner (FIXED)
-                11: "8,9,11,12",   // Middle-left corner (FIXED)
-                14: "11,12,14,15", // Middle-left corner (FIXED)
-                17: "14,15,17,18", // Middle-left corner (FIXED)
-                20: "16,17,19,20", // Middle-left corner (FIXED)
-                23: "20,21,23,24", // Middle-left corner (FIXED)
-                26: "22,23,25,26", // Middle-left corner (FIXED)
-                29: "25,26,28,29", // Middle-left corner (FIXED)
-                32: "28,29,31,32", // Middle-left corner (FIXED)
-                35: "31,32,33,35", // Middle-right corner (FIXED)
+                5: "1,2,4,5",      // Middle-left corner
+                8: "4,5,7,8",      // Middle-left corner
+                11: "7,8,10,11",   // Middle-left corner - FIXED
+                14: "10,11,13,14", // Middle-left corner - FIXED
+                17: "13,14,16,17", // Middle-left corner - FIXED
+                20: "16,17,19,20", // Middle-left corner
+                23: "19,20,22,23", // Middle-left corner - FIXED
+                26: "22,23,25,26", // Middle-left corner
+                29: "25,26,28,29", // Middle-left corner
+                32: "28,29,31,32", // Middle-left corner
+                35: "31,32,33,35", // Middle-right corner
                 
                 3: "2,3,0",        // Top-left corner
-                6: "2,3,5,6",      // Top-left corner (FIXED)
-                9: "5,6,8,9",      // Top-left corner (FIXED)
-                12: "8,9,11,12",   // Top-left corner (FIXED)
-                15: "12,14,15,18", // Top-left corner (FIXED)
-                18: "14,15,17,18", // Top-left corner (FIXED)
-                21: "17,18,20,21", // Top-left corner (FIXED)
-                24: "20,21,23,24", // Top-left corner (FIXED)
-                27: "23,24,26,27", // Top-left corner (FIXED)
-                30: "26,27,29,30", // Top-left corner (FIXED)
-                33: "29,30,32,33", // Top-left corner (FIXED)
-                36: "32,33,35,36"  // Top-right corner (FIXED)
+                6: "2,3,5,6",      // Top-left corner
+                9: "5,6,8,9",      // Top-left corner
+                12: "8,9,11,12",   // Top-left corner
+                15: "11,12,14,15", // Top-left corner - FIXED
+                18: "14,15,17,18", // Top-left corner
+                21: "17,18,20,21", // Top-left corner
+                24: "20,21,23,24", // Top-left corner
+                27: "23,24,26,27", // Top-left corner
+                30: "26,27,29,30", // Top-left corner
+                33: "29,30,32,33", // Top-left corner
+                36: "32,33,35,36"  // Top-right corner
               };
               
               // Only render corner bet area if this number has a corner definition
@@ -1776,30 +1776,30 @@ export default function GameRoulette() {
             // FIXED: Correct corner values based on actual roulette table layout
             const cornerMap = {
               2: "0,1,2",      // Middle-left corner
-              5: "1,2,4,5",      // Middle-left corner (FIXED)
-              8: "4,5,7,8",      // Middle-left corner (FIXED)
-              11: "8,9,11,12",  // Middle-left corner (FIXED)
-              14: "11,12,14,15", // Middle-left corner (FIXED)
-              17: "14,15,17,18", // Middle-left corner (FIXED)
-              20: "16,17,19,20", // Middle-left corner (FIXED)
-              23: "20,21,23,24", // Middle-left corner (FIXED)
-              26: "22,23,25,26", // Middle-left corner (FIXED)
-              29: "25,26,28,29", // Middle-left corner (FIXED)
-              32: "28,29,31,32", // Middle-left corner (FIXED)
-              35: "31,32,33,35", // Middle-right corner (FIXED)
+              5: "1,2,4,5",      // Middle-left corner
+              8: "4,5,7,8",      // Middle-left corner
+              11: "7,8,10,11",  // Middle-left corner - FIXED
+              14: "10,11,13,14", // Middle-left corner - FIXED
+              17: "13,14,16,17", // Middle-left corner - FIXED
+              20: "16,17,19,20", // Middle-left corner
+              23: "19,20,22,23", // Middle-left corner - FIXED
+              26: "22,23,25,26", // Middle-left corner
+              29: "25,26,28,29", // Middle-left corner
+              32: "28,29,31,32", // Middle-left corner
+              35: "31,32,33,35", // Middle-right corner
               
               3: "2,3,0",      // Top-left corner
-              6: "2,3,5,6",      // Top-left corner (FIXED)
-              9: "5,6,8,9",     // Top-left corner (FIXED)
-              12: "8,9,11,12",  // Top-left corner (FIXED)
-              15: "12,14,15,18", // Top-left corner (FIXED)
-              18: "14,15,17,18", // Top-left corner (FIXED)
-              21: "17,18,20,21", // Top-left corner (FIXED)
-              24: "20,21,23,24", // Top-left corner (FIXED)
-              27: "23,24,26,27", // Top-left corner (FIXED)
-              30: "26,27,29,30", // Top-left corner (FIXED)
-              33: "29,30,32,33", // Top-left corner (FIXED)
-              36: "32,33,35,36"  // Top-right corner (FIXED)
+              6: "2,3,5,6",      // Top-left corner
+              9: "5,6,8,9",     // Top-left corner
+              12: "8,9,11,12",  // Top-left corner
+              15: "11,12,14,15", // Top-left corner - FIXED
+              18: "14,15,17,18", // Top-left corner
+              21: "17,18,20,21", // Top-left corner
+              24: "20,21,23,24", // Top-left corner
+              27: "23,24,26,27", // Top-left corner
+              30: "26,27,29,30", // Top-left corner
+              33: "29,30,32,33", // Top-left corner
+              36: "32,33,35,36"  // Top-right corner
             };
 
             const cornerNumbers = cornerMap[actualNumber];
@@ -1990,6 +1990,12 @@ export default function GameRoulette() {
       case BetType.STREET:
         return `Street ${betValue}`;
       case BetType.CORNER:
+        // For corner bets, betValue is already a string like "7,8,10,11"
+        // Convert it to a more readable format like "7-8-10-11"
+        if (typeof betValue === 'string' && betValue.includes(',')) {
+          const cornerNumbers = betValue.split(',').map(n => n.trim());
+          return `Corner ${cornerNumbers.join('-')}`;
+        }
         return `Corner ${betValue}`;
       default:
         return 'Unknown';
