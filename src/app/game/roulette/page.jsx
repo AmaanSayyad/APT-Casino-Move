@@ -211,9 +211,154 @@ function GridInside({
 
     const cornerNumbers = cornerMap[insideNumber];
     if (cornerNumbers) {
-      return `Corner ${insideNumber} (${cornerNumbers})`;
+      return `Corner ${cornerNumbers.replace(/,/g, '-')}`;
     }
-    return `Corner ${insideNumber} (${insideNumber})`;
+    return `Corner ${insideNumber}`;
+  };
+
+  // Get split bet numbers from predefined map
+  const getSplitNumbers = () => {
+    // Predefined split positions for all numbers
+    const splitMap = {
+      // Left splits (n, n-3) - including 1,2,3 with 0
+      1: "0,1",      // Bottom-left split with 0
+      2: "0,2",      // Middle-left split with 0
+      3: "0,3",      // Top-left split with 0
+      
+      4: "1,4",      // Bottom-left split
+      7: "4,7",      // Bottom-left split
+      10: "7,10",    // Bottom-left split
+      13: "10,13",   // Bottom-left split
+      16: "13,16",   // Bottom-left split
+      19: "16,19",   // Bottom-left split
+      22: "19,22",   // Bottom-left split
+      25: "22,25",   // Bottom-left split
+      28: "25,28",   // Bottom-left split
+      31: "28,31",   // Bottom-left split
+      34: "31,34",   // Bottom-left split
+      
+      5: "2,5",      // Middle-left split
+      8: "5,8",      // Middle-left split
+      11: "8,11",    // Middle-left split
+      14: "11,14",   // Middle-left split
+      17: "14,17",   // Middle-left split
+      20: "17,20",   // Middle-left split
+      23: "20,23",   // Middle-left split
+      26: "23,26",   // Middle-left split
+      29: "26,29",   // Middle-left split
+      32: "29,32",   // Middle-left split
+      35: "32,35",   // Middle-left split
+      
+      6: "3,6",      // Top-left split
+      9: "6,9",      // Top-left split
+      12: "9,12",    // Top-left split
+      15: "12,15",   // Top-left split
+      18: "15,18",   // Top-left split
+      21: "18,21",   // Top-left split
+      24: "21,24",   // Top-left split
+      27: "24,27",   // Top-left split
+      30: "27,30",   // Top-left split
+      33: "30,33",   // Top-left split
+      36: "33,36"    // Top-left split
+    };
+
+    const splitNumbers = splitMap[insideNumber];
+    if (splitNumbers) {
+      // Show only the numbers, not the split number
+      return `Split ${splitNumbers.replace(',', '-')}`;
+    }
+    return `Split ${insideNumber}`;
+  };
+
+  // Get bottom bet numbers - can be either street bet or bottom split bet
+  const getBottomBetNumbers = () => {
+    const isBottomRow = [1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34].includes(insideNumber);
+    const isMiddleRow = [2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35].includes(insideNumber);
+    const isTopRow = [3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36].includes(insideNumber);
+
+    if (isBottomRow) {
+      // Bottom row: street bet [n, n+1, n+2]
+      const streetNumbers = [insideNumber, insideNumber + 1, insideNumber + 2];
+      return `Street ${streetNumbers.join('-')}`;
+    } else if (insideNumber <= 33) {
+      // Middle/Top row: bottom split bet - use predefined values
+      const bottomSplitMap = {
+        2: "1,2",      // Split 2: 1,2
+        3: "2,3",      // Split 3: 2,3
+        5: "4,5",      // Split 5: 4,5
+        6: "5,6",      // Split 6: 5,6
+        8: "7,8",      // Split 8: 7,8
+        9: "8,9",      // Split 9: 8,9
+        11: "10,11",   // Split 11: 10,11
+        12: "11,12",   // Split 12: 11,12
+        14: "13,14",   // Split 14: 13,14
+        15: "14,15",   // Split 15: 14,15
+        17: "16,17",   // Split 17: 16,17
+        18: "17,18",   // Split 18: 17,18
+        20: "19,20",   // Split 20: 19,20
+        21: "20,21",   // Split 21: 20,21
+        23: "22,23",   // Split 23: 22,23
+        24: "23,24",   // Split 24: 23,24
+        26: "25,26",   // Split 26: 25,26
+        27: "26,27",   // Split 27: 26,27
+        29: "28,29",   // Split 29: 28,29
+        30: "29,30",   // Split 30: 29,30
+        32: "31,32",   // Split 32: 31,32
+        33: "32,33"    // Split 33: 32,33
+      };
+      
+      const splitNumbers = bottomSplitMap[insideNumber];
+      if (splitNumbers) {
+        return `Split ${splitNumbers.replace(',', '-')}`;
+      }
+      
+      // Fallback to old calculation if not in map
+      const bottomNumber = insideNumber + 3;
+      return `Split ${insideNumber}-${bottomNumber}`;
+    } else {
+      // Top row numbers > 33: street bet [n-2, n-1, n]
+      const streetNumbers = [insideNumber - 2, insideNumber - 1, insideNumber];
+      return `Street ${streetNumbers.join('-')}`;
+    }
+  };
+
+  // Get horizontal split bet numbers from predefined map
+  const getHorizontalSplitNumbers = () => {
+    // Predefined horizontal split positions for all numbers
+    const horizontalSplitMap = {
+      // Horizontal splits (n, n+1) - same row - FIXED VALUES
+      2: "1,2",      // Split 2: 1,2
+      3: "2,3",      // Split 3: 2,3
+      5: "4,5",      // Split 5: 4,5
+      6: "5,6",      // Split 6: 5,6
+      8: "7,8",      // Split 8: 7,8
+      9: "8,9",      // Split 9: 8,9
+      11: "10,11",   // Split 11: 10,11
+      12: "11,12",   // Split 12: 11,12
+      14: "13,14",   // Split 14: 13,14
+      15: "14,15",   // Split 15: 14,15
+      17: "16,17",   // Split 17: 16,17
+      18: "17,18",   // Split 18: 17,18
+      20: "19,20",   // Split 20: 19,20
+      21: "20,21",   // Split 21: 20,21
+      23: "22,23",   // Split 23: 22,23
+      24: "23,24",   // Split 24: 23,24
+      26: "25,26",   // Split 26: 25,26
+      27: "26,27",   // Split 27: 26,27
+      29: "28,29",   // Split 29: 28,29
+      30: "29,30",   // Split 30: 29,30
+      32: "31,32",   // Split 32: 31,32
+      33: "32,33",   // Split 33: 32,33
+      35: "34,35",   // Split 35: 34,35
+      36: "35,36"    // Split 36: 35,36
+    };
+
+    const horizontalSplitNumbers = horizontalSplitMap[insideNumber];
+    if (horizontalSplitNumbers) {
+      // Show only the numbers, not the split number
+      return `Split ${horizontalSplitNumbers.replace(',', '-')}`;
+    }
+    return `Split ${insideNumber}`;
   };
 
   return (
@@ -264,11 +409,7 @@ function GridInside({
               {splitleft > 0 && (
                 <BetBox
                   betValue={splitleft}
-                  betType={
-                    insideNumber - 3 >= 1
-                      ? `Split (${insideNumber - 3}/${insideNumber})`
-                      : `Invalid Split`
-                  }
+                  betType={getSplitNumbers()}
                   position="top-right"
                   onClick={(e) =>
                     placeBet(e, "inside", (insideNumber - 1) * 4 + 2)
@@ -361,13 +502,7 @@ function GridInside({
               {splitbottom > 0 && (
                 <BetBox
                   betValue={splitbottom}
-                  betType={
-                    [1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34].includes(insideNumber)
-                      ? `Street (${insideNumber}-${insideNumber + 1}-${insideNumber + 2})`
-                      : insideNumber <= 33
-                        ? `Split (${insideNumber}/${insideNumber + 3})`
-                        : `Street (${insideNumber - 2}-${insideNumber - 1}-${insideNumber})`
-                  }
+                  betType={getBottomBetNumbers()}
                   position="bottom-right"
                   onClick={(e) =>
                     placeBet(e, "inside", (insideNumber - 1) * 4 + 3)
@@ -376,6 +511,7 @@ function GridInside({
               )}
             </Box>
           </Box>
+
         </Box>
       )}
     </ParentSize>
@@ -1489,11 +1625,55 @@ export default function GameRoulette() {
             // Straight up bet - actualNumber is the actual number (0-36)
             allBets.push({ type: BetType.NUMBER, value: actualNumber, amount, name: `Number ${actualNumber}` });
           } else if (betPosition === 2) {
-            // Left split bet - bet between current number and the number to its left
-            // In roulette table, left means -3 (moving up one row)
-            const leftNumber = actualNumber - 3;
-            if (leftNumber >= 1) {
-              allBets.push({ type: BetType.SPLIT, value: `${leftNumber},${actualNumber}`, amount, name: `Split ${leftNumber}/${actualNumber}` });
+            // Left split bet - predefined split positions
+            const splitMap = {
+              // Left splits (n, n-3) - including 1,2,3 with 0
+              1: "0,1",      // Bottom-left split with 0
+              2: "0,2",      // Middle-left split with 0
+              3: "0,3",      // Top-left split with 0
+              
+              4: "1,4",      // Bottom-left split
+              7: "4,7",      // Bottom-left split
+              10: "7,10",    // Bottom-left split
+              13: "10,13",   // Bottom-left split
+              16: "13,16",   // Bottom-left split
+              19: "16,19",   // Bottom-left split
+              22: "19,22",   // Bottom-left split
+              25: "22,25",   // Bottom-left split
+              28: "25,28",   // Bottom-left split
+              31: "28,31",   // Bottom-left split
+              34: "31,34",   // Bottom-left split
+              
+              5: "2,5",      // Middle-left split
+              8: "5,8",      // Middle-left split
+              11: "8,11",    // Middle-left split
+              14: "11,14",   // Middle-left split
+              17: "14,17",   // Middle-left split
+              20: "17,20",   // Middle-left split
+              23: "20,23",   // Middle-left split
+              26: "23,26",   // Middle-left split
+              29: "26,29",   // Middle-left split
+              32: "29,32",   // Middle-left split
+              35: "32,35",   // Middle-left split
+              
+              6: "3,6",      // Top-left split
+              9: "6,9",      // Top-left split
+              12: "9,12",    // Top-left split
+              15: "12,15",   // Top-left split
+              18: "15,18",   // Top-left split
+              21: "18,21",   // Top-left split
+              24: "21,24",   // Top-left split
+              27: "24,27",   // Top-left split
+              30: "27,30",   // Top-left split
+              33: "30,33",   // Top-left split
+              36: "33,36"    // Top-left split
+            };
+            
+            const splitNumbers = splitMap[actualNumber];
+            if (splitNumbers) {
+              // Use 100+ numbers for left splits to avoid confusion with bottom splits
+              const splitNumber = actualNumber + 100;
+              allBets.push({ type: BetType.SPLIT, value: splitNumbers, amount, name: `Split ${splitNumber} (${splitNumbers})` });
             }
           } else if (betPosition === 3) {
             // Bottom bet - can be either street bet or bottom split bet
@@ -1513,6 +1693,42 @@ export default function GameRoulette() {
               // Top row numbers > 33: street bet [n-2, n-1, n]
               const streetNumbers = [actualNumber - 2, actualNumber - 1, actualNumber];
               allBets.push({ type: BetType.STREET, value: streetNumbers.join(','), amount, name: `Street ${streetNumbers.join('-')}` });
+            }
+          } else if (betPosition === 5) {
+            // Horizontal split bet - predefined split positions (same row, adjacent numbers)
+            const horizontalSplitMap = {
+              // Horizontal splits (n, n+1) - same row - FIXED VALUES
+              2: "1,2",      // Split 2: 1,2
+              3: "2,3",      // Split 3: 2,3
+              5: "4,5",      // Split 5: 4,5
+              6: "5,6",      // Split 6: 5,6
+              8: "7,8",      // Split 8: 7,8
+              9: "8,9",      // Split 9: 8,9
+              11: "10,11",   // Split 11: 10,11
+              12: "11,12",   // Split 12: 11,12
+              14: "13,14",   // Split 14: 13,14
+              15: "14,15",   // Split 15: 14,15
+              17: "16,17",   // Split 17: 16,17
+              18: "17,18",   // Split 18: 17,18
+              20: "19,20",   // Split 20: 19,20
+              21: "20,21",   // Split 21: 20,21
+              23: "22,23",   // Split 23: 22,23
+              24: "23,24",   // Split 24: 23,24
+              26: "25,26",   // Split 26: 25,26
+              27: "26,27",   // Split 27: 26,27
+              29: "28,29",   // Split 29: 28,29
+              30: "29,30",   // Split 30: 29,30
+              32: "31,32",   // Split 32: 31,32
+              33: "32,33",   // Split 33: 32,33
+              35: "34,35",   // Split 35: 34,35
+              36: "35,36"    // Split 36: 35,36
+            };
+            
+            const horizontalSplitNumbers = horizontalSplitMap[actualNumber];
+            if (horizontalSplitNumbers) {
+              // Use 200+ numbers for horizontal splits to avoid confusion
+              const splitNumber = actualNumber + 200;
+              allBets.push({ type: BetType.SPLIT, value: horizontalSplitNumbers, amount, name: `Split ${splitNumber} (${horizontalSplitNumbers})` });
             }
           } else if (betPosition === 4) {
             // Corner bet (4 numbers) - predefined corner positions
