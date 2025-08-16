@@ -1634,26 +1634,33 @@ export default function GameRoulette() {
       // Add inside bets
       inside.forEach((amount, index) => {
         if (amount > 0) {
-          // inside array structure: 37 numbers × 4 bet types = 148 positions
-          // But we have 145, so let's calculate correctly
-          // Each number has 4 bet types: straight, split-left, split-bottom, corner
-          const betPosition = (index % 4) + 1; // 1=straight, 2=split-left, 3=split-bottom, 4=corner
-          const numberBase = Math.floor(index / 4);
+          // inside array structure: 
+          // Index 0: Number 0 (straight bet only)
+          // Index 1-4: Number 1 (straight=1, split-left=2, split-bottom=3, corner=4)
+          // Index 5-8: Number 2 (straight=5, split-left=6, split-bottom=7, corner=8)
+          // Formula: (number-1)*4 + betType for numbers 1-36
+          
+          let actualNumber, betPosition;
+          
+          if (index === 0) {
+            // Special case for number 0 - only straight bet
+            actualNumber = 0;
+            betPosition = 1; // straight bet
+          } else {
+            // For numbers 1-36
+            betPosition = ((index - 1) % 4) + 1; // 1=straight, 2=split-left, 3=split-bottom, 4=corner
+            actualNumber = Math.floor((index - 1) / 4) + 1; // Numbers 1-36
+          }
 
           // Debug: Check the actual structure
-          console.log(`Inside bet structure - index: ${index}, betPosition: ${betPosition}, numberBase: ${numberBase}`);
-
-          // The problem: index 1 should be number 1, not number 0!
-          // Let's fix the calculation
-          const actualNumber = Math.floor(index / 4) + 1;
-          const actualBetType = (index % 4);
+          console.log(`Inside bet structure - index: ${index}, betPosition: ${betPosition}, actualNumber: ${actualNumber}`);
 
           // Debug: Check if this is a straight bet on a number
           if (betPosition === 1) {
-            console.log(`Straight bet detected - index: ${index}, number: ${numberBase}, amount: ${amount}`);
+            console.log(`Straight bet detected - index: ${index}, actualNumber: ${actualNumber}, amount: ${amount}`);
           }
 
-          console.log(`Inside bet - index: ${index}, amount: ${amount}, betPosition: ${betPosition}, numberBase: ${numberBase}`);
+          console.log(`Inside bet - index: ${index}, amount: ${amount}, betPosition: ${betPosition}, actualNumber: ${actualNumber}`);
 
           // FIXED: Use actualNumber instead of numberBase for better accuracy
           if (betPosition === 1) {
