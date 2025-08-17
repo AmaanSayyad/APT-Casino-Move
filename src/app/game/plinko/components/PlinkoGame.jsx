@@ -452,7 +452,7 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
         console.log('Reward calculated:', reward);
         console.log('==================');
         
-        // Add reward to current balance (bet amount already deducted in GameControls)
+        // Add reward to current balance (bet amount already deducted when ball was spawned)
         if (effectiveBetAmount > 0) {
           console.log('Adding reward to balance:');
           console.log('  Current balance from Redux:', userBalance);
@@ -541,6 +541,26 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
     setBallPosition(null);
     setHitPegs(new Set());
 
+    // Deduct bet amount when ball is spawned
+    if (currentBetAmount > 0) {
+      const currentBalance = parseFloat(userBalance);
+      const betAmountInReduxUnit = currentBetAmount * 100000000;
+      
+      console.log('Ball spawned - deducting bet amount:');
+      console.log('  Current balance:', currentBalance);
+      console.log('  Bet amount to deduct:', betAmountInReduxUnit);
+      
+      if (betAmountInReduxUnit <= currentBalance) {
+        const newBalance = (currentBalance - betAmountInReduxUnit).toFixed(2);
+        dispatch(setBalance(newBalance));
+        console.log('  New balance after deduction:', newBalance);
+      } else {
+        console.warn('Insufficient balance for bet deduction');
+        setIsDropping(false);
+        return;
+      }
+    }
+
     const Bodies = Matter.Bodies;
     const World = Matter.World;
 
@@ -574,7 +594,7 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
     });
 
     World.add(engineRef.current.world, ball);
-  }, [isDropping, currentRows]);
+  }, [isDropping, currentRows, currentBetAmount, userBalance, dispatch]);
 
   // Expose functions to parent component
   useImperativeHandle(ref, () => ({

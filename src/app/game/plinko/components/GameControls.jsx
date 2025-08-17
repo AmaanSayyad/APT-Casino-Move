@@ -163,6 +163,10 @@ export default function GameControls({ onBet, onRowChange, onRiskLevelChange, on
     // Start first bet immediately
     if (onBet) {
       console.log('First bet starting...');
+      // Notify parent that auto betting has started
+      if (onBetAmountChange) {
+        onBetAmountChange(parseFloat(betAmount));
+      }
       onBet();
       currentBet++;
       setNumberOfBets((totalBets - currentBet).toString());
@@ -185,6 +189,10 @@ export default function GameControls({ onBet, onRowChange, onRiskLevelChange, on
       
       if (onBet) {
         console.log('Auto bet', currentBet + 1, 'starting...');
+        // Notify parent about each auto bet
+        if (onBetAmountChange) {
+          onBetAmountChange(parseFloat(betAmount));
+        }
         onBet();
         currentBet++;
         // Update the remaining bets count
@@ -489,20 +497,6 @@ export default function GameControls({ onBet, onRowChange, onRiskLevelChange, on
             <div className="text-center text-red-400 text-sm">
               Insufficient balance for {betAmount} APT bet
             </div>
-          )}
-          
-          {/* Test Balance Button - Only in development */}
-          {process.env.NODE_ENV === 'development' && (
-            <button
-              onClick={() => {
-                const currentBalance = parseFloat(userBalance);
-                const testAmount = 1 * 100000000; // 1 APT
-                dispatch(setBalance(testAmount));
-              }}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 px-4 rounded-lg transition-colors"
-            >
-              +1 APT (Test)
-            </button>
           )}
         </div>
       )}
