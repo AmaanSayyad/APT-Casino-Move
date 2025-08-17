@@ -216,8 +216,8 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
       // Calculate pins in this row - EXACTLY from AnsonH/plinko-game
       let pinsInRow;
       if (row === rows - 1) {
-        // Last row should have exactly 17 pins for 15 rows
-        pinsInRow = 17;
+        // Last row should have binCount + 1 pins (pins between reward boxes)
+        pinsInRow = binCount + 1;
       } else {
         // Other rows follow the pattern: 3 + row (starts with 3, adds 1 per row)
         pinsInRow = 3 + row;
@@ -245,7 +245,7 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
     }
     
     console.log(`Generated ${pins.length} pins for ${rows} rows, last row has ${pinsLastRowXCoords.length} pins`);
-    console.log(`Row breakdown: ${Array.from({length: rows}, (_, i) => i === rows - 1 ? 17 : 3 + i)}`);
+    console.log(`Row breakdown: ${Array.from({length: rows}, (_, i) => i === rows - 1 ? binCount + 1 : 3 + i)}`);
     console.log(`First row pins: ${pins.filter(p => p.row === 0).map(p => p.x.toFixed(1))}`);
     console.log(`Last row pins: ${pinsLastRowXCoords.map(x => x.toFixed(1))}`);
     return { pins, pinsLastRowXCoords };
@@ -602,7 +602,7 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
 
           {/* Multiplier Slots */}
           <div className="flex justify-center mt-4 max-w-[800px] mx-auto">
-            <div className="flex justify-between w-full px-12">
+            <div className="flex justify-between w-full px-4 gap-2">
               {multipliers.map((multiplier, index) => (
                 <div
                   key={index}
