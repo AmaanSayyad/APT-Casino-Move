@@ -193,7 +193,10 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
   const getPinDistanceX = (rows) => {
     // For the last row, we need to distribute binCount pins across the available width
     const availableWidth = CANVAS_WIDTH - PADDING_X * 2;
-    const pinDistanceX = availableWidth / (binCount - 1);
+    // Slightly increase pin distance for 16 rows to better align with reward boxes
+    const pinDistanceX = rows === 16 ? 
+      (availableWidth / (binCount - 1)) * 1.05 : 
+      availableWidth / (binCount - 1);
     console.log(`Pin distance X: ${pinDistanceX} for ${binCount} bins, available width: ${availableWidth}`);
     return pinDistanceX;
   };
@@ -602,7 +605,7 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
 
           {/* Multiplier Slots */}
           <div className="flex justify-center mt-4 max-w-[800px] mx-auto">
-            <div className="flex justify-between w-full px-4 gap-2">
+            <div className={`flex justify-between w-full gap-2 ${currentRows === 16 ? 'px-0' : 'px-4'}`}>
               {multipliers.map((multiplier, index) => (
                 <div
                   key={index}
