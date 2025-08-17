@@ -84,7 +84,7 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
   const PIN_CATEGORY = 0x0001;
   const BALL_CATEGORY = 0x0002;
 
-  // Row-specific configurations for bins and multipliers - Fixed to have binCount = rows + 1
+  // Row-specific configurations for bins and multipliers - Following 16 row logic: binCount = rows + 1
   const getRowConfig = (rows, riskLevel) => {
     const configs = {
       Low: {
@@ -427,29 +427,57 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
       });
     });
 
-    // Handle ball entering bin (exact logic from reference repo)
+    // Handle ball entering bin (exact logic from reference repo - 16 row logic)
     const handleBallEnterBin = (ball, pinsLastRowXCoords) => {
-      // Find which bin the ball fell into using findLastIndex logic
-      const binIndex = pinsLastRowXCoords.findLastIndex((pinX) => pinX < ball.position.x);
+      // 16 row logic: Calculate bin index based on ball position relative to last row pins
+      let binIndex = -1;
       
-      if (binIndex !== -1 && binIndex < pinsLastRowXCoords.length) {
+      // If ball is to the left of the first pin, it's in the leftmost bin (index 0)
+      if (ball.position.x < pinsLastRowXCoords[0]) {
+        binIndex = 0;
+      }
+      // If ball is to the right of the last pin, it's in the rightmost bin (last index)
+      else if (ball.position.x > pinsLastRowXCoords[pinsLastRowXCoords.length - 1]) {
+        binIndex = pinsLastRowXCoords.length;
+      }
+      // Otherwise, find which two pins the ball is between
+      else {
+        for (let i = 0; i < pinsLastRowXCoords.length - 1; i++) {
+          if (ball.position.x >= pinsLastRowXCoords[i] && ball.position.x < pinsLastRowXCoords[i + 1]) {
+            binIndex = i + 1;
+            break;
+          }
+        }
+      }
+      
+      // Debug: Log the bin detection process
+      console.log('=== BIN DETECTION DEBUG ===');
+      console.log('Row configuration:', rows, 'rows,', riskLevel, 'risk');
+      console.log('Ball position X:', ball.position.x);
+      console.log('Last row pin X coordinates:', pinsLastRowXCoords);
+      console.log('Calculated bin index:', binIndex);
+      console.log('Multipliers array length:', multipliers.length);
+      console.log('Multipliers:', multipliers);
+      console.log('==========================');
+      
+      // Ensure binIndex is within valid range for multipliers array
+      if (binIndex !== -1 && binIndex < multipliers.length) {
         // Set landing animation state
         setBallPosition(binIndex);
         
-        // Calculate reward based on multiplier and bet amount
+        // Calculate reward based on multiplier and bet amount (16 row logic)
         const multiplier = multipliers[binIndex];
         const multiplierValue = parseFloat(multiplier.replace('x', ''));
         
-        // Use betAmount prop if currentBetAmount state is still 0
-        const effectiveBetAmount = currentBetAmount > 0 ? currentBetAmount : betAmount;
+        // Always use the betAmount prop for consistency across all row configurations (16 row logic)
+        const effectiveBetAmount = parseFloat(betAmount) || 0;
         const reward = effectiveBetAmount * multiplierValue;
         
         console.log('=== GAME RESULT ===');
+        console.log('Row configuration:', rows, 'rows,', riskLevel, 'risk');
         console.log('Bet amount from props:', betAmount);
-        console.log('Current bet amount in state:', currentBetAmount);
-        console.log('Effective bet amount used:', effectiveBetAmount);
-        console.log('Multiplier:', multiplier);
-        console.log('Reward calculated:', reward);
+        console.log('Multiplier:', multiplier, '(bin index:', binIndex, ')');
+        console.log('Reward calculated:', reward, 'APT');
         console.log('==================');
         
         // Add reward to current balance (bet amount already deducted when ball was spawned)
