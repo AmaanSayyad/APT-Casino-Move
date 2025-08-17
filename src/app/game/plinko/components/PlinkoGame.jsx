@@ -8,6 +8,7 @@ const PlinkoGame = forwardRef(({ rowCount = 16, onRowChange }, ref) => {
   const [hitPegs, setHitPegs] = useState(new Set());
   const [currentRows, setCurrentRows] = useState(rowCount);
   const [isRecreating, setIsRecreating] = useState(false);
+  const [betHistory, setBetHistory] = useState([]);
   
   // Physics engine refs
   const engineRef = useRef(null);
@@ -315,6 +316,16 @@ const PlinkoGame = forwardRef(({ rowCount = 16, onRowChange }, ref) => {
         // Set landing animation state
         setBallPosition(binIndex);
         
+        // Add to bet history
+        const newBetResult = {
+          multiplier: multipliers[binIndex],
+          timestamp: Date.now()
+        };
+        setBetHistory(prev => {
+          const updated = [newBetResult, ...prev.slice(0, 4)]; // Keep only last 5
+          return updated;
+        });
+        
         setTimeout(() => {
           setIsDropping(false);
           console.log(`Ball landed in bin ${binIndex} with multiplier ${multipliers[binIndex]}`);
@@ -454,16 +465,7 @@ const PlinkoGame = forwardRef(({ rowCount = 16, onRowChange }, ref) => {
           </div>
         )}
         
-        {/* Landing Celebration Effect */}
-        {ballPosition !== null && (
-          <div className="absolute inset-0 pointer-events-none z-50">
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-              <div className="text-4xl font-bold text-yellow-400 animate-bounce">
-                {multipliers[ballPosition]}
-              </div>
-            </div>
-          </div>
-        )}
+
         
         {/* Physics Canvas Container */}
         <div className="relative w-full max-w-[800px]">
@@ -493,6 +495,26 @@ const PlinkoGame = forwardRef(({ rowCount = 16, onRowChange }, ref) => {
               />
             ))}
           </svg>
+
+          {/* Bet History - Right Side */}
+          <div className="absolute right-4 top-4 z-20">
+            <div className="bg-[#1A0015] border border-[#333947] rounded-lg p-3">
+              <div className="text-xs text-gray-400 mb-2 text-center">Last 5 Bets</div>
+              <div className="space-y-2">
+                {betHistory.map((bet, index) => (
+                  <div key={index} className="w-12 h-12 bg-[#2A0025] border border-[#333947] rounded-lg flex items-center justify-center">
+                    <span className="text-xs font-bold text-white">{bet.multiplier}</span>
+                  </div>
+                ))}
+                {/* Fill empty slots */}
+                {Array.from({ length: 5 - betHistory.length }).map((_, index) => (
+                  <div key={`empty-${index}`} className="w-12 h-12 bg-[#2A0025] border border-[#333947] rounded-lg flex items-center justify-center opacity-30">
+                    <span className="text-xs text-gray-500">-</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
 
           {/* Multiplier Slots */}
           <div className="flex justify-center mt-4 max-w-[800px] mx-auto">
