@@ -151,6 +151,15 @@ export default function GameControls({ onBet, onRowChange, onRiskLevelChange, on
     const totalBetAmountInReduxUnit = totalBetAmount * 100000000;
     const currentBalance = parseFloat(userBalance);
     
+    console.log('Auto betting balance check:', {
+      totalBets,
+      betAmount,
+      totalBetAmount,
+      totalBetAmountInReduxUnit,
+      currentBalance,
+      balanceInAPT: (currentBalance / 100000000).toFixed(3)
+    });
+    
     if (totalBetAmountInReduxUnit > currentBalance) {
       alert(`Insufficient balance for ${totalBets} bets of ${betAmount} APT each. You need ${totalBetAmount.toFixed(3)} APT but have ${(currentBalance / 100000000).toFixed(3)} APT`);
       setIsAutoPlaying(false);
@@ -246,6 +255,16 @@ export default function GameControls({ onBet, onRowChange, onRiskLevelChange, on
     const currentBalance = parseFloat(userBalance);
     const betAmountInReduxUnit = betValue * 100000000;
     return betAmountInReduxUnit <= currentBalance && betValue > 0;
+  };
+
+  // Check if user has sufficient balance for auto betting
+  const hasSufficientBalanceForAutoBet = () => {
+    const betValue = parseFloat(betAmount);
+    const totalBets = parseInt(numberOfBets) || 1;
+    const totalBetAmount = totalBets * betValue;
+    const totalBetAmountInReduxUnit = totalBetAmount * 100000000;
+    const currentBalance = parseFloat(userBalance);
+    return totalBetAmountInReduxUnit <= currentBalance && betValue > 0;
   };
 
   // Get current balance in APT for display
@@ -481,10 +500,10 @@ export default function GameControls({ onBet, onRowChange, onRiskLevelChange, on
           
           {/* Bet Button */}
           <button 
-            onClick={handleBet}
-            disabled={!hasSufficientBalance()}
+            onClick={gameMode === "auto" ? startAutoBetting : handleBet}
+            disabled={gameMode === "auto" ? !hasSufficientBalanceForAutoBet() : !hasSufficientBalance()}
             className={`w-full font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 ${
-              hasSufficientBalance() 
+              (gameMode === "auto" ? hasSufficientBalanceForAutoBet() : hasSufficientBalance())
                 ? 'bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white' 
                 : 'bg-gray-600 text-gray-400 cursor-not-allowed'
             }`}
@@ -493,9 +512,12 @@ export default function GameControls({ onBet, onRowChange, onRiskLevelChange, on
           </button>
           
           {/* Insufficient Balance Warning */}
-          {!hasSufficientBalance() && parseFloat(betAmount) > 0 && (
+          {((gameMode === "auto" && !hasSufficientBalanceForAutoBet()) || (!gameMode === "auto" && !hasSufficientBalance())) && parseFloat(betAmount) > 0 && (
             <div className="text-center text-red-400 text-sm">
-              Insufficient balance for {betAmount} APT bet
+              {gameMode === "auto" 
+                ? `Insufficient balance for ${numberOfBets} bets of ${betAmount} APT each` 
+                : `Insufficient balance for ${betAmount} APT bet`
+              }
             </div>
           )}
         </div>

@@ -472,8 +472,6 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
           console.log('  Final balance (APT):', (parseFloat(finalBalance) / 100000000).toFixed(3));
           
           dispatch(addToBalance(rewardInReduxUnit));
-        } else {
-          console.warn('Cannot add reward: effectiveBetAmount is 0 or negative');
         }
         
         // Add to bet history
@@ -481,7 +479,7 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
           id: Date.now(),
           game: "Plinko",
           title: new Date().toLocaleTimeString(),
-          betAmount: betAmount.toFixed(2),
+          betAmount: effectiveBetAmount.toFixed(2),
           multiplier: multipliers[binIndex],
           payout: reward.toFixed(2),
           timestamp: Date.now()
@@ -537,28 +535,29 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
   const dropBall = useCallback(() => {
     if (!engineRef.current) return;
     
+    // Simple balance check - if user doesn't have enough balance, don't allow playing
+    const currentBalance = parseFloat(userBalance);
+    const betAmountInReduxUnit = currentBetAmount * 100000000;
+    
+    if (betAmountInReduxUnit > currentBalance) {
+      console.warn('Insufficient balance for bet:', {
+        currentBalance: currentBalance / 100000000,
+        betAmount: currentBetAmount,
+        balanceInAPT: (currentBalance / 100000000).toFixed(3)
+      });
+      alert(`Insufficient balance! You have ${(currentBalance / 100000000).toFixed(3)} APT but need ${currentBetAmount} APT`);
+      return;
+    }
+    
     setIsDropping(true);
     setBallPosition(null);
     setHitPegs(new Set());
 
     // Deduct bet amount when ball is spawned
     if (currentBetAmount > 0) {
-      const currentBalance = parseFloat(userBalance);
-      const betAmountInReduxUnit = currentBetAmount * 100000000;
-      
-      console.log('Ball spawned - deducting bet amount:');
-      console.log('  Current balance:', currentBalance);
-      console.log('  Bet amount to deduct:', betAmountInReduxUnit);
-      
-      if (betAmountInReduxUnit <= currentBalance) {
-        const newBalance = (currentBalance - betAmountInReduxUnit).toFixed(2);
-        dispatch(setBalance(newBalance));
-        console.log('  New balance after deduction:', newBalance);
-      } else {
-        console.warn('Insufficient balance for bet deduction');
-        setIsDropping(false);
-        return;
-      }
+      const newBalance = (currentBalance - betAmountInReduxUnit).toFixed(2);
+      dispatch(setBalance(newBalance));
+      console.log('Bet amount deducted:', currentBetAmount, 'New balance:', newBalance);
     }
 
     const Bodies = Matter.Bodies;
@@ -626,6 +625,44 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
       }
     }
   };
+
+  // Game statistics state
+  const [gamesPlayed, setGamesPlayed] = useState(0);
+  const [bestMultiplier, setBestMultiplier] = useState(0);
+  const [totalWon, setTotalWon] = useState(0);
+  
+  // Calculate game statistics from betHistory
+  useEffect(() => {
+    if (betHistory.length > 0) {
+      // Count games played
+      setGamesPlayed(betHistory.length);
+      
+      // Find best multiplier
+      const bestMulti = betHistory.reduce((best, bet) => {
+        const multiplierValue = parseFloat(bet.multiplier.replace('x', ''));
+        return Math.max(best, multiplierValue);
+      }, 0);
+      setBestMultiplier(bestMulti);
+      
+      // Calculate total won (sum of all payouts - sum of all bet amounts)
+      const totalPayouts = betHistory.reduce((sum, bet) => {
+        return sum + parseFloat(bet.payout);
+      }, 0);
+      
+      const totalBetAmounts = betHistory.reduce((sum, bet) => {
+        return sum + parseFloat(bet.betAmount);
+      }, 0);
+      
+      const total = totalPayouts - totalBetAmounts;
+      setTotalWon(total);
+      
+      console.log('Game stats updated from history:', {
+        gamesPlayed: betHistory.length,
+        bestMultiplier: bestMulti,
+        totalWon: total
+      });
+    }
+  }, [betHistory]);
 
   return (
     <div className="bg-[#1A0015] rounded-xl border border-[#333947] p-6">
@@ -732,15 +769,15 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
       {/* Game Stats */}
       <div className="mt-8 grid grid-cols-3 gap-6">
         <div className="text-center">
-          <div className="text-2xl font-bold text-white">0</div>
+          <div className="text-2xl font-bold text-white">{gamesPlayed}</div>
           <div className="text-xs text-gray-400">Games Played</div>
         </div>
         <div className="text-center">
-          <div className="text-2xl font-bold text-white">0.00x</div>
+          <div className="text-2xl font-bold text-white">{bestMultiplier.toFixed(2)}x</div>
           <div className="text-xs text-gray-400">Best Multiplier</div>
         </div>
         <div className="text-center">
-          <div className="text-2xl font-bold text-white">0.00 APT</div>
+          <div className="text-2xl font-bold text-white">{totalWon.toFixed(2)} APT</div>
           <div className="text-xs text-gray-400">Total Won</div>
         </div>
       </div>
