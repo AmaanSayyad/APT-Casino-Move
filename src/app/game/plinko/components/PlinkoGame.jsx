@@ -51,121 +51,121 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
   const PIN_CATEGORY = 0x0001;
   const BALL_CATEGORY = 0x0002;
 
-  // Row-specific configurations for bins and multipliers - EXACTLY from AnsonH/plinko-game
+  // Row-specific configurations for bins and multipliers - Fixed to have binCount = rows + 1
   const getRowConfig = (rows, riskLevel) => {
     const configs = {
       Low: {
         8: {
-          binCount: 10,
-          multipliers: ["500x", "65x", "13x", "4.5x", "2x", "2x", "4.5x", "13x", "65x", "500x"]
+          binCount: 9,
+          multipliers: ["5.6x", "2.1x", "1.1x", "1x", "0.5x", "1x", "1.1x", "2.1x", "5.6x"]
         },
         9: {
-          binCount: 11,
-          multipliers: ["500x", "65x", "13x", "4.5x", "2x", "1x", "2x", "4.5x", "13x", "65x", "500x"]
+          binCount: 10,
+          multipliers: ["5.6x", "2x", "1.6x", "1x", "0.7x", "0.7x", "1x", "1.6x", "2x", "5.6x"]
         },
         10: {
-          binCount: 12,
-          multipliers: ["500x", "65x", "13x", "4.5x", "2x", "1x", "0.1x", "1x", "2x", "4.5x", "13x", "65x"]
+          binCount: 11,
+          multipliers: ["8.9x", "3x", "1.4x", "1.1x", "1x", "0.5x", "1x", "1.1x", "1.4x", "3x", "8.9x"]
         },
         11: {
-          binCount: 13,
-          multipliers: ["500x", "65x", "13x", "4.5x", "2x", "1x", "0.1x", "0.1x", "1x", "2x", "4.5x", "13x", "65x"]
+          binCount: 12,
+          multipliers: ["8.4x", "3x", "1.9x", "1.3x", "1x", "0.7x", "0.7x", "1x", "1.3x", "1.9x", "3x", "8.4x"]
         },
         12: {
-          binCount: 14,
-          multipliers: ["500x", "65x", "13x", "4.5x", "2x", "1x", "0.1x", "0.1x", "0.1x", "1x", "2x", "4.5x", "13x", "65x"]
+          binCount: 13,
+          multipliers: ["10x", "3x", "1.6x", "1.4x", "1.1x", "1x", "0.5x", "1x", "1.1x", "1.4x", "1.6x", "3x", "10x"]
         },
         13: {
-          binCount: 15,
-          multipliers: ["500x", "65x", "13x", "4.5x", "2x", "1x", "0.1x", "0.1x", "0.1x", "0.1x", "1x", "2x", "4.5x", "13x", "65x"]
+          binCount: 14,
+          multipliers: ["8.1x", "4x", "3x", "1.9x", "1.2x", "0.9x", "0.7x", "0.7x", "0.9x", "1.2x", "1.9x", "3x", "4x", "8.1x"]
         },
         14: {
-          binCount: 16,
-          multipliers: ["500x", "65x", "13x", "4.5x", "2x", "1x", "0.1x", "0.1x", "0.1x", "0.1x", "0.1x", "1x", "2x", "4.5x", "13x", "65x"]
+          binCount: 15,
+          multipliers: ["7.1x", "4x", "1.9x", "1.4x", "1.3x", "1.1x", "1x", "0.5x", "1x", "1.1x", "1.3x", "1.4x", "1.9x", "4x", "7.1x"]
         },
         15: {
-          binCount: 17,
-          multipliers: ["500x", "65x", "13x", "4.5x", "2x", "1x", "0.1x", "0.1x", "0.1x", "0.1x", "0.1x", "1x", "2x", "4.5x", "13x", "65x", "500x"]
+          binCount: 16,
+          multipliers: ["15x", "8x", "3x", "2x", "1.5x", "1.1x", "1x", "0.7x", "0.7x", "1x", "1.1x", "1.5x", "2x", "3x", "8x", "15x"]
         },
         16: {
-          binCount: 18,
-          multipliers: ["500x", "65x", "13x", "4.5x", "2x", "1x", "0.1x", "0.1x", "0.1x", "0.1x", "0.1x", "1x", "2x", "4.5x", "13x", "65x", "500x", "500x"]
+          binCount: 17,
+          multipliers: ["16x", "9x", "2x", "1.4x", "1.4x", "1.2x", "1.1x", "1x", "0.5x", "1x", "1.1x", "1.2x", "1.4x", "1.4x", "2x", "9x", "16x"]
         }
       },
       Medium: {
         8: {
-          binCount: 10,
-          multipliers: ["1000x", "130x", "26x", "9x", "4x", "4x", "9x", "26x", "130x", "1000x"]
+          binCount: 9,
+          multipliers: ["13x", "3x", "1.3x", "0.7x", "0.4x", "0.7x", "1.3x", "3x", "13x"]
         },
         9: {
-          binCount: 11,
-          multipliers: ["1000x", "130x", "26x", "9x", "4x", "2x", "4x", "9x", "26x", "130x", "1000x"]
+          binCount: 10,
+          multipliers: ["18x", "4x", "1.7x", "0.9x", "0.5x", "0.5x", "0.9x", "1.7x", "4x", "18x"]
         },
         10: {
-          binCount: 12,
-          multipliers: ["1000x", "130x", "26x", "9x", "4x", "2x", "0.2x", "2x", "4x", "9x", "26x", "130x"]
+          binCount: 11,
+          multipliers: ["22x", "5x", "2x", "1.4x", "0.6x", "0.4x", "0.6x", "1.4x", "2x", "5x", "22x"]
         },
         11: {
-          binCount: 13,
-          multipliers: ["1000x", "130x", "26x", "9x", "4x", "2x", "0.2x", "0.2x", "2x", "4x", "9x", "26x", "130x"]
+          binCount: 12,
+          multipliers: ["24x", "6x", "3x", "1.8x", "0.7x", "0.5x", "0.5x", "0.7x", "1.8x", "3x", "6x", "24x"]
         },
         12: {
-          binCount: 14,
-          multipliers: ["1000x", "130x", "26x", "9x", "4x", "2x", "0.2x", "0.2x", "0.2x", "2x", "4x", "9x", "26x", "130x"]
+          binCount: 13,
+          multipliers: ["33x", "11x", "4x", "2x", "1.1x", "0.6x", "0.3x", "0.6x", "1.1x", "2x", "4x", "11x", "33x"]
         },
         13: {
-          binCount: 15,
-          multipliers: ["1000x", "130x", "26x", "9x", "4x", "2x", "0.2x", "0.2x", "0.2x", "0.2x", "2x", "4x", "9x", "26x", "130x"]
+          binCount: 14,
+          multipliers: ["43x", "13x", "6x", "1.3x", "0.7x", "0.4x", "0.4x", "0.4x", "0.7x", "1.3x", "3x", "6x", "13x", "43x"]
         },
         14: {
-          binCount: 16,
-          multipliers: ["1000x", "130x", "26x", "9x", "4x", "2x", "0.2x", "0.2x", "0.2x", "0.2x", "0.2x", "2x", "4x", "9x", "26x", "130x"]
+          binCount: 15,
+          multipliers: ["58x", "15x", "7x", "4x", "1.9x", "1x", "0.5x", "0.2x", "0.5x", "1x", "1.9x", "4x", "7x", "15x", "58x"]
         },
         15: {
-          binCount: 17,
-          multipliers: ["1000x", "130x", "26x", "9x", "4x", "2x", "0.2x", "0.2x", "0.2x", "0.2x", "0.2x", "2x", "4x", "9x", "26x", "130x", "1000x"]
+          binCount: 16,
+          multipliers: ["88x", "18x", "11x", "5x", "3x", "1.3x", "0.5x", "0.3x", "0.3x", "0.5x", "1.3x", "3x", "5x", "11x", "18x", "88x"]
         },
         16: {
-          binCount: 18,
-          multipliers: ["1000x", "130x", "26x", "9x", "4x", "2x", "0.2x", "0.2x", "0.2x", "0.2x", "0.2x", "2x", "4x", "9x", "26x", "130x", "1000x", "1000x"]
+          binCount: 17,
+          multipliers: ["110x", "41x", "10x", "5x", "3x", "1.5x", "1x", "0.5x", "0.3x", "0.5x", "1x", "1.5x", "3x", "5x", "10x", "41x", "110x"]
         }
       },
       High: {
         8: {
-          binCount: 10,
-          multipliers: ["2000x", "260x", "52x", "18x", "8x", "8x", "18x", "52x", "260x", "2000x"]
+          binCount: 9,
+          multipliers: ["29x", "4x", "1.5x", "0.3x", "0.2x", "0.3x", "1.5x", "4x", "29x"]
         },
         9: {
-          binCount: 11,
-          multipliers: ["2000x", "260x", "52x", "18x", "8x", "4x", "8x", "18x", "52x", "260x", "2000x"]
+          binCount: 10,
+          multipliers: ["43x", "7x", "2x", "0.6x", "0.2x", "0.2x", "0.6x", "2x", "7x", "43x"]
         },
         10: {
-          binCount: 12,
-          multipliers: ["2000x", "260x", "52x", "18x", "8x", "4x", "0.4x", "4x", "8x", "18x", "52x", "260x"]
+          binCount: 11,
+          multipliers: ["76x", "10x", "3x", "0.9x", "0.3x", "0.2x", "0.3x", "0.9x", "3x", "10x", "76x"]
         },
         11: {
-          binCount: 13,
-          multipliers: ["2000x", "260x", "52x", "18x", "8x", "4x", "0.4x", "0.4x", "4x", "8x", "18x", "52x", "260x"]
+          binCount: 12,
+          multipliers: ["120x", "14x", "5.2x", "1.4x", "0.4x", "0.2x", "0.2x", "0.4x", "1.4x", "5.2x", "14x", "120x"]
         },
         12: {
-          binCount: 14,
-          multipliers: ["2000x", "260x", "52x", "18x", "8x", "4x", "0.4x", "0.4x", "0.4x", "4x", "8x", "18x", "52x", "260x"]
+          binCount: 13,
+          multipliers: ["170x", "24x", "8.1x", "2x", "0.7x", "0.2x", "0.2x", "0.2x", "0.7x", "2x", "8.1x", "24x", "170x"]
         },
         13: {
-          binCount: 15,
-          multipliers: ["2000x", "260x", "52x", "18x", "8x", "4x", "0.4x", "0.4x", "0.4x", "0.4x", "4x", "8x", "18x", "52x", "260x"]
+          binCount: 14,
+          multipliers: ["260x", "37x", "11x", "4x", "1x", "0.2x", "0.2x", "0.2x", "0.2x", "1x", "4x", "11x", "37x", "260x"]
         },
         14: {
-          binCount: 16,
-          multipliers: ["2000x", "260x", "52x", "18x", "8x", "4x", "0.4x", "0.4x", "0.4x", "0.4x", "0.4x", "4x", "8x", "18x", "52x", "260x"]
+          binCount: 15,
+          multipliers: ["420x", "56x", "18x", "5x", "1.9x", "0.3x", "0.2x", "0.2x", "0.2x", "0.3x", "1.9x", "5x", "18x", "56x", "420x"]
         },
         15: {
-          binCount: 17,
-          multipliers: ["2000x", "260x", "52x", "18x", "8x", "4x", "0.4x", "0.4x", "0.4x", "0.4x", "0.4x", "4x", "8x", "18x", "52x", "260x", "2000x"]
+          binCount: 16,
+          multipliers: ["620x", "83x", "27x", "8x", "3x", "0.5x", "0.2x", "0.2x", "0.2x", "0.2x", "0.5x", "3x", "8x", "27x", "83x", "620x"]
         },
         16: {
-          binCount: 18,
-          multipliers: ["2000x", "260x", "52x", "18x", "8x", "4x", "0.4x", "0.4x", "0.4x", "0.4x", "0.4x", "4x", "8x", "18x", "52x", "260x", "2000x", "2000x"]
+          binCount: 17,
+          multipliers: ["1000x", "130x", "26x", "9x", "4x", "2x", "0.2x", "0.2x", "0.2x", "0.2x", "0.2x", "2x", "4x", "9x", "26x", "130x", "1000x"]
         }
       }
     };

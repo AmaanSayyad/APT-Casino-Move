@@ -6,7 +6,7 @@ import GameControls from "./components/GameControls";
 
 export default function Plinko() {
   const [activeTab, setActiveTab] = useState("myBet");
-  const [currentRows, setCurrentRows] = useState(16);
+  const [currentRows, setCurrentRows] = useState(15);
   const [currentRiskLevel, setCurrentRiskLevel] = useState("Medium");
   const [gameHistory, setGameHistory] = useState([
     {
