@@ -452,7 +452,7 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
 
   // Function to change rows instantly
   const dropBall = useCallback(() => {
-    if (isDropping || !engineRef.current) return;
+    if (!engineRef.current) return;
     
     setIsDropping(true);
     setBallPosition(null);
