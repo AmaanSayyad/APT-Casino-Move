@@ -34,6 +34,9 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
     setBallPosition(null);
     setHitPegs(new Set());
     
+    // Keep bet amount when configuration changes, it will be updated via betAmount prop
+    console.log('PlinkoGame: Configuration changed, current bet amount:', currentBetAmount);
+    
     // Clear any existing ball or game state
     if (engineRef.current) {
       const Engine = Matter.Engine;

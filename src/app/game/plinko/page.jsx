@@ -42,12 +42,16 @@ export default function Plinko() {
   const handleRowChange = (newRows) => {
     console.log('Main page: Row change requested to:', newRows);
     setCurrentRows(newRows);
+    // Don't reset bet amount, let GameControls handle it
+    console.log('Main page: Row changed, keeping bet amount:', currentBetAmount);
     // The PlinkoGame component will automatically update when the rowCount prop changes
   };
 
   const handleRiskLevelChange = (newRiskLevel) => {
     console.log('Main page: Risk level change requested to:', newRiskLevel);
     setCurrentRiskLevel(newRiskLevel);
+    // Don't reset bet amount, let GameControls handle it
+    console.log('Main page: Risk level changed, keeping bet amount:', currentBetAmount);
     // The PlinkoGame component will automatically update when the riskLevel prop changes
   };
 

@@ -233,6 +233,9 @@ export default function GameControls({ onBet, onRowChange, onRiskLevelChange, on
     setRows(newRows);
     setShowRowsDropdown(false);
     
+    // Don't reset bet amount, keep it for consistency
+    console.log('GameControls: Row changed, keeping bet amount:', betAmount);
+    
     // Notify parent component about row change
     if (onRowChange) {
       onRowChange(newRows);
@@ -242,6 +245,9 @@ export default function GameControls({ onBet, onRowChange, onRiskLevelChange, on
   const handleRiskLevelChange = (newRiskLevel) => {
     setRiskLevel(newRiskLevel);
     setShowRiskDropdown(false);
+    
+    // Don't reset bet amount, keep it for consistency
+    console.log('GameControls: Risk level changed, keeping bet amount:', betAmount);
     
     // Notify parent component about risk level change
     if (onRiskLevelChange) {
