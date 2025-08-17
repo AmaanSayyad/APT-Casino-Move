@@ -216,8 +216,8 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
       // Calculate pins in this row - EXACTLY from AnsonH/plinko-game
       let pinsInRow;
       if (row === rows - 1) {
-        // Last row should have exactly binCount pins
-        pinsInRow = binCount;
+        // Last row should have exactly 17 pins for 15 rows
+        pinsInRow = 17;
       } else {
         // Other rows follow the pattern: 3 + row (starts with 3, adds 1 per row)
         pinsInRow = 3 + row;
@@ -245,7 +245,7 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
     }
     
     console.log(`Generated ${pins.length} pins for ${rows} rows, last row has ${pinsLastRowXCoords.length} pins`);
-    console.log(`Row breakdown: ${Array.from({length: rows}, (_, i) => i === rows - 1 ? binCount : 3 + i)}`);
+    console.log(`Row breakdown: ${Array.from({length: rows}, (_, i) => i === rows - 1 ? 17 : 3 + i)}`);
     console.log(`First row pins: ${pins.filter(p => p.row === 0).map(p => p.x.toFixed(1))}`);
     console.log(`Last row pins: ${pinsLastRowXCoords.map(x => x.toFixed(1))}`);
     return { pins, pinsLastRowXCoords };
