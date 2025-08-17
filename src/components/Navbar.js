@@ -682,7 +682,7 @@ export default function Navbar() {
                 <div className="flex items-center space-x-2">
                   <span className="text-xs text-gray-300">Balance:</span>
                   <span className="text-sm text-green-300 font-medium">
-                    {isLoadingBalance ? 'Loading...' : `${(parseFloat(userBalance) / 100000000).toFixed(8)} APT`}
+                    {isLoadingBalance ? 'Loading...' : `${(parseFloat(userBalance) / 100000000).toFixed(3)} APT`}
                   </span>
                   <button
                     onClick={() => setShowBalanceModal(true)}
@@ -749,7 +749,7 @@ export default function Navbar() {
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm text-gray-300">House Balance:</span>
                     <span className="text-sm text-green-300 font-medium">
-                      {isLoadingBalance ? 'Loading...' : `${(parseFloat(userBalance) / 100000000).toFixed(8)} APT`}
+                      {isLoadingBalance ? 'Loading...' : `${(parseFloat(userBalance) / 100000000).toFixed(3)} APT`}
                     </span>
                   </div>
                   <button
@@ -806,7 +806,7 @@ export default function Navbar() {
             <div className="mb-4 p-3 bg-gradient-to-r from-green-900/20 to-green-800/10 rounded-lg border border-green-800/30">
               <span className="text-sm text-gray-300">Current Balance:</span>
               <div className="text-lg text-green-300 font-bold">
-                {isLoadingBalance ? 'Loading...' : `${(parseFloat(userBalance) / 100000000).toFixed(8)} APT`}
+                {isLoadingBalance ? 'Loading...' : `${(parseFloat(userBalance) / 100000000).toFixed(3)} APT`}
               </div>
             </div>
             

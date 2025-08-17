@@ -3,11 +3,15 @@ import { useState, useRef } from "react";
 import PlinkoGame from "./components/PlinkoGame";
 import GameHistory from "./components/GameHistory";
 import GameControls from "./components/GameControls";
+import { useSelector } from 'react-redux';
 
 export default function Plinko() {
+  const userBalance = useSelector((state) => state.balance.userBalance);
+  
   const [activeTab, setActiveTab] = useState("myBet");
   const [currentRows, setCurrentRows] = useState(15);
   const [currentRiskLevel, setCurrentRiskLevel] = useState("Medium");
+  const [currentBetAmount, setCurrentBetAmount] = useState(0);
   const [gameHistory, setGameHistory] = useState([
     {
       id: 1,
@@ -68,6 +72,15 @@ export default function Plinko() {
     }
   };
 
+  const handleBetHistoryChange = (newBetResult) => {
+    setGameHistory(prev => [newBetResult, ...prev.slice(0, 19)]); // Keep last 20 games
+  };
+
+  const handleBetAmountChange = (amount) => {
+    console.log('Main page received bet amount:', amount);
+    setCurrentBetAmount(amount);
+  };
+
   const handleRowChange = (newRows) => {
     console.log('Main page: Row change requested to:', newRows);
     setCurrentRows(newRows);
@@ -99,6 +112,7 @@ export default function Plinko() {
               onBet={handleBet} 
               onRowChange={handleRowChange}
               onRiskLevelChange={handleRiskLevelChange}
+              onBetAmountChange={handleBetAmountChange}
               initialRows={currentRows}
               initialRiskLevel={currentRiskLevel}
             />
@@ -112,6 +126,8 @@ export default function Plinko() {
               rowCount={currentRows}
               riskLevel={currentRiskLevel}
               onRowChange={handleRowChange}
+              betAmount={currentBetAmount}
+              onBetHistoryChange={handleBetHistoryChange}
             />
           </div>
         </div>

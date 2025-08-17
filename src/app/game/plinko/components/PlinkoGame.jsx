@@ -1,8 +1,13 @@
 "use client";
 import { useState, forwardRef, useImperativeHandle, useCallback, useEffect, useRef } from "react";
 import Matter from 'matter-js';
+import { useSelector, useDispatch } from 'react-redux';
+import { setBalance } from '@/store/balanceSlice';
 
-const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChange }, ref) => {
+const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChange, betAmount = 0, onBetHistoryChange }, ref) => {
+  const dispatch = useDispatch();
+  const userBalance = useSelector((state) => state.balance.userBalance);
+  
   const [isDropping, setIsDropping] = useState(false);
   const [ballPosition, setBallPosition] = useState(null);
   const [hitPegs, setHitPegs] = useState(new Set());
@@ -10,6 +15,7 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
   const [currentRiskLevel, setCurrentRiskLevel] = useState(riskLevel);
   const [isRecreating, setIsRecreating] = useState(false);
   const [betHistory, setBetHistory] = useState([]);
+  const [currentBetAmount, setCurrentBetAmount] = useState(0);
   
   // Physics engine refs
   const engineRef = useRef(null);
@@ -39,6 +45,14 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
       setIsRecreating(false);
     }, 100);
   }, [rowCount, riskLevel]);
+
+  // Watch for bet amount changes
+  useEffect(() => {
+    console.log('PlinkoGame received bet amount:', betAmount, 'Type:', typeof betAmount);
+    const parsedAmount = parseFloat(betAmount) || 0;
+    console.log('Parsed bet amount:', parsedAmount);
+    setCurrentBetAmount(parsedAmount);
+  }, [betAmount]);
 
   // Game constants - matching the reference repo
   const CANVAS_WIDTH = 800;
@@ -403,9 +417,48 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
         // Set landing animation state
         setBallPosition(binIndex);
         
+        // Calculate reward based on multiplier and bet amount
+        const multiplier = multipliers[binIndex];
+        const multiplierValue = parseFloat(multiplier.replace('x', ''));
+        const reward = betAmount * multiplierValue;
+        
+        console.log('=== GAME RESULT ===');
+        console.log('Bet amount from props:', betAmount);
+        console.log('Current bet amount in state:', currentBetAmount);
+        console.log('Multiplier:', multiplier);
+        console.log('Reward calculated:', reward);
+        console.log('==================');
+        
+        // Add reward to current balance (bet amount already deducted in GameControls)
+        if (betAmount > 0) {
+          console.log('Adding reward to balance:');
+          console.log('  Current balance from Redux:', userBalance);
+          console.log('  Current balance in APT:', parseFloat(userBalance) / 100000000);
+          console.log('  Reward to add:', reward);
+          
+          const currentBalance = parseFloat(userBalance);
+          const rewardInReduxUnit = reward * 100000000;
+          const finalBalance = (currentBalance + rewardInReduxUnit).toFixed(2);
+          
+          console.log('Reward addition:');
+          console.log('  Current balance (Redux unit):', currentBalance);
+          console.log('  Current balance (APT):', (currentBalance / 100000000).toFixed(3));
+          console.log('  Reward added (Redux unit):', rewardInReduxUnit);
+          console.log('  Reward added (APT):', reward);
+          console.log('  Final balance (Redux unit):', finalBalance);
+          console.log('  Final balance (APT):', (parseFloat(finalBalance) / 100000000).toFixed(3));
+          
+          dispatch(setBalance(finalBalance));
+        }
+        
         // Add to bet history
         const newBetResult = {
+          id: Date.now(),
+          game: "Plinko",
+          title: new Date().toLocaleTimeString(),
+          betAmount: betAmount.toFixed(2),
           multiplier: multipliers[binIndex],
+          payout: reward.toFixed(2),
           timestamp: Date.now()
         };
         setBetHistory(prev => {
@@ -413,9 +466,14 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
           return updated;
         });
         
+        // Notify parent component about bet history change
+        if (onBetHistoryChange) {
+          onBetHistoryChange(newBetResult);
+        }
+        
         setTimeout(() => {
           setIsDropping(false);
-          console.log(`Ball landed in bin ${binIndex} with multiplier ${multipliers[binIndex]}`);
+          console.log(`Ball landed in bin ${binIndex} with multiplier ${multipliers[binIndex]}, payout: $${reward}`);
         }, 100);
       }
       
@@ -576,13 +634,14 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
           <div className="absolute right-4 top-4 z-20">
             <div className="space-y-2">
               {betHistory.map((bet, index) => (
-                <div key={index} className="w-12 h-12 bg-[#2A0025] border border-[#333947] rounded-lg flex items-center justify-center">
+                <div key={index} className="w-16 h-16 bg-[#2A0025] border border-[#333947] rounded-lg flex flex-col items-center justify-center p-1">
                   <span className="text-xs font-bold text-white">{bet.multiplier}</span>
+                  <span className="text-[10px] text-green-400">+{bet.payout} APT</span>
                 </div>
               ))}
               {/* Fill empty slots */}
               {Array.from({ length: 5 - betHistory.length }).map((_, index) => (
-                <div key={`empty-${index}`} className="w-12 h-12 bg-[#2A0025] border border-[#333947] rounded-lg flex items-center justify-center opacity-30">
+                <div key={`empty-${index}`} className="w-16 h-16 bg-[#2A0025] border border-[#333947] rounded-lg flex items-center justify-center opacity-30">
                   <span className="text-xs text-gray-500">-</span>
                 </div>
               ))}
@@ -636,7 +695,7 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
           <div className="text-xs text-gray-400">Best Multiplier</div>
         </div>
         <div className="text-center">
-          <div className="text-2xl font-bold text-white">$0.00</div>
+          <div className="text-2xl font-bold text-white">0.00 APT</div>
           <div className="text-xs text-gray-400">Total Won</div>
         </div>
       </div>

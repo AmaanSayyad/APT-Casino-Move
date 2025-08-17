@@ -68,10 +68,10 @@ export default function GameHistory({ history }) {
               <tr key={game.id} className="border-b border-[#333947]/30 hover:bg-[#2A0025]/50 transition-colors">
                 <td className="py-3 px-4">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                      <span className="text-xs font-bold text-white">M</span>
+                    <div className="w-6 h-6 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center">
+                      <span className="text-xs font-bold text-white">P</span>
                     </div>
-                    <span className="text-white text-sm">{game.game}</span>
+                    <span className="text-white text-sm">Plinko</span>
                   </div>
                 </td>
                 <td className="py-3 px-4">

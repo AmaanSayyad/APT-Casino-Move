@@ -1,8 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
 import { ChevronDown, ChevronUp, Minus, Plus } from "lucide-react";
+import { useSelector, useDispatch } from 'react-redux';
+import { setBalance } from '@/store/balanceSlice';
 
-export default function GameControls({ onBet, onRowChange, onRiskLevelChange, initialRows = 16, initialRiskLevel = "Medium" }) {
+export default function GameControls({ onBet, onRowChange, onRiskLevelChange, onBetAmountChange, initialRows = 16, initialRiskLevel = "Medium" }) {
+  const dispatch = useDispatch();
+  const userBalance = useSelector((state) => state.balance.userBalance);
+  
   const [gameMode, setGameMode] = useState("manual");
   const [betAmount, setBetAmount] = useState("0.00");
   const [numberOfBets, setNumberOfBets] = useState("1");
@@ -33,27 +38,86 @@ export default function GameControls({ onBet, onRowChange, onRiskLevelChange, in
   }, [autoBetInterval, gameMode]);
 
   const handleBetAmountChange = (value) => {
+    // Allow user to type freely
+    if (typeof value === 'string') {
+      // If it's a string (from input), just set it as is
+      setBetAmount(value);
+      
+      // Also notify parent with parsed value
+      const numValue = parseFloat(value) || 0;
+      if (onBetAmountChange) {
+        onBetAmountChange(numValue);
+      }
+      return;
+    }
+    
+    // If it's a number (from buttons), format it
     const numValue = parseFloat(value) || 0;
     setBetAmount(numValue.toFixed(2));
+    
+    // Notify parent component about bet amount change
+    if (onBetAmountChange) {
+      onBetAmountChange(numValue);
+    }
   };
 
   const handleHalfBet = () => {
     const currentBet = parseFloat(betAmount) || 0;
     const newBet = (currentBet / 2).toFixed(2);
     setBetAmount(newBet);
+    
+    // Notify parent component
+    if (onBetAmountChange) {
+      onBetAmountChange(parseFloat(newBet));
+    }
   };
 
   const handleDoubleBet = () => {
     const currentBet = parseFloat(betAmount) || 0;
     const newBet = (currentBet * 2).toFixed(2);
     setBetAmount(newBet);
+    
+    // Notify parent component
+    if (onBetAmountChange) {
+      onBetAmountChange(parseFloat(newBet));
+    }
   };
 
   const handleBet = () => {
-    if (parseFloat(betAmount) <= 0) {
+    const betValue = parseFloat(betAmount);
+    const currentBalance = parseFloat(userBalance);
+    
+    console.log('handleBet called with betValue:', betValue, 'currentBalance:', currentBalance);
+    
+    if (betValue <= 0) {
       alert("Please enter a valid bet amount");
       return;
     }
+    
+    if (betValue > currentBalance) {
+      alert(`Insufficient balance! You have ${currentBalance} APT but need ${betValue} APT`);
+      return;
+    }
+    
+    // First notify parent component about bet amount change
+    if (onBetAmountChange) {
+      console.log('Notifying parent about bet amount:', betValue);
+      onBetAmountChange(betValue);
+    }
+    
+    // Deduct bet amount from balance immediately
+    const betAmountInReduxUnit = betValue * 100000000;
+    const newBalance = (currentBalance - betAmountInReduxUnit).toFixed(2);
+    
+    console.log('Balance deduction details:');
+    console.log('  Current balance:', currentBalance);
+    console.log('  Bet amount (frontend):', betValue);
+    console.log('  Bet amount (Redux unit):', betAmountInReduxUnit);
+    console.log('  New balance after bet:', newBalance);
+    console.log('  Dispatching setBalance with:', newBalance);
+    
+    // Update Redux balance
+    dispatch(setBalance(newBalance));
     
     console.log('Game mode:', gameMode, 'Bet amount:', betAmount, 'Number of bets:', numberOfBets);
     
@@ -184,27 +248,34 @@ export default function GameControls({ onBet, onRowChange, onRiskLevelChange, in
           Bet Amount
         </label>
         <div className="mb-2">
-          <span className="text-2xl font-bold text-white">${betAmount}</span>
+          <span className="text-2xl font-bold text-white">{betAmount} APT</span>
         </div>
         <div className="relative">
           <input
             type="number"
             value={betAmount}
             onChange={(e) => handleBetAmountChange(e.target.value)}
+            onBlur={(e) => {
+              const numValue = parseFloat(e.target.value) || 0;
+              setBetAmount(numValue.toFixed(2));
+              if (onBetAmountChange) {
+                onBetAmountChange(numValue);
+              }
+            }}
             className="w-full bg-[#2A0025] border border-[#333947] rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-purple-500"
-            placeholder="0.00000000000"
-            step="0.01"
+            placeholder="0.00"
+            step="1"
             min="0"
           />
           <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex flex-col">
             <button
-              onClick={() => handleBetAmountChange(parseFloat(betAmount || 0) + 0.01)}
+              onClick={() => handleBetAmountChange(parseFloat(betAmount || 0) + 0.10)}
               className="text-gray-400 hover:text-white p-1"
             >
               <ChevronUp className="w-4 h-4" />
             </button>
             <button
-              onClick={() => handleBetAmountChange(parseFloat(betAmount || 0) - 0.01)}
+              onClick={() => handleBetAmountChange(parseFloat(betAmount || 0) - 0.10)}
               className="text-gray-400 hover:text-white p-1"
             >
               <ChevronDown className="w-4 h-4" />
@@ -223,6 +294,46 @@ export default function GameControls({ onBet, onRowChange, onRiskLevelChange, in
             className="flex-1 bg-[#2A0025] border border-[#333947] rounded-lg py-2 text-sm text-white hover:bg-[#3A0035] transition-colors"
           >
             2x
+          </button>
+        </div>
+        
+        {/* Quick Bet Amounts */}
+        <div className="grid grid-cols-3 gap-2 mt-2">
+          <button
+            onClick={() => handleBetAmountChange(0.01)}
+            className="bg-[#2A0025] border border-[#333947] rounded-lg py-2 text-xs text-white hover:bg-[#3A0035] transition-colors"
+          >
+            0.01 APT
+          </button>
+          <button
+            onClick={() => handleBetAmountChange(0.05)}
+            className="bg-[#2A0025] border border-[#333947] rounded-lg py-2 text-xs text-white hover:bg-[#3A0025] transition-colors"
+          >
+            0.05 APT
+          </button>
+          <button
+            onClick={() => handleBetAmountChange(0.1)}
+            className="bg-[#2A0025] border border-[#333947] rounded-lg py-2 text-xs text-white hover:bg-[#3A0035] transition-colors"
+          >
+            0.1 APT
+          </button>
+          <button
+            onClick={() => handleBetAmountChange(0.25)}
+            className="bg-[#2A0025] border border-[#333947] rounded-lg py-2 text-xs text-white hover:bg-[#3A0035] transition-colors"
+          >
+            0.25 APT
+          </button>
+          <button
+            onClick={() => handleBetAmountChange(0.5)}
+            className="bg-[#2A0025] border border-[#333947] rounded-lg py-2 text-xs text-white hover:bg-[#3A0035] transition-colors"
+          >
+            0.5 APT
+          </button>
+          <button
+            onClick={() => handleBetAmountChange(1)}
+            className="bg-[#2A0025] border border-[#333947] rounded-lg py-2 text-xs text-white hover:bg-[#3A0025] transition-colors"
+          >
+            1.0 APT
           </button>
         </div>
       </div>
