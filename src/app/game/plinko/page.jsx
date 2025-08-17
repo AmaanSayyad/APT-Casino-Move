@@ -12,56 +12,7 @@ export default function Plinko() {
   const [currentRows, setCurrentRows] = useState(15);
   const [currentRiskLevel, setCurrentRiskLevel] = useState("Medium");
   const [currentBetAmount, setCurrentBetAmount] = useState(0);
-  const [gameHistory, setGameHistory] = useState([
-    {
-      id: 1,
-      game: "Mines",
-      title: "4:43 am",
-      betAmount: "0.00000000000",
-      multiplier: "0.00x",
-      payout: "0.00000000000"
-    },
-    {
-      id: 2,
-      game: "Mines",
-      title: "4:42 am",
-      betAmount: "0.00000000000",
-      multiplier: "0.00x",
-      payout: "0.00000000000"
-    },
-    {
-      id: 3,
-      game: "Mines",
-      title: "4:41 am",
-      betAmount: "0.00000000000",
-      multiplier: "0.00x",
-      payout: "0.00000000000"
-    },
-    {
-      id: 4,
-      game: "Mines",
-      title: "4:40 am",
-      betAmount: "0.00000000000",
-      multiplier: "0.00x",
-      payout: "0.00000000000"
-    },
-    {
-      id: 5,
-      game: "Mines",
-      title: "4:39 am",
-      betAmount: "0.00000000000",
-      multiplier: "0.00x",
-      payout: "0.00000000000"
-    },
-    {
-      id: 6,
-      game: "Mines",
-      title: "4:38 am",
-      betAmount: "0.00000000000",
-      multiplier: "0.00x",
-      payout: "0.00000000000"
-    }
-  ]);
+  const [gameHistory, setGameHistory] = useState([]);
 
   const plinkoGameRef = useRef(null);
 

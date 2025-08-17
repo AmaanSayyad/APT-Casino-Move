@@ -712,8 +712,8 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
             ))}
           </svg>
 
-          {/* Bet History - Right Side */}
-          <div className="absolute right-4 top-4 z-20">
+                    {/* Bet History - Right Side */}
+          <div className="absolute right-4 top-4 z-10">
             <div className="space-y-2">
               {betHistory.map((bet, index) => (
                 <div key={index} className="w-16 h-16 bg-[#2A0025] border border-[#333947] rounded-lg flex flex-col items-center justify-center p-1">
