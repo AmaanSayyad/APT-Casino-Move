@@ -526,18 +526,7 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
 
   return (
     <div className="bg-[#1A0015] rounded-xl border border-[#333947] p-6">
-      <div className="text-center mb-6">
-        <h2 className="text-xl font-semibold text-white">Plinko Board</h2>
-        <p className="text-gray-400 text-sm mt-1">
-          Current Rows: {currentRows} | Risk Level: {currentRiskLevel} | Bins: {binCount} | Use the bet button on the left to start the game
-        </p>
-        <div className="mt-2 text-xs text-gray-500">
-          Configuration: {currentRows} rows with {binCount} reward bins ({currentRiskLevel} risk)
-        </div>
-        <div className="mt-1 text-xs text-gray-600">
-          Pin distribution: {Array.from({length: currentRows}, (_, i) => i === currentRows - 1 ? binCount : 3 + i).join(' → ')}
-        </div>
-      </div>
+
 
       {/* Plinko Board Container */}
       <div className="relative bg-[#2A0025] rounded-lg p-6 min-h-[600px] flex flex-col items-center">
@@ -585,21 +574,18 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
 
           {/* Bet History - Right Side */}
           <div className="absolute right-4 top-4 z-20">
-            <div className="bg-[#1A0015] border border-[#333947] rounded-lg p-3">
-              <div className="text-xs text-gray-400 mb-2 text-center">Last 5 Bets</div>
-              <div className="space-y-2">
-                {betHistory.map((bet, index) => (
-                  <div key={index} className="w-12 h-12 bg-[#2A0025] border border-[#333947] rounded-lg flex items-center justify-center">
-                    <span className="text-xs font-bold text-white">{bet.multiplier}</span>
-                  </div>
-                ))}
-                {/* Fill empty slots */}
-                {Array.from({ length: 5 - betHistory.length }).map((_, index) => (
-                  <div key={`empty-${index}`} className="w-12 h-12 bg-[#2A0025] border border-[#333947] rounded-lg flex items-center justify-center opacity-30">
-                    <span className="text-xs text-gray-500">-</span>
-                  </div>
-                ))}
-              </div>
+            <div className="space-y-2">
+              {betHistory.map((bet, index) => (
+                <div key={index} className="w-12 h-12 bg-[#2A0025] border border-[#333947] rounded-lg flex items-center justify-center">
+                  <span className="text-xs font-bold text-white">{bet.multiplier}</span>
+                </div>
+              ))}
+              {/* Fill empty slots */}
+              {Array.from({ length: 5 - betHistory.length }).map((_, index) => (
+                <div key={`empty-${index}`} className="w-12 h-12 bg-[#2A0025] border border-[#333947] rounded-lg flex items-center justify-center opacity-30">
+                  <span className="text-xs text-gray-500">-</span>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -634,9 +620,9 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
         {/* Game Instructions */}
         <div className="mt-6 text-center text-gray-400 text-sm">
           <p>Use the bet button on the left to start the game</p>
-          <p className="mt-1">The ball will bounce off pegs with realistic physics</p>
           <p className="mt-1">Current configuration: {currentRows} rows with {currentRiskLevel} risk</p>
         </div>
+
       </div>
 
       {/* Game Stats */}
