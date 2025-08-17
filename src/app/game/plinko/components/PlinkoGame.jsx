@@ -2,11 +2,12 @@
 import { useState, forwardRef, useImperativeHandle, useCallback, useEffect, useRef } from "react";
 import Matter from 'matter-js';
 
-const PlinkoGame = forwardRef(({ rowCount = 16, onRowChange }, ref) => {
+const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChange }, ref) => {
   const [isDropping, setIsDropping] = useState(false);
   const [ballPosition, setBallPosition] = useState(null);
   const [hitPegs, setHitPegs] = useState(new Set());
   const [currentRows, setCurrentRows] = useState(rowCount);
+  const [currentRiskLevel, setCurrentRiskLevel] = useState(riskLevel);
   const [isRecreating, setIsRecreating] = useState(false);
   const [betHistory, setBetHistory] = useState([]);
   
@@ -16,12 +17,14 @@ const PlinkoGame = forwardRef(({ rowCount = 16, onRowChange }, ref) => {
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
 
-  // Watch for changes in rowCount prop and update local state
+  // Watch for changes in rowCount or riskLevel props and update local state
   useEffect(() => {
     console.log('PlinkoGame: rowCount prop changed to:', rowCount);
-    console.log('PlinkoGame: New configuration:', getRowConfig(rowCount));
+    console.log('PlinkoGame: riskLevel prop changed to:', riskLevel);
+    console.log('PlinkoGame: New configuration:', getRowConfig(rowCount, riskLevel));
     setIsRecreating(true);
     setCurrentRows(rowCount);
+    setCurrentRiskLevel(riskLevel);
     setBallPosition(null);
     setHitPegs(new Set());
     
@@ -35,7 +38,7 @@ const PlinkoGame = forwardRef(({ rowCount = 16, onRowChange }, ref) => {
     setTimeout(() => {
       setIsRecreating(false);
     }, 100);
-  }, [rowCount]);
+  }, [rowCount, riskLevel]);
 
   // Game constants - matching the reference repo
   const CANVAS_WIDTH = 800;
@@ -49,51 +52,132 @@ const PlinkoGame = forwardRef(({ rowCount = 16, onRowChange }, ref) => {
   const BALL_CATEGORY = 0x0002;
 
   // Row-specific configurations for bins and multipliers - EXACTLY from AnsonH/plinko-game
-  const getRowConfig = (rows) => {
+  const getRowConfig = (rows, riskLevel) => {
     const configs = {
-      8: {
-        binCount: 10,
-        multipliers: ["1000x", "130x", "26x", "9x", "4x", "4x", "9x", "26x", "130x", "1000x"]
+      Low: {
+        8: {
+          binCount: 10,
+          multipliers: ["500x", "65x", "13x", "4.5x", "2x", "2x", "4.5x", "13x", "65x", "500x"]
+        },
+        9: {
+          binCount: 11,
+          multipliers: ["500x", "65x", "13x", "4.5x", "2x", "1x", "2x", "4.5x", "13x", "65x", "500x"]
+        },
+        10: {
+          binCount: 12,
+          multipliers: ["500x", "65x", "13x", "4.5x", "2x", "1x", "0.1x", "1x", "2x", "4.5x", "13x", "65x"]
+        },
+        11: {
+          binCount: 13,
+          multipliers: ["500x", "65x", "13x", "4.5x", "2x", "1x", "0.1x", "0.1x", "1x", "2x", "4.5x", "13x", "65x"]
+        },
+        12: {
+          binCount: 14,
+          multipliers: ["500x", "65x", "13x", "4.5x", "2x", "1x", "0.1x", "0.1x", "0.1x", "1x", "2x", "4.5x", "13x", "65x"]
+        },
+        13: {
+          binCount: 15,
+          multipliers: ["500x", "65x", "13x", "4.5x", "2x", "1x", "0.1x", "0.1x", "0.1x", "0.1x", "1x", "2x", "4.5x", "13x", "65x"]
+        },
+        14: {
+          binCount: 16,
+          multipliers: ["500x", "65x", "13x", "4.5x", "2x", "1x", "0.1x", "0.1x", "0.1x", "0.1x", "0.1x", "1x", "2x", "4.5x", "13x", "65x"]
+        },
+        15: {
+          binCount: 17,
+          multipliers: ["500x", "65x", "13x", "4.5x", "2x", "1x", "0.1x", "0.1x", "0.1x", "0.1x", "0.1x", "1x", "2x", "4.5x", "13x", "65x", "500x"]
+        },
+        16: {
+          binCount: 18,
+          multipliers: ["500x", "65x", "13x", "4.5x", "2x", "1x", "0.1x", "0.1x", "0.1x", "0.1x", "0.1x", "1x", "2x", "4.5x", "13x", "65x", "500x", "500x"]
+        }
       },
-      9: {
-        binCount: 11,
-        multipliers: ["1000x", "130x", "26x", "9x", "4x", "2x", "4x", "9x", "26x", "130x", "1000x"]
+      Medium: {
+        8: {
+          binCount: 10,
+          multipliers: ["1000x", "130x", "26x", "9x", "4x", "4x", "9x", "26x", "130x", "1000x"]
+        },
+        9: {
+          binCount: 11,
+          multipliers: ["1000x", "130x", "26x", "9x", "4x", "2x", "4x", "9x", "26x", "130x", "1000x"]
+        },
+        10: {
+          binCount: 12,
+          multipliers: ["1000x", "130x", "26x", "9x", "4x", "2x", "0.2x", "2x", "4x", "9x", "26x", "130x"]
+        },
+        11: {
+          binCount: 13,
+          multipliers: ["1000x", "130x", "26x", "9x", "4x", "2x", "0.2x", "0.2x", "2x", "4x", "9x", "26x", "130x"]
+        },
+        12: {
+          binCount: 14,
+          multipliers: ["1000x", "130x", "26x", "9x", "4x", "2x", "0.2x", "0.2x", "0.2x", "2x", "4x", "9x", "26x", "130x"]
+        },
+        13: {
+          binCount: 15,
+          multipliers: ["1000x", "130x", "26x", "9x", "4x", "2x", "0.2x", "0.2x", "0.2x", "0.2x", "2x", "4x", "9x", "26x", "130x"]
+        },
+        14: {
+          binCount: 16,
+          multipliers: ["1000x", "130x", "26x", "9x", "4x", "2x", "0.2x", "0.2x", "0.2x", "0.2x", "0.2x", "2x", "4x", "9x", "26x", "130x"]
+        },
+        15: {
+          binCount: 17,
+          multipliers: ["1000x", "130x", "26x", "9x", "4x", "2x", "0.2x", "0.2x", "0.2x", "0.2x", "0.2x", "2x", "4x", "9x", "26x", "130x", "1000x"]
+        },
+        16: {
+          binCount: 18,
+          multipliers: ["1000x", "130x", "26x", "9x", "4x", "2x", "0.2x", "0.2x", "0.2x", "0.2x", "0.2x", "2x", "4x", "9x", "26x", "130x", "1000x", "1000x"]
+        }
       },
-      10: {
-        binCount: 12,
-        multipliers: ["1000x", "130x", "26x", "9x", "4x", "2x", "0.2x", "2x", "4x", "9x", "26x", "130x"]
-      },
-      11: {
-        binCount: 13,
-        multipliers: ["1000x", "130x", "26x", "9x", "4x", "2x", "0.2x", "0.2x", "2x", "4x", "9x", "26x", "130x"]
-      },
-      12: {
-        binCount: 14,
-        multipliers: ["1000x", "130x", "26x", "9x", "4x", "2x", "0.2x", "0.2x", "0.2x", "2x", "4x", "9x", "26x", "130x"]
-      },
-      13: {
-        binCount: 15,
-        multipliers: ["1000x", "130x", "26x", "9x", "4x", "2x", "0.2x", "0.2x", "0.2x", "0.2x", "2x", "4x", "9x", "26x", "130x"]
-      },
-      14: {
-        binCount: 16,
-        multipliers: ["1000x", "130x", "26x", "9x", "4x", "2x", "0.2x", "0.2x", "0.2x", "0.2x", "0.2x", "2x", "4x", "9x", "26x", "130x"]
-      },
-      15: {
-        binCount: 17,
-        multipliers: ["1000x", "130x", "26x", "9x", "4x", "2x", "0.2x", "0.2x", "0.2x", "0.2x", "0.2x", "2x", "4x", "9x", "26x", "130x", "1000x"]
-      },
-      16: {
-        binCount: 18,
-        multipliers: ["1000x", "130x", "26x", "9x", "4x", "2x", "0.2x", "0.2x", "0.2x", "0.2x", "0.2x", "2x", "4x", "9x", "26x", "130x", "1000x", "1000x"]
+      High: {
+        8: {
+          binCount: 10,
+          multipliers: ["2000x", "260x", "52x", "18x", "8x", "8x", "18x", "52x", "260x", "2000x"]
+        },
+        9: {
+          binCount: 11,
+          multipliers: ["2000x", "260x", "52x", "18x", "8x", "4x", "8x", "18x", "52x", "260x", "2000x"]
+        },
+        10: {
+          binCount: 12,
+          multipliers: ["2000x", "260x", "52x", "18x", "8x", "4x", "0.4x", "4x", "8x", "18x", "52x", "260x"]
+        },
+        11: {
+          binCount: 13,
+          multipliers: ["2000x", "260x", "52x", "18x", "8x", "4x", "0.4x", "0.4x", "4x", "8x", "18x", "52x", "260x"]
+        },
+        12: {
+          binCount: 14,
+          multipliers: ["2000x", "260x", "52x", "18x", "8x", "4x", "0.4x", "0.4x", "0.4x", "4x", "8x", "18x", "52x", "260x"]
+        },
+        13: {
+          binCount: 15,
+          multipliers: ["2000x", "260x", "52x", "18x", "8x", "4x", "0.4x", "0.4x", "0.4x", "0.4x", "4x", "8x", "18x", "52x", "260x"]
+        },
+        14: {
+          binCount: 16,
+          multipliers: ["2000x", "260x", "52x", "18x", "8x", "4x", "0.4x", "0.4x", "0.4x", "0.4x", "0.4x", "4x", "8x", "18x", "52x", "260x"]
+        },
+        15: {
+          binCount: 17,
+          multipliers: ["2000x", "260x", "52x", "18x", "8x", "4x", "0.4x", "0.4x", "0.4x", "0.4x", "0.4x", "4x", "8x", "18x", "52x", "260x", "2000x"]
+        },
+        16: {
+          binCount: 18,
+          multipliers: ["2000x", "260x", "52x", "18x", "8x", "4x", "0.4x", "0.4x", "0.4x", "0.4x", "0.4x", "4x", "8x", "18x", "52x", "260x", "2000x", "2000x"]
+        }
       }
     };
     
-    return configs[rows] || configs[16]; // Default to 16 rows if invalid
+    // Get the risk level config, default to Medium if invalid
+    const riskConfig = configs[riskLevel] || configs.Medium;
+    // Get the row config, default to 16 rows if invalid
+    return riskConfig[rows] || riskConfig[16];
   };
 
   // Get current row configuration
-  const currentConfig = getRowConfig(currentRows);
+  const currentConfig = getRowConfig(currentRows, currentRiskLevel);
   const multipliers = currentConfig.multipliers;
   const binCount = currentConfig.binCount;
 
@@ -168,8 +252,8 @@ const PlinkoGame = forwardRef(({ rowCount = 16, onRowChange }, ref) => {
   };
 
   // Initialize physics engine
-  const initializePhysics = useCallback((rows) => {
-    console.log('PlinkoGame: Initializing physics for', rows, 'rows');
+  const initializePhysics = useCallback((rows, riskLevel) => {
+    console.log('PlinkoGame: Initializing physics for', rows, 'rows with risk level:', riskLevel);
     if (typeof window === 'undefined') return;
 
     const Engine = Matter.Engine;
@@ -345,7 +429,7 @@ const PlinkoGame = forwardRef(({ rowCount = 16, onRowChange }, ref) => {
 
   // Effect to initialize physics when component mounts or rows change
   useEffect(() => {
-    const { pins, pinsLastRowXCoords } = initializePhysics(currentRows);
+    const { pins, pinsLastRowXCoords } = initializePhysics(currentRows, currentRiskLevel);
     
     return () => {
       if (renderRef.current) {
@@ -361,7 +445,7 @@ const PlinkoGame = forwardRef(({ rowCount = 16, onRowChange }, ref) => {
         Engine.clear(engineRef.current);
       }
     };
-  }, [currentRows, initializePhysics]);
+  }, [currentRows, currentRiskLevel, initializePhysics]);
 
   // Function to change rows instantly
   const dropBall = useCallback(() => {
@@ -442,10 +526,10 @@ const PlinkoGame = forwardRef(({ rowCount = 16, onRowChange }, ref) => {
       <div className="text-center mb-6">
         <h2 className="text-xl font-semibold text-white">Plinko Board</h2>
         <p className="text-gray-400 text-sm mt-1">
-          Current Rows: {currentRows} | Bins: {binCount} | Use the bet button on the left to start the game
+          Current Rows: {currentRows} | Risk Level: {currentRiskLevel} | Bins: {binCount} | Use the bet button on the left to start the game
         </p>
         <div className="mt-2 text-xs text-gray-500">
-          Configuration: {currentRows} rows with {binCount} reward bins
+          Configuration: {currentRows} rows with {binCount} reward bins ({currentRiskLevel} risk)
         </div>
         <div className="mt-1 text-xs text-gray-600">
           Pin distribution: {Array.from({length: currentRows}, (_, i) => i === currentRows - 1 ? binCount : 3 + i).join(' → ')}
@@ -460,7 +544,7 @@ const PlinkoGame = forwardRef(({ rowCount = 16, onRowChange }, ref) => {
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
               <p className="text-white text-lg">Recreating board...</p>
-              <p className="text-gray-400 text-sm">Setting up {currentRows} rows</p>
+              <p className="text-gray-400 text-sm">Setting up {currentRows} rows with {currentRiskLevel} risk</p>
             </div>
           </div>
         )}
@@ -548,7 +632,7 @@ const PlinkoGame = forwardRef(({ rowCount = 16, onRowChange }, ref) => {
         <div className="mt-6 text-center text-gray-400 text-sm">
           <p>Use the bet button on the left to start the game</p>
           <p className="mt-1">The ball will bounce off pegs with realistic physics</p>
-          <p className="mt-1">Current configuration: {currentRows} rows</p>
+          <p className="mt-1">Current configuration: {currentRows} rows with {currentRiskLevel} risk</p>
         </div>
       </div>
 

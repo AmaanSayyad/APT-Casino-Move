@@ -1,17 +1,23 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronDown, ChevronUp, Minus, Plus } from "lucide-react";
 
-export default function GameControls({ onBet, onRowChange, initialRows = 16 }) {
+export default function GameControls({ onBet, onRowChange, onRiskLevelChange, initialRows = 16, initialRiskLevel = "Medium" }) {
   const [gameMode, setGameMode] = useState("manual");
   const [betAmount, setBetAmount] = useState("0.00");
-  const [riskLevel, setRiskLevel] = useState("Medium");
+  const [riskLevel, setRiskLevel] = useState(initialRiskLevel);
   const [rows, setRows] = useState(initialRows);
   const [showRiskDropdown, setShowRiskDropdown] = useState(false);
   const [showRowsDropdown, setShowRowsDropdown] = useState(false);
 
   const riskLevels = ["Low", "Medium", "High"];
   const rowOptions = [8, 9, 10, 11, 12, 13, 14, 15, 16];
+
+  // Update local state when props change
+  useEffect(() => {
+    setRiskLevel(initialRiskLevel);
+    setRows(initialRows);
+  }, [initialRiskLevel, initialRows]);
 
   const handleBetAmountChange = (value) => {
     const numValue = parseFloat(value) || 0;
@@ -49,6 +55,16 @@ export default function GameControls({ onBet, onRowChange, initialRows = 16 }) {
     // Notify parent component about row change
     if (onRowChange) {
       onRowChange(newRows);
+    }
+  };
+
+  const handleRiskLevelChange = (newRiskLevel) => {
+    setRiskLevel(newRiskLevel);
+    setShowRiskDropdown(false);
+    
+    // Notify parent component about risk level change
+    if (onRiskLevelChange) {
+      onRiskLevelChange(newRiskLevel);
     }
   };
 
@@ -147,10 +163,7 @@ export default function GameControls({ onBet, onRowChange, initialRows = 16 }) {
               {riskLevels.map((level) => (
                 <button
                   key={level}
-                  onClick={() => {
-                    setRiskLevel(level);
-                    setShowRiskDropdown(false);
-                  }}
+                  onClick={() => handleRiskLevelChange(level)}
                   className="w-full px-4 py-2 text-left text-white hover:bg-[#3A0035] transition-colors"
                 >
                   {level}

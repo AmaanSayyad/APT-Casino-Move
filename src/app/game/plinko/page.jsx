@@ -7,6 +7,7 @@ import GameControls from "./components/GameControls";
 export default function Plinko() {
   const [activeTab, setActiveTab] = useState("myBet");
   const [currentRows, setCurrentRows] = useState(16);
+  const [currentRiskLevel, setCurrentRiskLevel] = useState("Medium");
   const [gameHistory, setGameHistory] = useState([
     {
       id: 1,
@@ -73,6 +74,12 @@ export default function Plinko() {
     // The PlinkoGame component will automatically update when the rowCount prop changes
   };
 
+  const handleRiskLevelChange = (newRiskLevel) => {
+    console.log('Main page: Risk level change requested to:', newRiskLevel);
+    setCurrentRiskLevel(newRiskLevel);
+    // The PlinkoGame component will automatically update when the riskLevel prop changes
+  };
+
   return (
     <div className="min-h-screen bg-[#070005] text-white">
       {/* Header */}
@@ -91,16 +98,19 @@ export default function Plinko() {
             <GameControls 
               onBet={handleBet} 
               onRowChange={handleRowChange}
+              onRiskLevelChange={handleRiskLevelChange}
               initialRows={currentRows}
+              initialRiskLevel={currentRiskLevel}
             />
           </div>
 
           {/* Right Panel - Plinko Board */}
           <div className="w-full xl:w-3/4">
             <PlinkoGame 
-              key={`plinko-${currentRows}`}
+              key={`plinko-${currentRows}-${currentRiskLevel}`}
               ref={plinkoGameRef} 
               rowCount={currentRows}
+              riskLevel={currentRiskLevel}
               onRowChange={handleRowChange}
             />
           </div>
