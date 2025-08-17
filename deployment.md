@@ -23,3 +23,9 @@ Wheel:
 0x...::wheel::house_spin(admin: &signer, player: address, amount: u64, sectors: u8)
 User_Balance
 demo liquidity provider
+Plinko:
+0x...::plinko::deposit(user: &signer, amount: u64, house_addr: address)
+0x...::plinko::request_withdraw(user: &signer, amount: u64)
+0x...::plinko::admin_payout(admin: &signer, to: address, amount: u64)
+0x...::plinko::user_plinko(user: &signer, amount: u64, sectors: u8)
+0x...::plinko::house_plinko(admin: &signer, player: address, amount: u64, sectors: u8)
