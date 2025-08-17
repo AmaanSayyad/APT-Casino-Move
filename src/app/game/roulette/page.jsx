@@ -837,13 +837,11 @@ const BettingStats = ({ history }) => {
       .map(([number, count]) => ({ number: parseInt(number), count }));
 
     // Calculate profit/loss
-    const totalWagered = history.reduce((sum, bet) => sum + bet.amount, 0);
-    const totalWon = history.reduce((sum, bet) => sum + (bet.win ? bet.payout : 0), 0);
-    // profitLoss = totalWagered - totalWon (bahis miktarı - kazanç)
-    const profitLoss = totalWagered - totalWon;
-
-    // New profit/loss calculation: profitLoss2 = -totalWagered + profitLoss
-    const profitLoss2 = -totalWagered + profitLoss;
+    // payout field now contains the net result (positive for wins, negative for losses)
+    const totalProfitLoss = history.reduce((sum, bet) => sum + bet.payout, 0);
+    
+    // profitLoss is the actual net profit/loss from all bets
+    const profitLoss = totalProfitLoss;
 
 
 
@@ -856,11 +854,8 @@ const BettingStats = ({ history }) => {
         totalBets: bet.totalBets,
         winningBets: bet.winningBets
       })),
-      totalWagered,
-      totalWon,
+      totalProfitLoss,
       profitLoss,
-      profitLoss2,
-
       statTotal,
       statWinnings
     });
@@ -868,11 +863,8 @@ const BettingStats = ({ history }) => {
     const result = {
       winRate,
       mostCommonNumbers,
-      totalWagered,
-      totalWon,
+      totalProfitLoss,
       profitLoss,
-      profitLoss2,
-
       totalBets: history.length,
       statTotal,
       statWinnings
@@ -903,8 +895,8 @@ const BettingStats = ({ history }) => {
         </Grid>
         <Grid xs={6} md={4}>
           <Typography variant="body2" color="text.secondary">P/L</Typography>
-          <Typography variant="h5" color={stats.profitLoss2 >= 0 ? 'success.main' : 'error.main'}>
-            {stats.profitLoss2 >= 0 ? '+' : ''}{stats.profitLoss2.toFixed(2)}
+          <Typography variant="h5" color={stats.profitLoss >= 0 ? 'success.main' : 'error.main'}>
+            {stats.profitLoss >= 0 ? '+' : ''}{stats.profitLoss.toFixed(2)}
           </Typography>
         </Grid>
 
@@ -1542,7 +1534,7 @@ export default function GameRoulette() {
     dispatchInside({ type: "reset" });
     dispatchEvents({ type: "reset" });
     setRollResult(-1);
-    setWinnings(-1);
+    setWinnings(-1); // Reset to -1 to indicate no result yet
   }, [playSound, menuClickRef]);
 
   // updating the bet size
@@ -1585,10 +1577,27 @@ export default function GameRoulette() {
         remainingBalance: currentBalance - totalBetAmount
       });
 
-      // Deduct bet amount from Redux balance
-      const betAmountInOctas = totalBetAmount * 100000000; // Convert to octas
-      const newBalance = (parseFloat(userBalance || '0') - betAmountInOctas).toString();
-      dispatch(setBalance(newBalance));
+      // Store original balance for calculation
+      const originalBalance = parseFloat(userBalance || '0');
+      
+      // Check if user has enough balance
+      if (originalBalance < totalBetAmount * 100000000) {
+        alert(`Insufficient balance. You have ${(originalBalance / 100000000).toFixed(8)} APT but need ${totalBetAmount} APT`);
+        setSubmitDisabled(false);
+        setWheelSpinning(false);
+        return;
+      }
+      
+      // Deduct bet amount immediately from balance
+      const betAmountInOctas = totalBetAmount * 100000000;
+      const balanceAfterBet = originalBalance - betAmountInOctas;
+      dispatch(setBalance(balanceAfterBet.toString()));
+      
+      console.log("Balance deducted:", {
+        originalBalance: originalBalance / 100000000,
+        betAmount: totalBetAmount,
+        balanceAfterBet: balanceAfterBet / 100000000
+      });
 
       // Convert ALL bets into an array for multiple bet processing
       const allBets = [];
@@ -1721,6 +1730,7 @@ export default function GameRoulette() {
             if (isBottomRow) {
               // Bottom row: street bet [n, n+1, n+2]
               const streetNumbers = [actualNumber, actualNumber + 1, actualNumber + 2];
+              console.log(`🎯 STREET BET DETECTED: ${actualNumber} → [${streetNumbers.join(',')}] - Amount: ${amount}`);
               allBets.push({ type: BetType.STREET, value: streetNumbers.join(','), amount, name: `Street ${streetNumbers.join('-')}` });
             } else {
               // Middle/Top row: bottom split bet - use predefined values
@@ -1877,7 +1887,6 @@ export default function GameRoulette() {
         }
 
         // Process ALL bets and calculate total winnings
-        let totalWinnings = 0;
         let totalPayout = 0;
         let winningBets = [];
         let losingBets = [];
@@ -1887,21 +1896,26 @@ export default function GameRoulette() {
           const payoutRatio = getPayoutRatio(bet.type);
 
           if (isWinner) {
-            const betPayout = bet.amount * payoutRatio; // Payout ratio already includes the multiplier
-            const betWinnings = bet.amount * (payoutRatio - 1); // Net winnings only (exclude original bet)
+            const betPayout = bet.amount * payoutRatio; // Full payout (includes original bet)
             totalPayout += betPayout;
-            totalWinnings += betWinnings;
-            winningBets.push({ ...bet, payout: betPayout, winnings: betWinnings, multiplier: payoutRatio });
+            winningBets.push({ ...bet, payout: betPayout, multiplier: payoutRatio });
           } else {
             losingBets.push({ ...bet, loss: bet.amount });
           }
         });
 
-        // netWinnings should be: totalWinnings - total losses
-        // Since totalWinnings is already net (excludes original bet), we just need to subtract losing bets
-        const totalLosses = losingBets.reduce((sum, bet) => sum + bet.loss, 0);
-        const netWinnings = totalWinnings - totalLosses;
-        setWinnings(netWinnings);
+        // Calculate net result: Since we already deducted the bet amount, 
+        // netResult should be just the winnings (totalPayout includes original bet)
+        const netResult = totalPayout > 0 ? totalPayout : 0;
+        setWinnings(netResult);
+        
+        console.log("🎯 WINNINGS CALCULATION:", {
+          totalPayout,
+          totalBetAmount,
+          netResult,
+          winningsState: netResult,
+          explanation: "totalPayout already includes original bet, so netResult = totalPayout"
+        });
 
         console.log("Bet results:", {
           winningNumber,
@@ -1909,22 +1923,23 @@ export default function GameRoulette() {
           winningBets: winningBets.length,
           losingBets: losingBets.length,
           totalPayout,
-          totalWinnings,
-          netWinnings,
+          netResult,
           totalBetAmount
         });
 
-        // Update user balance with net winnings (includes losses)
-        const currentBalance = parseFloat(userBalance || '0');
-        // netWinnings = totalWinnings - total losses, so this gives us the correct final balance
-        const newBalance = (currentBalance + (netWinnings * 100000000)).toString(); // Convert to octas
-        dispatch(setBalance(newBalance));
+        // Update user balance with final result
+        // netResult = totalPayout (includes original bet since we already deducted it)
+        // So we just add the total winnings to the balance after bet deduction
+        const finalBalance = balanceAfterBet + (netResult * 100000000);
+        dispatch(setBalance(finalBalance.toString()));
 
         console.log("Balance update:", {
-          currentBalance: currentBalance / 100000000,
-          totalWinnings: totalWinnings,
-          netWinnings: netWinnings,
-          newBalance: newBalance / 100000000
+          originalBalance: originalBalance / 100000000,
+          balanceAfterBet: balanceAfterBet / 100000000,
+          totalPayout: totalPayout,
+          netResult: netResult,
+          finalBalance: finalBalance / 100000000,
+          explanation: "netResult = totalPayout (includes original bet), so we add full winnings"
         });
 
         // Add to betting history
@@ -1935,9 +1950,9 @@ export default function GameRoulette() {
           amount: totalBetAmount,
           numbers: [],
           result: winningNumber,
-          win: netWinnings > 0,  // Use netWinnings to determine if it's a win
-          payout: netWinnings,   // Use netWinnings (includes losses)
-          multiplier: netWinnings > 0 ? (netWinnings / totalBetAmount).toFixed(2) : 0,
+          win: netResult > 0,  // Use netResult to determine if it's a win
+          payout: netResult > 0 ? (netResult - totalBetAmount) : -totalBetAmount,   // Net winnings (exclude original bet)
+          multiplier: netResult > 0 ? (netResult / totalBetAmount).toFixed(2) : 0,
           totalBets: allBets.length, // Add totalBets field
           winningBets: winningBets.length, // Add winningBets field
           details: {
@@ -1949,8 +1964,8 @@ export default function GameRoulette() {
         console.log("newBet object created:", {
           win: newBet.win,
           payout: newBet.payout,
-          netWinnings,
-          totalWinnings,
+          netResult,
+          totalPayout,
           totalBetAmount
         });
 
@@ -1960,18 +1975,18 @@ export default function GameRoulette() {
         console.log("Updated bettingHistory:", [newBet, ...bettingHistory].slice(0, 50)); // Debug log
 
         // Show result notification
-        if (totalPayout > 0) {
+        if (netResult > 0) {
           const winMessage = winningBets.length === 1
-            ? `🎉 WINNER! ${winningBets[0].name} - You won ${totalWinnings.toFixed(4)} APT!`
-            : `🎉 MULTIPLE WINNERS! ${winningBets.length} bets won - Total: ${totalWinnings.toFixed(4)} APT!`;
+            ? `🎉 WINNER! ${winningBets[0].name} - You won ${(netResult - totalBetAmount).toFixed(4)} APT!`
+            : `🎉 MULTIPLE WINNERS! ${winningBets.length} bets won - Total: ${(netResult - totalBetAmount).toFixed(4)} APT!`;
 
           setNotificationMessage(winMessage);
           setNotificationSeverity("success");
           setSnackbarMessage(winMessage);
         } else {
-          setNotificationMessage(`💸 Number ${winningNumber} - Better luck next time!`);
+          setNotificationMessage(`💸 Number ${winningNumber} - You lost ${totalBetAmount.toFixed(4)} APT!`);
           setNotificationSeverity("error");
-          setSnackbarMessage(`💸 Number ${winningNumber} - Better luck next time!`);
+          setSnackbarMessage(`💸 Number ${winningNumber} - You lost ${totalBetAmount.toFixed(4)} APT!`);
         }
         setSnackbarOpen(true);
 
@@ -1988,8 +2003,7 @@ export default function GameRoulette() {
       setWheelSpinning(false);
       alert(`Error: ${error.message || error.toString()}`);
 
-      // Refund the deducted balance on error
-      dispatch(setBalance(userBalance));
+      // No need to refund since we don't deduct balance upfront anymore
     } finally {
       // Don't disable submit here since we removed the blockchain wait
     }
@@ -2338,6 +2352,7 @@ export default function GameRoulette() {
     dispatchColumns({ type: "reset" });
     dispatchInside({ type: "reset" });
     dispatchEvents({ type: "reset" });
+    setWinnings(-1); // Reset winnings when clearing bets
   }, [playSound, menuClickRef]);
 
   // Removed handlePlaceBet function - now using lockBet with Redux balance
@@ -2412,7 +2427,7 @@ export default function GameRoulette() {
 
     // Reset core game state
     setRollResult(-1);
-    setWinnings(0);
+    setWinnings(-1); // Reset to -1 to indicate no result yet
     setSubmitDisabled(false);
 
     // Clear all bets from the board
@@ -3001,6 +3016,7 @@ export default function GameRoulette() {
                             [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36].includes(rollResult) ? '#d82633' : 'white'
                         }}>{rollResult}</span>
                       </Typography>
+
                     </Box>
                   </Box>
                 ) : (
@@ -3358,8 +3374,10 @@ export default function GameRoulette() {
             {notificationIndex === notificationSteps.RESULT_READY && (
               <Typography>
                 {winnings > 0
-                  ? `You won ${winnings} APTC!`
-                  : "Better luck next time!"}
+                  ? `🎉 You won ${winnings.toFixed(4)} APT!`
+                  : winnings < 0
+                  ? `💸 You lost ${Math.abs(winnings).toFixed(4)} APT!`
+                  : "🤝 Break even!"}
               </Typography>
             )}
           </MuiAlert>

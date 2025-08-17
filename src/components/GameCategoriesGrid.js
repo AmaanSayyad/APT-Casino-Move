@@ -61,6 +61,14 @@ const GameCategoriesGrid = () => {
       background: '/images/games/crash-bg.jpg',
       gameCount: 6
     },
+    { 
+      id: 8, 
+      name: 'Plinko', 
+      description: 'Drop the ball and watch it bounce to fortune', 
+      icon: '/images/games/plinko.png', 
+      background: '/images/games/crash-bg.jpg',
+      gameCount: 3
+    },
   ];
   
   const [hoveredId, setHoveredId] = useState(null);

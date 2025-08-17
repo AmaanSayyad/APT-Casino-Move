@@ -1,77 +1,145 @@
 "use client";
-import FeatureSection from "@/components/FeatureSection";
-import HeroSection from "@/components/HeroSection";
-import LetsPlaySection from "@/components/LetsPlaySection";
-import FeatureGameSection from "@/components/FeatureGameSection";
-import Button from "@/components/Button";
-import TabButton from "../../../components/TabButton";
-import DropdownButton from "../../../components/DropdownButton";
-import { Apple, Laptop, Tablet, Watch } from "lucide-react";
-import Tabs from "@/components/Tabs";
-import DynamicForm from "./Form";
-import GameDetail from "../../../components/GameDetail";
-import { gameData, bettingTableData } from "./config/gameDetail";
-import { manualFormConfig, autoFormConfig } from "./config/formConfig";
-
-const options = [
-  { value: "iphone", label: "iPhone", icon: <Apple className="w-4 h-4" /> },
-  { value: "macbook", label: "MacBook", icon: <Laptop className="w-4 h-4" /> },
-  { value: "ipad", label: "iPad", icon: <Tablet className="w-4 h-4" /> },
-  { value: "watch", label: "Apple Watch", icon: <Watch className="w-4 h-4" /> },
-];
+import { useState, useRef } from "react";
+import PlinkoGame from "./components/PlinkoGame";
+import GameHistory from "./components/GameHistory";
+import GameControls from "./components/GameControls";
 
 export default function Plinko() {
-  const handleFormSubmit = (data) => {
-    console.log("Form Data Submitted:", data);
+  const [activeTab, setActiveTab] = useState("myBet");
+  const [gameHistory, setGameHistory] = useState([
+    {
+      id: 1,
+      game: "Mines",
+      title: "4:43 am",
+      betAmount: "0.00000000000",
+      multiplier: "0.00x",
+      payout: "0.00000000000"
+    },
+    {
+      id: 2,
+      game: "Mines",
+      title: "4:42 am",
+      betAmount: "0.00000000000",
+      multiplier: "0.00x",
+      payout: "0.00000000000"
+    },
+    {
+      id: 3,
+      game: "Mines",
+      title: "4:41 am",
+      betAmount: "0.00000000000",
+      multiplier: "0.00x",
+      payout: "0.00000000000"
+    },
+    {
+      id: 4,
+      game: "Mines",
+      title: "4:40 am",
+      betAmount: "0.00000000000",
+      multiplier: "0.00x",
+      payout: "0.00000000000"
+    },
+    {
+      id: 5,
+      game: "Mines",
+      title: "4:39 am",
+      betAmount: "0.00000000000",
+      multiplier: "0.00x",
+      payout: "0.00000000000"
+    },
+    {
+      id: 6,
+      game: "Mines",
+      title: "4:38 am",
+      betAmount: "0.00000000000",
+      multiplier: "0.00x",
+      payout: "0.00000000000"
+    }
+  ]);
+
+  const plinkoGameRef = useRef(null);
+
+  const handleBet = () => {
+    // Trigger the ball dropping animation in PlinkoGame
+    if (plinkoGameRef.current && plinkoGameRef.current.dropBall) {
+      plinkoGameRef.current.dropBall();
+    }
   };
 
-  const tabs = [
-    {
-      label: "Manual",
-      content: (
-        <DynamicForm config={manualFormConfig} onSubmit={handleFormSubmit} />
-      ),
-    },
-    {
-      label: "Auto",
-      content: (
-        <DynamicForm config={autoFormConfig} onSubmit={handleFormSubmit} />
-      ),
-    },
-  ];
-
   return (
-    <div className="bg-[#070005]">
-      <div className="pt-32">
-        {/* Game Header */}
-        <div className="text-white flex justify-between items-center py-4 flex-wrap gap-4 px-4 md:px-8 lg:px-20">
-          <div>
-            <p className="text-sm text-gray-400">Games/Plinko</p>
-            <h1 className="text-3xl md:text-4xl font-semibold">Plinko</h1>
-          </div>
-          <DropdownButton
-            options={options}
-            defaultLabel="Select Apple Product"
-          />
-          <div className="w-full h-0.5 magic-gradient mb-6"></div>
+    <div className="min-h-screen bg-[#070005] text-white">
+      {/* Header */}
+      <div className="pt-32 pb-12 px-4 md:px-8 lg:px-20">
+        <div className="mb-8">
+          <p className="text-sm text-gray-400">Games / Plinko</p>
+          <h1 className="text-3xl md:text-4xl font-semibold">Plinko</h1>
         </div>
+      </div>
 
-        {/* Main Content */}
-        <div className="flex flex-col md:flex-row gap-6 px-4 md:px-8 lg:px-20">
-          {/* Sidebar/Tabs */}
-          <div className="w-full md:w-1/3 lg:w-1/4 rounded-3xl border-2 border-[#333947] bg-[#290023] p-4">
-            <Tabs tabs={tabs} />
+      {/* Main Game Area */}
+      <div className="px-4 md:px-8 lg:px-20 pb-12">
+        <div className="flex flex-col xl:flex-row gap-8">
+          {/* Left Panel - Game Controls */}
+          <div className="w-full xl:w-1/4">
+            <GameControls onBet={handleBet} />
           </div>
 
-          {/* Game Area */}
-          <div className="w-full md:w-2/3 lg:w-3/4 rounded-3xl border-2 border-[#333947] bg-[#290023] p-6">
-            <h2 className="text-xl font-semibold text-white">Game Area</h2>
+          {/* Right Panel - Plinko Board */}
+          <div className="w-full xl:w-3/4">
+            <PlinkoGame ref={plinkoGameRef} />
           </div>
         </div>
+      </div>
 
-        {/* Game Description */}
-        <div className="mt-10 px-4 md:px-8 lg:px-20">
-          <GameDetail gameData={gameData} bettingTableData={bettingTableData} />
+      {/* Bottom Section - Game History */}
+      <div className="px-4 md:px-8 lg:px-20 pb-20">
+        <div className="bg-[#1A0015] rounded-xl border border-[#333947] overflow-hidden">
+          {/* Tabs */}
+          <div className="flex border-b border-[#333947]">
+            <button
+              onClick={() => setActiveTab("myBet")}
+              className={`px-6 py-4 text-sm font-medium transition-colors ${
+                activeTab === "myBet"
+                  ? "text-white border-b-2 border-purple-500"
+                  : "text-gray-500"
+              }`}
+            >
+              My Bet
+            </button>
+            <button
+              onClick={() => setActiveTab("gameDescription")}
+              className={`px-6 py-4 text-sm font-medium transition-colors ${
+                activeTab === "gameDescription"
+                  ? "text-white border-b-2 border-purple-500"
+                  : "text-gray-500"
+              }`}
+            >
+              Game description
+            </button>
+          </div>
+
+          {/* Tab Content */}
+          <div className="p-6">
+            {activeTab === "myBet" ? (
+              <GameHistory history={gameHistory} />
+            ) : (
+              <div className="text-gray-400">
+                <h3 className="text-lg font-semibold text-white mb-4">How to Play Plinko</h3>
+                <p className="mb-4">
+                  Plinko is a game of chance where you drop a ball from the top of a triangular board 
+                  filled with pegs. The ball bounces off the pegs as it falls, eventually landing in one 
+                  of the multiplier slots at the bottom.
+                </p>
+                <p className="mb-4">
+                  Choose your bet amount, risk level, and number of rows. Higher risk levels offer 
+                  greater potential rewards but also higher chances of losing your bet.
+                </p>
+                <p>
+                  The multiplier you land on determines your payout: Bet Amount × Multiplier = Payout
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

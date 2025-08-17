@@ -43,6 +43,7 @@
     "got": "^11.8.6",
     "lottie-react": "^2.4.0",
     "lucide-react": "^0.469.0",
+    "matter-js": "^0.19.0",
     "next": "^15.3.3",
     "next-themes": "^0.3.0",
     "react": "18.3.1",

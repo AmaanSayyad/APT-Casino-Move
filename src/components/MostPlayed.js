@@ -25,6 +25,15 @@ const MostPlayed = () => {
       winRate: "97.3%",
     },
     { 
+      name: "Plinko", 
+      img: "/images/games/plinko.png", 
+      link: "/game/plinko",
+      players: 95,
+      categories: ["instant", "featured"],
+      isHot: true,
+      winRate: "97.1%",
+    },
+    { 
       name: "Fortune Tiger", 
       img: "/images/games/fortune-tiger.png", 
       link: "/game/fortune-tiger",
