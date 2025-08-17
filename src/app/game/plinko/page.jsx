@@ -6,6 +6,7 @@ import GameControls from "./components/GameControls";
 
 export default function Plinko() {
   const [activeTab, setActiveTab] = useState("myBet");
+  const [currentRows, setCurrentRows] = useState(16);
   const [gameHistory, setGameHistory] = useState([
     {
       id: 1,
@@ -66,6 +67,12 @@ export default function Plinko() {
     }
   };
 
+  const handleRowChange = (newRows) => {
+    console.log('Main page: Row change requested to:', newRows);
+    setCurrentRows(newRows);
+    // The PlinkoGame component will automatically update when the rowCount prop changes
+  };
+
   return (
     <div className="min-h-screen bg-[#070005] text-white">
       {/* Header */}
@@ -81,12 +88,21 @@ export default function Plinko() {
         <div className="flex flex-col xl:flex-row gap-8">
           {/* Left Panel - Game Controls */}
           <div className="w-full xl:w-1/4">
-            <GameControls onBet={handleBet} />
+            <GameControls 
+              onBet={handleBet} 
+              onRowChange={handleRowChange}
+              initialRows={currentRows}
+            />
           </div>
 
           {/* Right Panel - Plinko Board */}
           <div className="w-full xl:w-3/4">
-            <PlinkoGame ref={plinkoGameRef} />
+            <PlinkoGame 
+              key={`plinko-${currentRows}`}
+              ref={plinkoGameRef} 
+              rowCount={currentRows}
+              onRowChange={handleRowChange}
+            />
           </div>
         </div>
       </div>
@@ -131,11 +147,16 @@ export default function Plinko() {
                   of the multiplier slots at the bottom.
                 </p>
                 <p className="mb-4">
-                  Choose your bet amount, risk level, and number of rows. Higher risk levels offer 
-                  greater potential rewards but also higher chances of losing your bet.
+                  Choose your bet amount, risk level, and number of rows (8-16). Higher risk levels offer 
+                  greater potential rewards but also higher chances of losing your bet. More rows create 
+                  more complex gameplay with additional pin interactions.
+                </p>
+                <p className="mb-4">
+                  The multiplier you land on determines your payout: Bet Amount × Multiplier = Payout
                 </p>
                 <p>
-                  The multiplier you land on determines your payout: Bet Amount × Multiplier = Payout
+                  <strong>Row Configuration:</strong> You can adjust the number of rows from 8 to 16. 
+                  The default is 16 rows, which provides the most complex and engaging gameplay experience.
                 </p>
               </div>
             )}

@@ -2,16 +2,16 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Minus, Plus } from "lucide-react";
 
-export default function GameControls({ onBet }) {
+export default function GameControls({ onBet, onRowChange, initialRows = 16 }) {
   const [gameMode, setGameMode] = useState("manual");
   const [betAmount, setBetAmount] = useState("0.00");
   const [riskLevel, setRiskLevel] = useState("Medium");
-  const [rows, setRows] = useState("3");
+  const [rows, setRows] = useState(initialRows);
   const [showRiskDropdown, setShowRiskDropdown] = useState(false);
   const [showRowsDropdown, setShowRowsDropdown] = useState(false);
 
   const riskLevels = ["Low", "Medium", "High"];
-  const rowOptions = ["3", "5", "7", "9", "11", "13", "15", "17"];
+  const rowOptions = [8, 9, 10, 11, 12, 13, 14, 15, 16];
 
   const handleBetAmountChange = (value) => {
     const numValue = parseFloat(value) || 0;
@@ -39,6 +39,16 @@ export default function GameControls({ onBet }) {
     // Trigger the ball dropping animation in the parent component
     if (onBet) {
       onBet();
+    }
+  };
+
+  const handleRowChange = (newRows) => {
+    setRows(newRows);
+    setShowRowsDropdown(false);
+    
+    // Notify parent component about row change
+    if (onRowChange) {
+      onRowChange(newRows);
     }
   };
 
@@ -154,7 +164,7 @@ export default function GameControls({ onBet }) {
       {/* Rows */}
       <div className="mb-8">
         <label className="block text-sm font-medium text-gray-300 mb-2">
-          Rows
+          Rows (8-16)
         </label>
         <div className="relative">
           <button
@@ -169,10 +179,7 @@ export default function GameControls({ onBet }) {
               {rowOptions.map((row) => (
                 <button
                   key={row}
-                  onClick={() => {
-                    setRows(row);
-                    setShowRowsDropdown(false);
-                  }}
+                  onClick={() => handleRowChange(row)}
                   className="w-full px-4 py-2 text-left text-white hover:bg-[#3A0035] transition-colors"
                 >
                   {row}
@@ -180,6 +187,9 @@ export default function GameControls({ onBet }) {
               ))}
             </div>
           )}
+        </div>
+        <div className="text-xs text-gray-400 mt-1">
+          More rows = more complex gameplay
         </div>
       </div>
 
