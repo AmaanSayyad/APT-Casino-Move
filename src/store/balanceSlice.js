@@ -33,10 +33,37 @@ const balanceSlice = createSlice({
   initialState,
   reducers: {
     setBalance(state, action) {
-      state.userBalance = action.payload;
+      const newBalance = action.payload;
+      // Ensure balance never goes negative
+      if (parseFloat(newBalance) < 0) {
+        state.userBalance = "0";
+        console.warn('Attempted to set negative balance, setting to 0 instead');
+      } else {
+        state.userBalance = newBalance;
+      }
       // Persist to localStorage
       if (typeof window !== 'undefined') {
-        localStorage.setItem('userBalance', action.payload);
+        localStorage.setItem('userBalance', state.userBalance);
+      }
+    },
+    addToBalance(state, action) {
+      const amountToAdd = parseFloat(action.payload);
+      const currentBalance = parseFloat(state.userBalance);
+      const newBalance = Math.max(0, currentBalance + amountToAdd).toFixed(2);
+      state.userBalance = newBalance;
+      // Persist to localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('userBalance', newBalance);
+      }
+    },
+    subtractFromBalance(state, action) {
+      const amountToSubtract = parseFloat(action.payload);
+      const currentBalance = parseFloat(state.userBalance);
+      const newBalance = Math.max(0, currentBalance - amountToSubtract).toFixed(2);
+      state.userBalance = newBalance;
+      // Persist to localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('userBalance', newBalance);
       }
     },
     setLoading(state, action) {
@@ -49,7 +76,7 @@ const balanceSlice = createSlice({
   },
 });
 
-export const { setBalance, setLoading } = balanceSlice.actions;
+export const { setBalance, addToBalance, subtractFromBalance, setLoading } = balanceSlice.actions;
 
 // Utility functions for localStorage operations
 export const loadBalanceFromStorage = () => {

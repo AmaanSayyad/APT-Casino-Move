@@ -65,7 +65,19 @@ export default function Plinko() {
 
   const plinkoGameRef = useRef(null);
 
+  const handleBetAmountChange = (amount) => {
+    console.log('Main page received bet amount:', amount);
+    setCurrentBetAmount(amount);
+  };
+
   const handleBet = () => {
+    // Ensure we have the latest bet amount before starting the game
+    console.log('Main page handleBet called with bet amount:', currentBetAmount);
+    if (currentBetAmount <= 0) {
+      console.warn('Bet amount is 0 or negative, cannot start game');
+      return;
+    }
+    
     // Trigger the ball dropping animation in PlinkoGame
     if (plinkoGameRef.current && plinkoGameRef.current.dropBall) {
       plinkoGameRef.current.dropBall();
@@ -74,11 +86,6 @@ export default function Plinko() {
 
   const handleBetHistoryChange = (newBetResult) => {
     setGameHistory(prev => [newBetResult, ...prev.slice(0, 19)]); // Keep last 20 games
-  };
-
-  const handleBetAmountChange = (amount) => {
-    console.log('Main page received bet amount:', amount);
-    setCurrentBetAmount(amount);
   };
 
   const handleRowChange = (newRows) => {

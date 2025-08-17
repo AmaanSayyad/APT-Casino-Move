@@ -103,41 +103,59 @@ export default function GameControls({ onBet, onRowChange, onRiskLevelChange, on
     if (onBetAmountChange) {
       console.log('Notifying parent about bet amount:', betValue);
       onBetAmountChange(betValue);
-    }
-    
-    // Deduct bet amount from balance immediately
-    const betAmountInReduxUnit = betValue * 100000000;
-    const newBalance = (currentBalance - betAmountInReduxUnit).toFixed(2);
-    
-    console.log('Balance deduction details:');
-    console.log('  Current balance:', currentBalance);
-    console.log('  Bet amount (frontend):', betValue);
-    console.log('  Bet amount (Redux unit):', betAmountInReduxUnit);
-    console.log('  New balance after bet:', newBalance);
-    console.log('  Dispatching setBalance with:', newBalance);
-    
-    // Update Redux balance
-    dispatch(setBalance(newBalance));
-    
-    console.log('Game mode:', gameMode, 'Bet amount:', betAmount, 'Number of bets:', numberOfBets);
-    
-    if (gameMode === "auto") {
-      // Start auto betting
-      console.log('Starting auto betting...');
-      setIsAutoPlaying(true);
-      startAutoBetting();
+      
+      // Wait a bit for the parent to update, then continue
+      setTimeout(() => {
+        console.log('Parent notified, now deducting balance and starting game...');
+        
+        // Deduct bet amount from balance immediately
+        const betAmountInReduxUnit = betValue * 100000000;
+        const newBalance = (currentBalance - betAmountInReduxUnit).toFixed(2);
+        
+        console.log('Balance deduction details:');
+        console.log('  Current balance:', currentBalance);
+        console.log('  Bet amount (frontend):', betValue);
+        console.log('  Bet amount (Redux unit):', betAmountInReduxUnit);
+        console.log('  New balance after bet:', newBalance);
+        console.log('  Dispatching setBalance with:', newBalance);
+        
+        // Update Redux balance
+        dispatch(setBalance(newBalance));
+        
+        console.log('Game mode:', gameMode, 'Bet amount:', betAmount, 'Number of bets:', numberOfBets);
+        
+        if (gameMode === "auto") {
+          // Start auto betting
+          console.log('Starting auto betting...');
+          setIsAutoPlaying(true);
+          startAutoBetting();
+        } else {
+          // Manual bet
+          console.log('Manual bet...');
+          if (onBet) {
+            onBet();
+          }
+        }
+      }, 100); // Small delay to ensure parent state is updated
     } else {
-      // Manual bet
-      console.log('Manual bet...');
-      if (onBet) {
-        onBet();
-      }
+      console.error('onBetAmountChange callback not provided!');
     }
   };
 
   const startAutoBetting = () => {
     const totalBets = parseInt(numberOfBets) || 1;
     let currentBet = 0;
+    
+    // Check if we have enough balance for all bets
+    const totalBetAmount = totalBets * parseFloat(betAmount);
+    const totalBetAmountInReduxUnit = totalBetAmount * 100000000;
+    const currentBalance = parseFloat(userBalance);
+    
+    if (totalBetAmountInReduxUnit > currentBalance) {
+      alert(`Insufficient balance for ${totalBets} bets of ${betAmount} APT each. You need ${totalBetAmount.toFixed(3)} APT but have ${(currentBalance / 100000000).toFixed(3)} APT`);
+      setIsAutoPlaying(false);
+      return;
+    }
     
     console.log('Auto betting started with', totalBets, 'bets');
     console.log('onBet function exists:', !!onBet);
@@ -212,6 +230,19 @@ export default function GameControls({ onBet, onRowChange, onRiskLevelChange, on
     if (onRiskLevelChange) {
       onRiskLevelChange(newRiskLevel);
     }
+  };
+
+  // Check if user has sufficient balance for current bet
+  const hasSufficientBalance = () => {
+    const betValue = parseFloat(betAmount);
+    const currentBalance = parseFloat(userBalance);
+    const betAmountInReduxUnit = betValue * 100000000;
+    return betAmountInReduxUnit <= currentBalance && betValue > 0;
+  };
+
+  // Get current balance in APT for display
+  const getCurrentBalanceInAPT = () => {
+    return (parseFloat(userBalance) / 100000000).toFixed(3);
   };
 
   return (
@@ -433,12 +464,47 @@ export default function GameControls({ onBet, onRowChange, onRiskLevelChange, on
           Stop
         </button>
       ) : (
-        <button 
-          onClick={handleBet}
-          className="w-full bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold py-4 px-6 rounded-lg hover:from-pink-600 hover:to-purple-600 transition-all transform hover:scale-105"
-        >
-          {gameMode === "auto" ? "Start Auto Betting" : "Bet"}
-        </button>
+        <div className="space-y-3">
+          {/* Current Balance Display */}
+          <div className="text-center p-3 bg-[#2A0025] rounded-lg border border-[#333947]">
+            <span className="text-sm text-gray-400">Current Balance:</span>
+            <div className="text-lg font-bold text-green-400">{getCurrentBalanceInAPT()} APT</div>
+          </div>
+          
+          {/* Bet Button */}
+          <button 
+            onClick={handleBet}
+            disabled={!hasSufficientBalance()}
+            className={`w-full font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 ${
+              hasSufficientBalance() 
+                ? 'bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white' 
+                : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+            }`}
+          >
+            {gameMode === "auto" ? "Start Auto Betting" : "Bet"}
+          </button>
+          
+          {/* Insufficient Balance Warning */}
+          {!hasSufficientBalance() && parseFloat(betAmount) > 0 && (
+            <div className="text-center text-red-400 text-sm">
+              Insufficient balance for {betAmount} APT bet
+            </div>
+          )}
+          
+          {/* Test Balance Button - Only in development */}
+          {process.env.NODE_ENV === 'development' && (
+            <button
+              onClick={() => {
+                const currentBalance = parseFloat(userBalance);
+                const testAmount = 1 * 100000000; // 1 APT
+                dispatch(setBalance(testAmount));
+              }}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 px-4 rounded-lg transition-colors"
+            >
+              +1 APT (Test)
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

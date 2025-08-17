@@ -2,7 +2,7 @@
 import { useState, forwardRef, useImperativeHandle, useCallback, useEffect, useRef } from "react";
 import Matter from 'matter-js';
 import { useSelector, useDispatch } from 'react-redux';
-import { setBalance } from '@/store/balanceSlice';
+import { setBalance, addToBalance } from '@/store/balanceSlice';
 
 const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChange, betAmount = 0, onBetHistoryChange }, ref) => {
   const dispatch = useDispatch();
@@ -53,6 +53,25 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
     console.log('Parsed bet amount:', parsedAmount);
     setCurrentBetAmount(parsedAmount);
   }, [betAmount]);
+
+  // Update currentBetAmount whenever betAmount prop changes
+  useEffect(() => {
+    if (betAmount && betAmount > 0) {
+      console.log('Updating currentBetAmount from prop:', betAmount);
+      setCurrentBetAmount(betAmount);
+    }
+  }, [betAmount]);
+
+  // Ensure currentBetAmount is always in sync with betAmount prop
+  useEffect(() => {
+    console.log('PlinkoGame: betAmount prop changed to:', betAmount);
+    console.log('PlinkoGame: currentBetAmount state is:', currentBetAmount);
+    
+    if (betAmount !== currentBetAmount) {
+      console.log('Syncing currentBetAmount with betAmount prop');
+      setCurrentBetAmount(betAmount);
+    }
+  }, [betAmount, currentBetAmount]);
 
   // Game constants - matching the reference repo
   const CANVAS_WIDTH = 800;
@@ -420,17 +439,21 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
         // Calculate reward based on multiplier and bet amount
         const multiplier = multipliers[binIndex];
         const multiplierValue = parseFloat(multiplier.replace('x', ''));
-        const reward = betAmount * multiplierValue;
+        
+        // Use betAmount prop if currentBetAmount state is still 0
+        const effectiveBetAmount = currentBetAmount > 0 ? currentBetAmount : betAmount;
+        const reward = effectiveBetAmount * multiplierValue;
         
         console.log('=== GAME RESULT ===');
         console.log('Bet amount from props:', betAmount);
         console.log('Current bet amount in state:', currentBetAmount);
+        console.log('Effective bet amount used:', effectiveBetAmount);
         console.log('Multiplier:', multiplier);
         console.log('Reward calculated:', reward);
         console.log('==================');
         
         // Add reward to current balance (bet amount already deducted in GameControls)
-        if (betAmount > 0) {
+        if (effectiveBetAmount > 0) {
           console.log('Adding reward to balance:');
           console.log('  Current balance from Redux:', userBalance);
           console.log('  Current balance in APT:', parseFloat(userBalance) / 100000000);
@@ -448,7 +471,9 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
           console.log('  Final balance (Redux unit):', finalBalance);
           console.log('  Final balance (APT):', (parseFloat(finalBalance) / 100000000).toFixed(3));
           
-          dispatch(setBalance(finalBalance));
+          dispatch(addToBalance(rewardInReduxUnit));
+        } else {
+          console.warn('Cannot add reward: effectiveBetAmount is 0 or negative');
         }
         
         // Add to bet history
