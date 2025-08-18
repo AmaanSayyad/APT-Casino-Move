@@ -3,6 +3,10 @@ import { useState, useRef, useEffect } from "react";
 import PlinkoGame from "./components/PlinkoGame";
 import GameHistory from "./components/GameHistory";
 import GameControls from "./components/GameControls";
+import PlinkoStrategyGuide from "./components/PlinkoStrategyGuide";
+import PlinkoWinProbabilities from "./components/PlinkoWinProbabilities";
+import PlinkoPayouts from "./components/PlinkoPayouts";
+import PlinkoLeaderboard from "./components/PlinkoLeaderboard";
 import { useSelector } from 'react-redux';
 import { motion } from "framer-motion";
 import { GiRollingDices, GiCardRandom, GiPokerHand } from "react-icons/gi";
@@ -233,7 +237,7 @@ export default function Plinko() {
       </div>
 
       {/* Bottom Section - Game History */}
-      <div className="px-4 md:px-8 lg:px-20 pb-20" id="history">
+      <div className="px-4 md:px-8 lg:px-20 pb-12" id="history">
         <div className="bg-[#1A0015] rounded-xl border border-[#333947] overflow-hidden">
           {/* Tabs */}
           <div className="flex border-b border-[#333947]">
@@ -286,6 +290,22 @@ export default function Plinko() {
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Strategy + Probabilities + (side-by-side) Payouts & Leaderboard */}
+      <div className="px-4 md:px-8 lg:px-20 pb-20">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <div className="lg:col-span-2">
+            <PlinkoStrategyGuide />
+          </div>
+          <div className="lg:col-span-1">
+            <PlinkoWinProbabilities risk={currentRiskLevel} />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <PlinkoPayouts />
+          <PlinkoLeaderboard />
         </div>
       </div>
     </div>
