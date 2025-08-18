@@ -10,12 +10,11 @@ import PlinkoLeaderboard from "./components/PlinkoLeaderboard";
 import { useSelector } from 'react-redux';
 import { motion } from "framer-motion";
 import { GiRollingDices, GiCardRandom, GiPokerHand } from "react-icons/gi";
-import { FaPercentage, FaBalanceScale, FaChartLine, FaCoins, FaTrophy } from "react-icons/fa";
+import { FaPercentage, FaBalanceScale, FaChartLine, FaCoins, FaTrophy, FaPlay, FaExternalLinkAlt } from "react-icons/fa";
 
 export default function Plinko() {
   const userBalance = useSelector((state) => state.balance.userBalance);
   
-  const [activeTab, setActiveTab] = useState("myBet");
   const [currentRows, setCurrentRows] = useState(15);
   const [currentRiskLevel, setCurrentRiskLevel] = useState("Medium");
   const [currentBetAmount, setCurrentBetAmount] = useState(0);
@@ -239,56 +238,63 @@ export default function Plinko() {
       {/* Bottom Section - Game History */}
       <div className="px-4 md:px-8 lg:px-20 pb-12" id="history">
         <div className="bg-[#1A0015] rounded-xl border border-[#333947] overflow-hidden">
-          {/* Tabs */}
-          <div className="flex border-b border-[#333947]">
-            <button
-              onClick={() => setActiveTab("myBet")}
-              className={`px-6 py-4 text-sm font-medium transition-colors ${
-                activeTab === "myBet"
-                  ? "text-white border-b-2 border-purple-500"
-                  : "text-gray-500"
-              }`}
-            >
-              My Bet
-            </button>
-            <button
-              onClick={() => setActiveTab("gameDescription")}
-              className={`px-6 py-4 text-sm font-medium transition-colors ${
-                activeTab === "gameDescription"
-                  ? "text-white border-b-2 border-purple-500"
-                  : "text-gray-500"
-              }`}
-            >
-              Game description
-            </button>
-          </div>
-
-          {/* Tab Content */}
           <div className="p-6">
-            {activeTab === "myBet" ? (
-              <GameHistory history={gameHistory} />
-            ) : (
-              <div className="text-gray-400" id="strategy">
-                <h3 className="text-lg font-semibold text-white mb-4">How to Play Plinko</h3>
-                <p className="mb-4">
-                  Plinko is a game of chance where you drop a ball from the top of a triangular board 
-                  filled with pegs. The ball bounces off the pegs as it falls, eventually landing in one 
-                  of the multiplier slots at the bottom.
-                </p>
-                <p className="mb-4">
-                  Choose your bet amount, risk level, and number of rows (8-16). Higher risk levels offer 
-                  greater potential rewards but also higher chances of losing your bet. More rows create 
-                  more complex gameplay with additional pin interactions.
-                </p>
-                <p className="mb-4">
-                  The multiplier you land on determines your payout: Bet Amount × Multiplier = Payout
-                </p>
-                <p>
-                  <strong>Row Configuration:</strong> You can adjust the number of rows from 8 to 16. 
-                  The default is 16 rows, which provides the most complex and engaging gameplay experience.
-                </p>
-              </div>
-            )}
+            <GameHistory history={gameHistory} />
+          </div>
+        </div>
+      </div>
+
+      {/* Game Description with Video */}
+      <div className="px-4 md:px-8 lg:px-20 pb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          {(() => {
+            const videoId = 'DMZmbPkS1dE';
+            const [thumbSrc, setThumbSrc] = useState(`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`);
+            const [triedFallback, setTriedFallback] = useState(false);
+            const onThumbError = () => {
+              if (!triedFallback) {
+                setTriedFallback(true);
+                setThumbSrc(`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`);
+              }
+            };
+            const openYoutube = () => {
+              if (typeof window !== 'undefined') {
+                window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank', 'noopener,noreferrer');
+              }
+            };
+            return (
+              <button onClick={openYoutube} className="group w-full aspect-video relative rounded-xl border border-[#333947] overflow-hidden bg-black/40 text-left">
+                {/* Thumbnail */}
+                <img src={thumbSrc} onError={onThumbError} alt="Plinko video cover" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                {/* Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                {/* Play and label */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                  <div className="w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                    <FaPlay className="text-white" />
+                  </div>
+                  <div className="text-white font-medium">Watch on YouTube</div>
+                  <div className="text-xs text-amber-300 flex items-center gap-1">
+                    <FaExternalLinkAlt /> Age-restricted content
+                  </div>
+                </div>
+              </button>
+            );
+          })()}
+          <div className="bg-[#1A0015] rounded-xl border border-[#333947] p-6 text-gray-300">
+            <h3 className="text-lg font-semibold text-white mb-4">How to Play Plinko</h3>
+            <p className="mb-4">
+              Plinko is a game of chance where you drop a ball from the top of a triangular board filled with pegs. The ball bounces off the pegs as it falls, eventually landing in one of the multiplier slots at the bottom.
+            </p>
+            <p className="mb-4">
+              Choose your bet amount, risk level, and number of rows (8–16). Higher risk levels offer greater potential rewards but also higher chances of losing your bet. More rows create more complex gameplay with additional pin interactions.
+            </p>
+            <p className="mb-4">
+              Payout is calculated as: Bet Amount × Multiplier.
+            </p>
+            <p>
+              <strong>Row Configuration:</strong> Adjust rows from 8 to 16. Default is 16 for the richest peg interactions.
+            </p>
           </div>
         </div>
       </div>
