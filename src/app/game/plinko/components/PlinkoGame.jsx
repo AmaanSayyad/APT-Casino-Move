@@ -410,26 +410,22 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
 
     // Handle ball entering bin (exact logic from reference repo - 16 row logic)
     const handleBallEnterBin = (ball, pinsLastRowXCoords) => {
-      // 16 row logic: Calculate bin index based on ball position relative to last row pins
-      let binIndex = -1;
-      
-      // If ball is to the left of the first pin, it's in the leftmost bin (index 0)
-      if (ball.position.x < pinsLastRowXCoords[0]) {
-        binIndex = 0;
-      }
-      // If ball is to the right of the last pin, it's in the rightmost bin (last index)
-      else if (ball.position.x > pinsLastRowXCoords[pinsLastRowXCoords.length - 1]) {
-        binIndex = pinsLastRowXCoords.length;
-      }
-      // Otherwise, find which two pins the ball is between
-      else {
-        for (let i = 0; i < pinsLastRowXCoords.length - 1; i++) {
-          if (ball.position.x >= pinsLastRowXCoords[i] && ball.position.x < pinsLastRowXCoords[i + 1]) {
-            binIndex = i + 1;
-            break;
-          }
+      // Calculate bin index by snapping to the nearest slot center (between adjacent last-row pins)
+      // This avoids boundary bias and matches visual expectation (nearest reward box)
+      const gaps = pinsLastRowXCoords.length - 1; // equals binCount
+      const x = ball.position.x;
+
+      let nearestIndex = 0;
+      let nearestDist = Infinity;
+      for (let i = 0; i < gaps; i++) {
+        const center = (pinsLastRowXCoords[i] + pinsLastRowXCoords[i + 1]) / 2;
+        const dist = Math.abs(x - center);
+        if (dist < nearestDist) {
+          nearestDist = dist;
+          nearestIndex = i;
         }
       }
+      const binIndex = Math.max(0, Math.min(gaps - 1, nearestIndex));
       
       // Debug: Log the bin detection process
       console.log('=== BIN DETECTION DEBUG ===');
