@@ -21,6 +21,25 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
   const renderRef = useRef(null);
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
+  
+  // Audio refs (drop and bin land only)
+  const ballDropAudioRef = useRef(null);
+  const binLandAudioRef = useRef(null);
+  
+  const playAudio = (ref) => {
+    try {
+      const audio = ref.current;
+      if (audio) {
+        audio.currentTime = 0;
+        audio.play().catch(() => {});
+      }
+    } catch {}
+  };
+  
+  useEffect(() => {
+    if (ballDropAudioRef.current) ballDropAudioRef.current.volume = 0.6;
+    if (binLandAudioRef.current) binLandAudioRef.current.volume = 0.7;
+  }, []);
 
   // Watch for changes in rowCount or riskLevel props and update local state
   useEffect(() => {
@@ -479,6 +498,9 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
           dispatch(addToBalance(rewardInReduxUnit));
         }
         
+        // Play bin land sound
+        playAudio(binLandAudioRef);
+        
         // Add to bet history
         const newBetResult = {
           id: Date.now(),
@@ -599,6 +621,9 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
     });
 
     World.add(engineRef.current.world, ball);
+    
+    // Play drop sound
+    playAudio(ballDropAudioRef);
   }, [isDropping, currentRows, userBalance, dispatch]);
 
   // Expose functions to parent component
@@ -676,6 +701,9 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
 
       {/* Plinko Board Container */}
       <div className="relative bg-[#2A0025] rounded-lg p-6 min-h-[600px] flex flex-col items-center">
+        {/* Audio elements */}
+        <audio ref={ballDropAudioRef} src="/sounds/chip-put.mp3" preload="auto" />
+        <audio ref={binLandAudioRef} src="/sounds/win-chips.mp3" preload="auto" />
         {/* Loading Overlay */}
         {isRecreating && (
           <div className="absolute inset-0 bg-[#2A0025] bg-opacity-90 flex items-center justify-center z-50">
