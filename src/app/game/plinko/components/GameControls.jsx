@@ -1,11 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
 import { ChevronDown, ChevronUp, Minus, Plus } from "lucide-react";
-import { useSelector, useDispatch } from 'react-redux';
-import { setBalance } from '@/store/balanceSlice';
+import { useSelector } from 'react-redux';
 
 export default function GameControls({ onBet, onRowChange, onRiskLevelChange, onBetAmountChange, initialRows = 16, initialRiskLevel = "Medium" }) {
-  const dispatch = useDispatch();
   const userBalance = useSelector((state) => state.balance.userBalance);
   
   const [gameMode, setGameMode] = useState("manual");
@@ -85,60 +83,32 @@ export default function GameControls({ onBet, onRowChange, onRiskLevelChange, on
 
   const handleBet = () => {
     const betValue = parseFloat(betAmount);
-    const currentBalance = parseFloat(userBalance);
+    const currentBalanceReduxUnit = parseFloat(userBalance);
+    const currentBalanceAPT = currentBalanceReduxUnit / 100000000;
     
-    console.log('handleBet called with betValue:', betValue, 'currentBalance:', currentBalance);
+    console.log('handleBet called with betValue:', betValue, 'currentBalance (APT):', currentBalanceAPT);
     
     if (betValue <= 0) {
       alert("Please enter a valid bet amount");
       return;
     }
     
-    if (betValue > currentBalance) {
-      alert(`Insufficient balance! You have ${currentBalance} APT but need ${betValue} APT`);
+    if (betValue > currentBalanceAPT) {
+      alert(`Insufficient balance! You have ${currentBalanceAPT.toFixed(3)} APT but need ${betValue} APT`);
       return;
     }
     
-    // First notify parent component about bet amount change
     if (onBetAmountChange) {
-      console.log('Notifying parent about bet amount:', betValue);
       onBetAmountChange(betValue);
-      
-      // Wait a bit for the parent to update, then continue
-      setTimeout(() => {
-        console.log('Parent notified, now deducting balance and starting game...');
-        
-        // Deduct bet amount from balance immediately
-        const betAmountInReduxUnit = betValue * 100000000;
-        const newBalance = (currentBalance - betAmountInReduxUnit).toFixed(2);
-        
-        console.log('Balance deduction details:');
-        console.log('  Current balance:', currentBalance);
-        console.log('  Bet amount (frontend):', betValue);
-        console.log('  Bet amount (Redux unit):', betAmountInReduxUnit);
-        console.log('  New balance after bet:', newBalance);
-        console.log('  Dispatching setBalance with:', newBalance);
-        
-        // Update Redux balance
-        dispatch(setBalance(newBalance));
-        
-        console.log('Game mode:', gameMode, 'Bet amount:', betAmount, 'Number of bets:', numberOfBets);
-        
-        if (gameMode === "auto") {
-          // Start auto betting
-          console.log('Starting auto betting...');
-          setIsAutoPlaying(true);
-          startAutoBetting();
-        } else {
-          // Manual bet
-          console.log('Manual bet...');
-          if (onBet) {
-            onBet();
-          }
-        }
-      }, 100); // Small delay to ensure parent state is updated
-    } else {
-      console.error('onBetAmountChange callback not provided!');
+    }
+    
+    if (gameMode === "auto") {
+      console.log('Starting auto betting...');
+      setIsAutoPlaying(true);
+      startAutoBetting();
+    } else if (onBet) {
+      console.log('Manual bet...');
+      onBet();
     }
   };
 

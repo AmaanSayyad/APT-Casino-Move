@@ -15,7 +15,6 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
   const [currentRiskLevel, setCurrentRiskLevel] = useState(riskLevel);
   const [isRecreating, setIsRecreating] = useState(false);
   const [betHistory, setBetHistory] = useState([]);
-  const [currentBetAmount, setCurrentBetAmount] = useState(0);
   
   // Physics engine refs
   const engineRef = useRef(null);
@@ -35,7 +34,7 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
     setHitPegs(new Set());
     
     // Keep bet amount when configuration changes, it will be updated via betAmount prop
-    console.log('PlinkoGame: Configuration changed, current bet amount:', currentBetAmount);
+    console.log('PlinkoGame: Configuration changed, current bet amount:', parseFloat(betAmount) || 0);
     
     // Clear any existing ball or game state
     if (engineRef.current) {
@@ -49,32 +48,11 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
     }, 100);
   }, [rowCount, riskLevel]);
 
-  // Watch for bet amount changes
+  // Keep the latest bet amount in a ref for use in async handlers
+  const betAmountRef = useRef(0);
   useEffect(() => {
-    console.log('PlinkoGame received bet amount:', betAmount, 'Type:', typeof betAmount);
-    const parsedAmount = parseFloat(betAmount) || 0;
-    console.log('Parsed bet amount:', parsedAmount);
-    setCurrentBetAmount(parsedAmount);
+    betAmountRef.current = parseFloat(betAmount) || 0;
   }, [betAmount]);
-
-  // Update currentBetAmount whenever betAmount prop changes
-  useEffect(() => {
-    if (betAmount && betAmount > 0) {
-      console.log('Updating currentBetAmount from prop:', betAmount);
-      setCurrentBetAmount(betAmount);
-    }
-  }, [betAmount]);
-
-  // Ensure currentBetAmount is always in sync with betAmount prop
-  useEffect(() => {
-    console.log('PlinkoGame: betAmount prop changed to:', betAmount);
-    console.log('PlinkoGame: currentBetAmount state is:', currentBetAmount);
-    
-    if (betAmount !== currentBetAmount) {
-      console.log('Syncing currentBetAmount with betAmount prop');
-      setCurrentBetAmount(betAmount);
-    }
-  }, [betAmount, currentBetAmount]);
 
   // Game constants - matching the reference repo
   const CANVAS_WIDTH = 800;
@@ -472,19 +450,19 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
         const multiplier = multipliers[binIndex];
         const multiplierValue = parseFloat(multiplier.replace('x', ''));
         
-        // Always use the betAmount prop for consistency across all row configurations (16 row logic)
-        const effectiveBetAmount = parseFloat(betAmount) || 0;
-        const reward = effectiveBetAmount * multiplierValue;
+        // Use latest bet amount from ref to avoid stale values captured by closures
+        const latestBetAmount = betAmountRef.current;
+        const reward = latestBetAmount * multiplierValue;
         
         console.log('=== GAME RESULT ===');
         console.log('Row configuration:', rows, 'rows,', riskLevel, 'risk');
-        console.log('Bet amount from props:', betAmount);
+        console.log('Bet amount (latest):', betAmountRef.current);
         console.log('Multiplier:', multiplier, '(bin index:', binIndex, ')');
         console.log('Reward calculated:', reward, 'APT');
         console.log('==================');
         
         // Add reward to current balance (bet amount already deducted when ball was spawned)
-        if (effectiveBetAmount > 0) {
+        if (latestBetAmount > 0) {
           console.log('Adding reward to balance:');
           console.log('  Current balance from Redux:', userBalance);
           console.log('  Current balance in APT:', parseFloat(userBalance) / 100000000);
@@ -510,7 +488,7 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
           id: Date.now(),
           game: "Plinko",
           title: new Date().toLocaleTimeString(),
-          betAmount: effectiveBetAmount.toFixed(2),
+          betAmount: latestBetAmount.toFixed(2),
           multiplier: multipliers[binIndex],
           payout: reward.toFixed(2),
           timestamp: Date.now()
@@ -562,21 +540,22 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
     };
   }, [currentRows, currentRiskLevel, initializePhysics]);
 
-  // Function to change rows instantly
+  // Function to start a bet and drop the ball
   const dropBall = useCallback(() => {
     if (!engineRef.current) return;
     
     // Simple balance check - if user doesn't have enough balance, don't allow playing
     const currentBalance = parseFloat(userBalance);
-    const betAmountInReduxUnit = currentBetAmount * 100000000;
+    const latestBetAmount = betAmountRef.current;
+    const betAmountInReduxUnit = latestBetAmount * 100000000;
     
     if (betAmountInReduxUnit > currentBalance) {
       console.warn('Insufficient balance for bet:', {
         currentBalance: currentBalance / 100000000,
-        betAmount: currentBetAmount,
+        betAmount: latestBetAmount,
         balanceInAPT: (currentBalance / 100000000).toFixed(3)
       });
-      alert(`Insufficient balance! You have ${(currentBalance / 100000000).toFixed(3)} APT but need ${currentBetAmount} APT`);
+      alert(`Insufficient balance! You have ${(currentBalance / 100000000).toFixed(3)} APT but need ${latestBetAmount} APT`);
       return;
     }
     
@@ -585,10 +564,10 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
     setHitPegs(new Set());
 
     // Deduct bet amount when ball is spawned
-    if (currentBetAmount > 0) {
+    if (latestBetAmount > 0) {
       const newBalance = (currentBalance - betAmountInReduxUnit).toFixed(2);
       dispatch(setBalance(newBalance));
-      console.log('Bet amount deducted:', currentBetAmount, 'New balance:', newBalance);
+      console.log('Bet amount deducted:', latestBetAmount, 'New balance:', newBalance);
     }
 
     const Bodies = Matter.Bodies;
@@ -624,7 +603,7 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
     });
 
     World.add(engineRef.current.world, ball);
-  }, [isDropping, currentRows, currentBetAmount, userBalance, dispatch]);
+  }, [isDropping, currentRows, userBalance, dispatch]);
 
   // Expose functions to parent component
   useImperativeHandle(ref, () => ({
