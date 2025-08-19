@@ -708,7 +708,7 @@ export default function Navbar() {
             {navLinks.map(({ name, path, classes }, index) => (
               <div key={index}>
                 <Link
-                  className={`${path === pathname ? "text-transparent bg-clip-text bg-gradient-to-r from-red-magic to-blue-magic font-semibold" : classes} py-2 px-3 rounded-md hover:bg-purple-500/10 flex items-center w-full text-lg font-medium`}
+                  className={`${path === pathname ? 'text-white font-semibold' : 'text-white/80'} py-2 px-3 rounded-md hover:bg-purple-500/10 flex items-center w-full text-lg`}
                   href={path}
                   onClick={() => setShowMobileMenu(false)}
                 >
