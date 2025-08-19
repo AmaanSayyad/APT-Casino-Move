@@ -51,6 +51,7 @@ export default function Navbar() {
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const dispatch = useDispatch();
   const { userBalance, isLoading: isLoadingBalance } = useSelector((state) => state.balance);
+  const [walletNetworkName, setWalletNetworkName] = useState("");
 
   // User balance management
   const [showBalanceModal, setShowBalanceModal] = useState(false);
@@ -387,6 +388,43 @@ export default function Navbar() {
     setSearchQuery('');
   };
 
+  // Detect Aptos wallet network (best-effort)
+  useEffect(() => {
+    const readNetwork = async () => {
+      try {
+        if (typeof window !== 'undefined' && window.aptos?.network) {
+          const n = await window.aptos.network();
+          if (n?.name) setWalletNetworkName(String(n.name).toLowerCase());
+        }
+      } catch {}
+    };
+    readNetwork();
+    const off = window?.aptos?.onNetworkChange?.((n) => {
+      try { setWalletNetworkName(String(n?.name || '').toLowerCase()); } catch {}
+    });
+    return () => {
+      try { off && off(); } catch {}
+    };
+  }, []);
+
+  const switchToTestnet = async () => {
+    try {
+      if (window?.aptos?.switchNetwork) {
+        await window.aptos.switchNetwork('Testnet');
+      } else if (window?.aptos?.changeNetwork) {
+        await window.aptos.changeNetwork('Testnet');
+      } else {
+        alert('Please open your Aptos wallet and switch network to Testnet.');
+        return;
+      }
+      setWalletNetworkName('testnet');
+      setShowMobileMenu(false);
+    } catch (e) {
+      console.error('Failed to switch Aptos network:', e);
+      alert('Network switch failed. Please switch to Testnet in your wallet.');
+    }
+  };
+
   return (
     <nav className="backdrop-blur-md bg-[#070005]/90 fixed w-full z-20 transition-all duration-300 shadow-lg">
       <div className="flex w-full items-center justify-between py-6 px-4 sm:px-10 md:px-20 lg:px-36">
@@ -716,6 +754,15 @@ export default function Navbar() {
                 </Link>
               </div>
             ))}
+            {/* Mobile-only: switch to testnet if wallet is on mainnet */}
+            {walletNetworkName === 'mainnet' && (
+              <button
+                onClick={switchToTestnet}
+                className="mt-2 py-2 px-3 rounded-md bg-gradient-to-r from-purple-600 to-blue-600 text-white text-sm font-medium"
+              >
+                Switch to Testnet
+              </button>
+            )}
             <div className="flex justify-between items-center py-2 px-3">
               <span className="text-white/70">Dark Mode</span>
               <button 
