@@ -19,6 +19,7 @@ export default function Plinko() {
   const [currentRiskLevel, setCurrentRiskLevel] = useState("Medium");
   const [currentBetAmount, setCurrentBetAmount] = useState(0);
   const [gameHistory, setGameHistory] = useState([]);
+  const [showMobileWarning, setShowMobileWarning] = useState(false);
 
   const plinkoGameRef = useRef(null);
 
@@ -32,6 +33,16 @@ export default function Plinko() {
       window.scrollTo({ top: y, behavior: 'smooth' });
     }
   };
+
+  // Show mobile warning on first load if device is mobile-sized
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth < 768;
+      if (isMobile) {
+        setShowMobileWarning(true);
+      }
+    }
+  }, []);
 
   // Header component adapted from Roulette header
   const PlinkoHeader = () => {
@@ -202,6 +213,22 @@ export default function Plinko() {
 
   return (
     <div className="min-h-screen bg-[#070005] text-white">
+      {showMobileWarning && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/70 px-4">
+          <div className="bg-[#1A0015] border border-[#333947] rounded-xl p-6 max-w-md w-full text-center">
+            <h3 className="text-xl font-semibold text-white mb-3">Desktop Mode Recommended</h3>
+            <p className="text-gray-300 text-sm mb-4">
+              For the best experience, please switch your mobile browser to Desktop Mode. The Plinko board and physics may not work correctly on small screens.
+            </p>
+            <button
+              onClick={() => setShowMobileWarning(false)}
+              className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-medium py-3 rounded-lg"
+            >
+              I understand, continue
+            </button>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <PlinkoHeader />
 
