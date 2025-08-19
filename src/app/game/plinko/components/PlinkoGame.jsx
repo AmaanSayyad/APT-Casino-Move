@@ -15,7 +15,6 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
   const [currentRiskLevel, setCurrentRiskLevel] = useState(riskLevel);
   const [isRecreating, setIsRecreating] = useState(false);
   const [betHistory, setBetHistory] = useState([]);
-  const [visibleHistoryCount, setVisibleHistoryCount] = useState(5);
   
   // Physics engine refs
   const engineRef = useRef(null);
@@ -750,29 +749,17 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
                     {/* Bet History - Right Side */}
           <div className="absolute right-4 top-4 z-10">
             <div className="space-y-2">
-              {betHistory.slice(0, visibleHistoryCount).map((bet, index) => (
+              {betHistory.slice(0, 5).map((bet, index) => (
                 <div key={index} className="w-16 h-16 bg-[#2A0025] border border-[#333947] rounded-lg flex flex-col items-center justify-center p-1">
-                  <span className="text-xs font-bold text-white">{bet.multiplier}</span>
-                  <span className="text-[10px] text-green-400">+{bet.payout} APT</span>
+                  <span className="w-full text-center leading-tight text-xs font-bold text-white">{bet.multiplier}</span>
+                  <span className="w-full text-center leading-tight text-[10px] text-green-400">+{bet.payout} APT</span>
                 </div>
               ))}
-              {/* Fill up to initial 5 slots only when fewer than 5 results exist */}
-              {visibleHistoryCount <= 5 && betHistory.length < 5 && (
-                Array.from({ length: 5 - betHistory.length }).map((_, index) => (
-                  <div key={`empty-${index}`} className="w-16 h-16 bg-[#2A0025] border border-[#333947] rounded-lg flex items-center justify-center opacity-30">
-                    <span className="text-xs text-gray-500">-</span>
-                  </div>
-                ))
-              )}
-              {/* Show more button */}
-              {betHistory.length > visibleHistoryCount && (
-                <button
-                  onClick={() => setVisibleHistoryCount((c) => Math.min(c + 5, betHistory.length))}
-                  className="w-16 h-8 text-xs bg-[#2A0025] border border-[#333947] rounded-lg text-white hover:bg-[#3A0035]"
-                >
-                  Show more
-                </button>
-              )}
+              {Array.from({ length: Math.max(0, 5 - Math.min(5, betHistory.length)) }).map((_, index) => (
+                <div key={`empty-${index}`} className="w-16 h-16 bg-[#2A0025] border border-[#333947] rounded-lg flex items-center justify-center opacity-30">
+                  <span className="text-xs text-gray-500">-</span>
+                </div>
+              ))}
             </div>
           </div>
 
