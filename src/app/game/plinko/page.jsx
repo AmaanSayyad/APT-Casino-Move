@@ -181,7 +181,7 @@ export default function Plinko() {
   };
 
   const handleBetHistoryChange = (newBetResult) => {
-    setGameHistory(prev => [newBetResult, ...prev.slice(0, 19)]); // Keep last 20 games
+    setGameHistory(prev => [newBetResult, ...prev].slice(0, 100)); // Keep up to last 100 entries
   };
 
   const handleRowChange = (newRows) => {

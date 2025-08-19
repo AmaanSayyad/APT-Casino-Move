@@ -1,44 +1,23 @@
 "use client";
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
 
 export default function GameHistory({ history }) {
-  const [entriesPerPage, setEntriesPerPage] = useState(10);
-  const [showEntriesDropdown, setShowEntriesDropdown] = useState(false);
-
-  const entryOptions = [5, 10, 25, 50, 100];
+  const [visibleCount, setVisibleCount] = useState(5);
 
   return (
     <div>
-      {/* Header with entries selector */}
+      {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold text-white">Game History</h3>
-        <div className="relative">
+        {/* Show more control */}
+        {history.length > visibleCount && (
           <button
-            onClick={() => setShowEntriesDropdown(!showEntriesDropdown)}
-            className="flex items-center gap-2 bg-[#2A0025] border border-[#333947] rounded-lg px-3 py-2 text-sm text-white hover:bg-[#3A0035] transition-colors"
+            onClick={() => setVisibleCount((c) => Math.min(c + 5, history.length))}
+            className="bg-[#2A0025] border border-[#333947] rounded-lg px-3 py-2 text-sm text-white hover:bg-[#3A0035] transition-colors"
           >
-            <span>{entriesPerPage}</span>
-            <ChevronDown className="w-4 h-4" />
+            Show more
           </button>
-          
-          {showEntriesDropdown && (
-            <div className="absolute top-full right-0 mt-1 bg-[#2A0025] border border-[#333947] rounded-lg overflow-hidden z-10 min-w-[80px]">
-              {entryOptions.map((option) => (
-                <button
-                  key={option}
-                  onClick={() => {
-                    setEntriesPerPage(option);
-                    setShowEntriesDropdown(false);
-                  }}
-                  className="w-full px-3 py-2 text-left text-white hover:bg-[#3A0035] transition-colors text-sm"
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
       {/* Game History Table */}
@@ -64,7 +43,7 @@ export default function GameHistory({ history }) {
             </tr>
           </thead>
           <tbody>
-            {history.map((game) => (
+            {history.slice(0, visibleCount).map((game) => (
               <tr key={game.id} className="border-b border-[#333947]/30 hover:bg-[#2A0025]/50 transition-colors">
                 <td className="py-3 px-4">
                   <div className="flex items-center gap-2">
@@ -109,9 +88,9 @@ export default function GameHistory({ history }) {
         </div>
       )}
 
-      {/* Pagination Info */}
+      {/* Info */}
       <div className="mt-4 text-center text-gray-400 text-sm">
-        Showing {Math.min(entriesPerPage, history.length)} of {history.length} entries
+        Showing {Math.min(visibleCount, history.length)} of {history.length} entries
       </div>
     </div>
   );
