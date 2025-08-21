@@ -5,16 +5,136 @@ import { FaHistory, FaChartLine, FaFire, FaExclamationCircle, FaCoins, FaInfoCir
 
 // Sample data for demonstration - would be fetched from API in real app
 const sampleBets = [
-  { id: 1, time: '2023-06-22T14:35:22Z', type: 'Red', amount: 10, result: 23, win: true, payout: 20 },
-  { id: 2, time: '2023-06-22T14:32:19Z', type: 'Even', amount: 15, result: 16, win: true, payout: 30 },
-  { id: 3, time: '2023-06-22T14:30:05Z', type: 'Black', amount: 20, result: 15, win: false, payout: 0 },
-  { id: 4, time: '2023-06-22T14:25:45Z', type: 'Straight Up (17)', amount: 5, result: 17, win: true, payout: 175 },
-  { id: 5, time: '2023-06-22T14:22:10Z', type: 'Split (4/7)', amount: 10, result: 22, win: false, payout: 0 },
-  { id: 6, time: '2023-06-22T14:18:33Z', type: 'Corner (22-25)', amount: 15, result: 22, win: true, payout: 120 },
-  { id: 7, time: '2023-06-22T14:15:21Z', type: 'Dozen (1-12)', amount: 25, result: 5, win: true, payout: 75 },
-  { id: 8, time: '2023-06-22T14:12:08Z', type: 'High (19-36)', amount: 20, result: 12, win: false, payout: 0 },
-  { id: 9, time: '2023-06-22T14:08:55Z', type: 'Column (2nd)', amount: 10, result: 8, win: false, payout: 0 },
-  { id: 10, time: '2023-06-22T14:05:42Z', type: 'Odd', amount: 15, result: 33, win: false, payout: 0 },
+  { 
+    id: 1, 
+    time: '2023-06-22T14:35:22Z', 
+    betType: 'Multiple Bets (3)', 
+    amount: 10, 
+    result: 23, 
+    win: true, 
+    payout: 20,
+    details: {
+      winningBets: ['Red: 5 × 2.0x', 'Odd: 3 × 2.0x'],
+      losingBets: ['Number 17: -2']
+    }
+  },
+  { 
+    id: 2, 
+    time: '2023-06-22T14:32:19Z', 
+    betType: 'Multiple Bets (2)', 
+    amount: 15, 
+    result: 16, 
+    win: true, 
+    payout: 30,
+    details: {
+      winningBets: ['Even: 10 × 2.0x', 'Low (1-18): 5 × 2.0x'],
+      losingBets: []
+    }
+  },
+  { 
+    id: 3, 
+    time: '2023-06-22T14:30:05Z', 
+    betType: 'Multiple Bets (2)', 
+    amount: 20, 
+    result: 15, 
+    win: false, 
+    payout: 0,
+    details: {
+      winningBets: [],
+      losingBets: ['Black: -15', 'High (19-36): -5']
+    }
+  },
+  { 
+    id: 4, 
+    time: '2023-06-22T14:25:45Z', 
+    betType: 'Multiple Bets (1)', 
+    amount: 5, 
+    result: 17, 
+    win: true, 
+    payout: 175,
+    details: {
+      winningBets: ['Number 17: 5 × 35.0x'],
+      losingBets: []
+    }
+  },
+  { 
+    id: 5, 
+    time: '2023-06-22T14:22:10Z', 
+    betType: 'Multiple Bets (2)', 
+    amount: 10, 
+    result: 22, 
+    win: false, 
+    payout: 0,
+    details: {
+      winningBets: [],
+      losingBets: ['Split 4/7: -8', 'Corner 4-5-7-8: -2']
+    }
+  },
+  { 
+    id: 6, 
+    time: '2023-06-22T14:18:33Z', 
+    betType: 'Multiple Bets (3)', 
+    amount: 15, 
+    result: 22, 
+    win: true, 
+    payout: 120,
+    details: {
+      winningBets: ['Corner 22-25: 10 × 8.0x', 'Red: 3 × 2.0x', 'Even: 2 × 2.0x'],
+      losingBets: []
+    }
+  },
+  { 
+    id: 7, 
+    time: '2023-06-22T14:15:21Z', 
+    betType: 'Multiple Bets (2)', 
+    amount: 25, 
+    result: 5, 
+    win: true, 
+    payout: 75,
+    details: {
+      winningBets: ['Dozen 1: 20 × 3.0x', 'Low (1-18): 5 × 2.0x'],
+      losingBets: []
+    }
+  },
+  { 
+    id: 8, 
+    time: '2023-06-22T14:12:08Z', 
+    betType: 'Multiple Bets (2)', 
+    amount: 20, 
+    result: 12, 
+    win: false, 
+    payout: 0,
+    details: {
+      winningBets: [],
+      losingBets: ['High (19-36): -15', 'Dozen 2: -5']
+    }
+  },
+  { 
+    id: 9, 
+    time: '2023-06-22T14:08:55Z', 
+    betType: 'Multiple Bets (2)', 
+    amount: 10, 
+    result: 8, 
+    win: false, 
+    payout: 0,
+    details: {
+      winningBets: [],
+      losingBets: ['Column 2: -8', 'Even: -2']
+    }
+  },
+  { 
+    id: 10, 
+    time: '2023-06-22T14:05:42Z', 
+    betType: 'Multiple Bets (1)', 
+    amount: 15, 
+    result: 33, 
+    win: false, 
+    payout: 0,
+    details: {
+      winningBets: [],
+      losingBets: ['Odd: -15']
+    }
+  },
 ];
 
 // Function to calculate statistics from bet history
@@ -59,11 +179,15 @@ const calculateStats = (bets) => {
 const RouletteHistory = ({ bettingHistory = [] }) => {
   const [tabValue, setTabValue] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [bets, setBets] = useState(bettingHistory);
+  const [bets, setBets] = useState([]);
   
   // Update bets when bettingHistory prop changes
   React.useEffect(() => {
-    setBets(bettingHistory);
+    if (bettingHistory && bettingHistory.length > 0) {
+      setBets(bettingHistory);
+    } else {
+      setBets(sampleBets);
+    }
   }, [bettingHistory]);
   
   const stats = calculateStats(bets);
@@ -73,12 +197,30 @@ const RouletteHistory = ({ bettingHistory = [] }) => {
   };
   
   const formatTime = (timeString) => {
-    const date = new Date(timeString);
+    let date;
+    if (timeString instanceof Date) {
+      date = timeString;
+    } else if (typeof timeString === 'string') {
+      date = new Date(timeString);
+    } else if (typeof timeString === 'number') {
+      date = new Date(timeString);
+    } else {
+      return '--:--';
+    }
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
   
   const formatDate = (timeString) => {
-    const date = new Date(timeString);
+    let date;
+    if (timeString instanceof Date) {
+      date = timeString;
+    } else if (typeof timeString === 'string') {
+      date = new Date(timeString);
+    } else if (typeof timeString === 'number') {
+      date = new Date(timeString);
+    } else {
+      return '--';
+    }
     return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
   };
   
@@ -216,30 +358,96 @@ const RouletteHistory = ({ bettingHistory = [] }) => {
                       >
                         <TableCell>
                           <Box>
-                            <Typography variant="body2" fontWeight="medium">{formatTime(bet.time)}</Typography>
-                            <Typography variant="caption" color="rgba(255,255,255,0.5)">{formatDate(bet.time)}</Typography>
+                            <Typography variant="body2" fontWeight="medium">
+                              {formatTime(bet.time || bet.timestamp)}
+                            </Typography>
+                            <Typography variant="caption" color="rgba(255,255,255,0.5)">
+                              {formatDate(bet.time || bet.timestamp)}
+                            </Typography>
                           </Box>
                         </TableCell>
                         <TableCell>
-                          <Chip 
-                            label={bet.type} 
-                            size="small"
-                            sx={{ 
-                              fontSize: '0.75rem',
-                              bgcolor: 'rgba(104, 29, 219, 0.1)',
-                              color: 'white',
-                              border: '1px solid rgba(104, 29, 219, 0.2)'
-                            }}
-                          />
+                          <Box>
+                            <Chip 
+                              label={bet.betType || bet.type || 'Unknown'} 
+                              size="small"
+                              sx={{ 
+                                fontSize: '0.75rem',
+                                bgcolor: 'rgba(104, 29, 219, 0.1)',
+                                color: 'white',
+                                border: '1px solid rgba(104, 29, 219, 0.2)',
+                                mb: 1
+                              }}
+                            />
+                            {/* Show bet details if available */}
+                            {bet.details && (
+                              <Box sx={{ mt: 1 }}>
+                                {bet.details.winningBets && bet.details.winningBets.length > 0 && (
+                                  <Box sx={{ mb: 0.5 }}>
+                                    {bet.details.winningBets.slice(0, 2).map((winBet, idx) => (
+                                      <Typography 
+                                        key={idx} 
+                                        variant="caption" 
+                                        color="#14D854" 
+                                        sx={{ 
+                                          display: 'block', 
+                                          fontSize: '0.7rem',
+                                          fontWeight: 'medium'
+                                        }}
+                                      >
+                                        ✓ {winBet}
+                                      </Typography>
+                                    ))}
+                                    {bet.details.winningBets.length > 2 && (
+                                      <Typography 
+                                        variant="caption" 
+                                        color="rgba(20, 216, 84, 0.7)" 
+                                        sx={{ fontSize: '0.65rem' }}
+                                      >
+                                        +{bet.details.winningBets.length - 2} more
+                                      </Typography>
+                                    )}
+                                  </Box>
+                                )}
+                                {bet.details.losingBets && bet.details.losingBets.length > 0 && (
+                                  <Box>
+                                    {bet.details.losingBets.slice(0, 2).map((loseBet, idx) => (
+                                      <Typography 
+                                        key={idx} 
+                                        variant="caption" 
+                                        color="#d82633" 
+                                        sx={{ 
+                                          display: 'block', 
+                                          fontSize: '0.7rem',
+                                          fontWeight: 'medium'
+                                        }}
+                                      >
+                                        ✗ {loseBet}
+                                      </Typography>
+                                    ))}
+                                    {bet.details.losingBets.length > 2 && (
+                                      <Typography 
+                                        variant="caption" 
+                                        color="rgba(216, 38, 51, 0.7)" 
+                                        sx={{ fontSize: '0.65rem' }}
+                                      >
+                                        +{bet.details.losingBets.length - 2} more
+                                      </Typography>
+                                    )}
+                                  </Box>
+                                )}
+                              </Box>
+                            )}
+                          </Box>
                         </TableCell>
-                        <TableCell align="center">{bet.amount} APTC</TableCell>
+                        <TableCell align="center">{bet.amount || bet.totalBetAmount || 0} APT</TableCell>
                         <TableCell align="center">
                           <Box 
                             sx={{ 
                               width: 28, 
                               height: 28, 
                               borderRadius: '50%', 
-                              backgroundColor: getNumberColor(bet.result),
+                              backgroundColor: getNumberColor(bet.result || bet.winningNumber),
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
@@ -248,7 +456,9 @@ const RouletteHistory = ({ bettingHistory = [] }) => {
                               boxShadow: '0 3px 6px rgba(0,0,0,0.2)',
                             }}
                           >
-                            <Typography variant="body2" fontWeight="bold" color="white">{bet.result}</Typography>
+                            <Typography variant="body2" fontWeight="bold" color="white">
+                              {bet.result || bet.winningNumber || '?'}
+                            </Typography>
                           </Box>
                         </TableCell>
                         <TableCell align="right">
@@ -266,7 +476,7 @@ const RouletteHistory = ({ bettingHistory = [] }) => {
                             {bet.win ? (
                               <>
                                 <FaCoins size={12} color="#14D854" />
-                                +{bet.payout} APTC
+                                +{(bet.payout || bet.netResult || 0).toFixed(4)} APT
                               </>
                             ) : '-'}
                           </Typography>
@@ -388,7 +598,7 @@ const RouletteHistory = ({ bettingHistory = [] }) => {
                       </Box>
                       <Typography variant="body2" color="rgba(255,255,255,0.7)">Total Wagered</Typography>
                     </Box>
-                    <Typography variant="h4" fontWeight="bold" color="white" sx={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>{stats.totalWagered} APTC</Typography>
+                    <Typography variant="h4" fontWeight="bold" color="white" sx={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>{stats.totalWagered} APT</Typography>
                   </Box>
                   
                   <Box 
@@ -430,7 +640,7 @@ const RouletteHistory = ({ bettingHistory = [] }) => {
                       color={stats.netProfit >= 0 ? '#14D854' : '#d82633'}
                       sx={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}
                     >
-                      {stats.netProfit >= 0 ? '+' : ''}{stats.netProfit} APTC
+                      {stats.netProfit >= 0 ? '+' : ''}{stats.netProfit} APT
                     </Typography>
                   </Box>
                 </Box>
@@ -550,7 +760,7 @@ const RouletteHistory = ({ bettingHistory = [] }) => {
                             zIndex: 2 
                           }}
                         >
-                          {stats.biggestWin.payout} APTC
+                          {stats.biggestWin.payout} APT
                         </Typography>
                         <Box 
                           sx={{ 

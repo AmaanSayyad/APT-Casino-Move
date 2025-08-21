@@ -173,38 +173,30 @@ export default function Mines() {
     {
       label: "Manual",
       content: (
-        <DynamicForm config={manualFormConfig} onSubmit={handleFormSubmit} gameStatus={gameStatus} onGameComplete={(result) => {
-        const newHistoryItem = {
-          id: Date.now(),
-          mines: result.mines || 0,
-          bet: `${result.betAmount || 0} APT`,
-          outcome: result.won ? 'win' : 'loss',
-          payout: result.won ? `${result.payout || 0} APT` : '0 APT',
-          multiplier: result.won ? `${result.multiplier || 0}x` : '0x',
-          time: 'Just now'
-        };
-        setGameHistory(prev => [newHistoryItem, ...prev].slice(0, 50));
-      }} />
+        <DynamicForm config={manualFormConfig} onSubmit={handleFormSubmit} gameStatus={gameStatus} />
       ),
     },
     {
       label: "Auto",
       content: (
-        <DynamicForm config={autoFormConfig} onSubmit={handleFormSubmit} gameStatus={gameStatus} onGameComplete={(result) => {
-        const newHistoryItem = {
-          id: Date.now(),
-          mines: result.mines || 0,
-          bet: `${result.betAmount || 0} APT`,
-          outcome: result.won ? 'win' : 'loss',
-          payout: result.won ? `${result.payout || 0} APT` : '0 APT',
-          multiplier: result.won ? `${result.multiplier || 0}x` : '0x',
-          time: 'Just now'
-        };
-        setGameHistory(prev => [newHistoryItem, ...prev].slice(0, 50));
-      }} />
+        <DynamicForm config={autoFormConfig} onSubmit={handleFormSubmit} gameStatus={gameStatus} />
       ),
     },
   ], [gameStatus]);
+
+  // Handle game completion (only when game ends - cashout or mine hit)
+  const handleGameComplete = (result) => {
+    const newHistoryItem = {
+      id: Date.now(),
+      mines: result.mines || 0,
+      bet: `${result.betAmount || 0} APT`,
+      outcome: result.won ? 'win' : 'loss',
+      payout: result.won ? `${result.payout || 0} APT` : '0 APT',
+      multiplier: result.won ? `${result.multiplier || 0}x` : '0x',
+      time: 'Just now'
+    };
+    setGameHistory(prev => [newHistoryItem, ...prev].slice(0, 50));
+  };
 
   // Handle tab change
   const handleTabChange = (tabLabel) => {
@@ -396,7 +388,7 @@ export default function Mines() {
           transition={{ duration: 0.3 }}
           className="relative z-10"
         >
-          <Game betSettings={betSettings} onGameStatusChange={setGameStatus} />
+          <Game betSettings={betSettings} onGameStatusChange={setGameStatus} onGameComplete={handleGameComplete} />
         </motion.div>
       </motion.div>
     </div>

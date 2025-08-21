@@ -4,7 +4,7 @@ import CustomSelect from "@/components/CustomSelect";
 import CustomInput from "@/components/CustomInput";
 import { motion, AnimatePresence } from "framer-motion";
 
-const DynamicForm = ({ config, onSubmit, gameStatus = { isPlaying: false, hasPlacedBet: false }, onGameComplete }) => {
+const DynamicForm = ({ config, onSubmit, gameStatus = { isPlaying: false, hasPlacedBet: false } }) => {
   // State to manage form values
   const [formData, setFormData] = useState({});
   const [expanded, setExpanded] = useState(true);
@@ -41,20 +41,6 @@ const DynamicForm = ({ config, onSubmit, gameStatus = { isPlaying: false, hasPla
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(formData); // Pass the form data to the parent
-    
-    // Simulate game completion for demo purposes
-    if (onGameComplete) {
-      setTimeout(() => {
-        const mockResult = {
-          mines: formData.mines || 5,
-          betAmount: formData.betAmount || 1,
-          won: Math.random() > 0.5, // Random win/loss for demo
-          payout: Math.random() > 0.5 ? (formData.betAmount || 1) * (1 + Math.random() * 2) : 0,
-          multiplier: Math.random() > 0.5 ? (1 + Math.random() * 2).toFixed(2) : 0
-        };
-        onGameComplete(mockResult);
-      }, 1000);
-    }
   };
   
   // Toggle expanded state

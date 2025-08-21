@@ -35,7 +35,7 @@ const SOUNDS = {
   bet: "/sounds/bet.mp3",
 };
 
-const Game = ({ betSettings = {}, onGameStatusChange }) => {
+const Game = ({ betSettings = {}, onGameStatusChange, onGameComplete }) => {
   // Redux integration
   const dispatch = useDispatch();
   const { userBalance } = useSelector((state) => state.balance);
@@ -412,6 +412,17 @@ const Game = ({ betSettings = {}, onGameStatusChange }) => {
           if (onGameStatusChange) {
             onGameStatusChange({ isPlaying: false, hasPlacedBet: false });
           }
+          
+          // Notify parent about game completion
+          if (onGameComplete) {
+            onGameComplete({
+              mines: minesCount,
+              betAmount: betAmount,
+              won: false,
+              payout: 0,
+              multiplier: 0
+            });
+          }
         };
         
         // Use setTimeout to ensure state updates happen properly
@@ -454,6 +465,17 @@ const Game = ({ betSettings = {}, onGameStatusChange }) => {
               // Force parent component to update immediately
               if (onGameStatusChange) {
                 onGameStatusChange({ isPlaying: false, hasPlacedBet: false });
+              }
+              
+              // Notify parent about game completion
+              if (onGameComplete) {
+                onGameComplete({
+                  mines: minesCount,
+                  betAmount: betAmount,
+                  won: true,
+                  payout: calculatePayout(),
+                  multiplier: multiplier
+                });
               }
             };
             
@@ -672,6 +694,17 @@ const Game = ({ betSettings = {}, onGameStatusChange }) => {
         // Force parent component to update immediately
         if (onGameStatusChange) {
           onGameStatusChange({ isPlaying: false, hasPlacedBet: false });
+        }
+        
+        // Notify parent about game completion
+        if (onGameComplete) {
+          onGameComplete({
+            mines: minesCount,
+            betAmount: betAmount,
+            won: true,
+            payout: payout,
+            multiplier: multiplier
+          });
         }
       };
       
