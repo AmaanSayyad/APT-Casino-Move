@@ -6,44 +6,30 @@ import { FaHistory, FaFilter, FaDownload, FaSearch, FaTrophy, FaChartLine } from
 import Image from "next/image";
 import coin from "../../../../../public/coin.png";
 
-const WheelHistory = () => {
+const WheelHistory = ({ gameHistory = [] }) => {
   const [activeTab, setActiveTab] = useState("all");
   const [entriesShown, setEntriesShown] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
   
-  // Sample game history data
-  const sampleHistory = [
-    { id: 1, player: "Player1", time: "12:45", betAmount: 100, risk: "Medium", multiplier: "2.0x", payout: 200, profit: 100 },
-    { id: 2, player: "Player2", time: "12:43", betAmount: 50, risk: "High", multiplier: "0x", payout: 0, profit: -50 },
-    { id: 3, player: "Player3", time: "12:40", betAmount: 200, risk: "Low", multiplier: "1.5x", payout: 300, profit: 100 },
-    { id: 4, player: "Player4", time: "12:38", betAmount: 500, risk: "High", multiplier: "5.0x", payout: 2500, profit: 2000 },
-    { id: 5, player: "Player5", time: "12:35", betAmount: 100, risk: "Medium", multiplier: "0x", payout: 0, profit: -100 },
-    { id: 6, player: "Player6", time: "12:32", betAmount: 75, risk: "Low", multiplier: "1.2x", payout: 90, profit: 15 },
-    { id: 7, player: "Player7", time: "12:30", betAmount: 1000, risk: "High", multiplier: "20.0x", payout: 20000, profit: 19000 },
-    { id: 8, player: "Player8", time: "12:28", betAmount: 250, risk: "Medium", multiplier: "2.0x", payout: 500, profit: 250 },
-    { id: 9, player: "Player9", time: "12:25", betAmount: 50, risk: "Low", multiplier: "1.5x", payout: 75, profit: 25 },
-    { id: 10, player: "Player10", time: "12:23", betAmount: 300, risk: "High", multiplier: "0x", payout: 0, profit: -300 },
-    { id: 11, player: "Player11", time: "12:20", betAmount: 150, risk: "Medium", multiplier: "5.0x", payout: 750, profit: 600 },
-    { id: 12, player: "Player12", time: "12:18", betAmount: 200, risk: "Low", multiplier: "1.2x", payout: 240, profit: 40 }
-  ];
+  // Use real game history data from props instead of sample data
+  const historyData = gameHistory.length > 0 ? gameHistory : [];
   
   // Filter history based on active tab and search query
-  const filteredHistory = sampleHistory.filter(item => {
+  const filteredHistory = historyData.filter(item => {
     const matchesSearch = 
-      item.player.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.risk.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.multiplier.toLowerCase().includes(searchQuery.toLowerCase());
+      (item.game && item.game.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (item.multiplier && item.multiplier.toLowerCase().includes(searchQuery.toLowerCase()));
       
     if (activeTab === "all") return matchesSearch;
-    if (activeTab === "high-risk") return item.risk === "High" && matchesSearch;
-    if (activeTab === "big-wins") return item.profit >= 500 && matchesSearch;
+    if (activeTab === "high-risk") return item.multiplier && parseFloat(item.multiplier) >= 3.0 && matchesSearch;
+    if (activeTab === "big-wins") return item.payout && item.payout >= 100 && matchesSearch;
     return matchesSearch;
   });
   
-  // Stats calculation
-  const totalBets = sampleHistory.length;
-  const totalVolume = sampleHistory.reduce((sum, item) => sum + item.betAmount, 0);
-  const biggestWin = Math.max(...sampleHistory.map(item => item.profit));
+  // Stats calculation from real data
+  const totalBets = historyData.length;
+  const totalVolume = historyData.reduce((sum, item) => sum + (item.betAmount || 0), 0);
+  const biggestWin = historyData.length > 0 ? Math.max(...historyData.map(item => item.payout || 0)) : 0;
   
   return (
     <div id="history" className="my-16 px-4 md:px-8 lg:px-20 scroll-mt-24">
@@ -111,7 +97,7 @@ const WheelHistory = () => {
               <div className="bg-black/20 rounded-lg p-3 border border-purple-800/10">
                 <div className="text-xs text-white/50 mb-1">Total Volume</div>
                 <div className="text-xl font-bold text-white flex items-center">
-                  {totalVolume} APTC
+                  {totalVolume} APT
                   <Image src={coin} width={20} height={20} alt="coin" className="ml-2" />
                 </div>
               </div>
@@ -119,7 +105,7 @@ const WheelHistory = () => {
               <div className="bg-black/20 rounded-lg p-3 border border-purple-800/10">
                 <div className="text-xs text-white/50 mb-1">Biggest Win</div>
                 <div className="text-xl font-bold text-white flex items-center">
-                  {biggestWin} APTC
+                  {biggestWin} APT
                   <FaTrophy className="ml-2 text-yellow-400 text-sm" />
                 </div>
               </div>
@@ -150,44 +136,34 @@ const WheelHistory = () => {
               <table className="w-full text-white">
                 <thead>
                   <tr className="bg-black/30 border-b border-purple-800/20">
-                    <th className="py-3 px-4 text-left">Player</th>
+                    <th className="py-3 px-4 text-left">Game</th>
                     <th className="py-3 px-4 text-left">Time</th>
                     <th className="py-3 px-4 text-left">Bet Amount</th>
-                    <th className="py-3 px-4 text-left">Risk Level</th>
                     <th className="py-3 px-4 text-left">Multiplier</th>
                     <th className="py-3 px-4 text-left">Payout</th>
-                    <th className="py-3 px-4 text-left">Profit</th>
+                    <th className="py-3 px-4 text-left">Result</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredHistory.slice(0, entriesShown).map((item, index) => (
                     <tr key={item.id} className={`border-b border-purple-800/10 ${index % 2 === 0 ? 'bg-black/10' : ''} hover:bg-purple-900/10 transition-colors duration-150`}>
-                      <td className="py-3 px-4 font-medium">{item.player}</td>
+                      <td className="py-3 px-4 font-medium">{item.game || 'Wheel'}</td>
                       <td className="py-3 px-4">{item.time}</td>
                       <td className="py-3 px-4">
                         <div className="flex items-center">
-                          {item.betAmount}
+                          {item.betAmount} APT
                           <Image src={coin} width={16} height={16} alt="coin" className="ml-1" />
                         </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          item.risk === 'Low' ? 'bg-green-900/30 text-green-300' :
-                          item.risk === 'Medium' ? 'bg-blue-900/30 text-blue-300' :
-                          'bg-red-900/30 text-red-300'
-                        }`}>
-                          {item.risk}
-                        </span>
                       </td>
                       <td className="py-3 px-4 font-medium">{item.multiplier}</td>
                       <td className="py-3 px-4">
                         <div className="flex items-center">
-                          {item.payout}
+                          {item.payout} APT
                           <Image src={coin} width={16} height={16} alt="coin" className="ml-1" />
                         </div>
                       </td>
-                      <td className={`py-3 px-4 font-medium ${item.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                        {item.profit >= 0 ? `+${item.profit}` : item.profit}
+                      <td className={`py-3 px-4 font-medium ${item.payout > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        {item.payout > 0 ? `+${item.payout}` : '0'}
                       </td>
                     </tr>
                   ))}

@@ -566,7 +566,7 @@ export default function Home() {
       <WheelPayouts />
       
       {/* Game History */}
-      <WheelHistory />
+      <WheelHistory gameHistory={gameHistory} />
     </div>
   );
 }

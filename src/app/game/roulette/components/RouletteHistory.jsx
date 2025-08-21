@@ -56,10 +56,15 @@ const calculateStats = (bets) => {
   };
 };
 
-const RouletteHistory = () => {
+const RouletteHistory = ({ bettingHistory = [] }) => {
   const [tabValue, setTabValue] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [bets, setBets] = useState(sampleBets);
+  const [bets, setBets] = useState(bettingHistory);
+  
+  // Update bets when bettingHistory prop changes
+  React.useEffect(() => {
+    setBets(bettingHistory);
+  }, [bettingHistory]);
   
   const stats = calculateStats(bets);
   

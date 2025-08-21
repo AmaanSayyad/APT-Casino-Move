@@ -33,6 +33,7 @@ export default function Mines() {
   const [showTutorial, setShowTutorial] = useState(false);
   const [isStatsExpanded, setIsStatsExpanded] = useState(false);
   const [gameStatus, setGameStatus] = useState({ isPlaying: false, hasPlacedBet: false });
+  const [gameHistory, setGameHistory] = useState([]);
   
   // AI Auto Betting State
   const [isAIActive, setIsAIActive] = useState(false);
@@ -172,13 +173,35 @@ export default function Mines() {
     {
       label: "Manual",
       content: (
-        <DynamicForm config={manualFormConfig} onSubmit={handleFormSubmit} gameStatus={gameStatus} />
+        <DynamicForm config={manualFormConfig} onSubmit={handleFormSubmit} gameStatus={gameStatus} onGameComplete={(result) => {
+        const newHistoryItem = {
+          id: Date.now(),
+          mines: result.mines || 0,
+          bet: `${result.betAmount || 0} APT`,
+          outcome: result.won ? 'win' : 'loss',
+          payout: result.won ? `${result.payout || 0} APT` : '0 APT',
+          multiplier: result.won ? `${result.multiplier || 0}x` : '0x',
+          time: 'Just now'
+        };
+        setGameHistory(prev => [newHistoryItem, ...prev].slice(0, 50));
+      }} />
       ),
     },
     {
       label: "Auto",
       content: (
-        <DynamicForm config={autoFormConfig} onSubmit={handleFormSubmit} gameStatus={gameStatus} />
+        <DynamicForm config={autoFormConfig} onSubmit={handleFormSubmit} gameStatus={gameStatus} onGameComplete={(result) => {
+        const newHistoryItem = {
+          id: Date.now(),
+          mines: result.mines || 0,
+          bet: `${result.betAmount || 0} APT`,
+          outcome: result.won ? 'win' : 'loss',
+          payout: result.won ? `${result.payout || 0} APT` : '0 APT',
+          multiplier: result.won ? `${result.multiplier || 0}x` : '0x',
+          time: 'Just now'
+        };
+        setGameHistory(prev => [newHistoryItem, ...prev].slice(0, 50));
+      }} />
       ),
     },
   ], [gameStatus]);
@@ -497,7 +520,7 @@ export default function Mines() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.3 }}
       >
-        {typeof MinesHistory === 'function' && <MinesHistory />}
+        {typeof MinesHistory === 'function' && <MinesHistory gameHistory={gameHistory} />}
       </motion.div>
       
       <motion.div 

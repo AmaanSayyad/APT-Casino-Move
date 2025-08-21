@@ -23,18 +23,8 @@ const MinesHistory = ({ gameHistory = [], userStats = {} }) => {
 
   const stats = { ...defaultStats, ...userStats };
 
-  // Default history if none provided
-  const defaultHistory = [
-    { id: 1, mines: 5, bet: "0.5 APT", outcome: "win", payout: "1.65 APT", multiplier: "3.3x", time: "5m ago" },
-    { id: 2, mines: 3, bet: "1 APT", outcome: "loss", payout: "0 APT", multiplier: "0x", time: "8m ago" },
-    { id: 3, mines: 10, bet: "0.25 APT", outcome: "win", payout: "2.23 APT", multiplier: "8.91x", time: "15m ago" },
-    { id: 4, mines: 5, bet: "0.75 APT", outcome: "loss", payout: "0 APT", multiplier: "0x", time: "22m ago" },
-    { id: 5, mines: 1, bet: "2 APT", outcome: "win", payout: "2.53 APT", multiplier: "1.27x", time: "22m ago" },
-    { id: 6, mines: 7, bet: "0.5 APT", outcome: "win", payout: "3.00 APT", multiplier: "6.0x", time: "45m ago" },
-    { id: 7, mines: 10, bet: "0.35 APT", outcome: "loss", payout: "0 APT", multiplier: "0x", time: "1h ago" },
-  ];
-
-  const history = gameHistory.length > 0 ? gameHistory : defaultHistory;
+  // Use real game history data from props
+  const history = gameHistory.length > 0 ? gameHistory : [];
   
   // Handle sorting
   const handleSort = (field) => {

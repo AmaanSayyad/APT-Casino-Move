@@ -3319,7 +3319,7 @@ export default function GameRoulette() {
           <Grid container spacing={4} sx={{ mb: 6, pt: 4 }}>
             <Grid xs={12} md={7}>
               <div id="history" className="scroll-mt-16">
-                <RouletteHistory />
+                <RouletteHistory bettingHistory={bettingHistory} />
               </div>
             </Grid>
             <Grid xs={12} md={5}>
