@@ -264,15 +264,6 @@ export default function Plinko() {
         </div>
       </div>
 
-      {/* Bottom Section - Game History */}
-      <div className="px-4 md:px-8 lg:px-20 pb-12" id="history">
-        <div className="bg-[#1A0015] rounded-xl border border-[#333947] overflow-hidden">
-          <div className="p-6">
-            <GameHistory history={gameHistory} />
-          </div>
-        </div>
-      </div>
-
       {/* Game Description with Video */}
       <div className="px-4 md:px-8 lg:px-20 pb-12">
         <Typography 
@@ -319,6 +310,15 @@ export default function Plinko() {
                 {paragraph}
               </p>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Game History Section */}
+      <div className="px-4 md:px-8 lg:px-20 pb-12" id="history">
+        <div className="bg-[#1A0015] rounded-xl border border-[#333947] overflow-hidden">
+          <div className="p-6">
+            <GameHistory history={gameHistory} />
           </div>
         </div>
       </div>
