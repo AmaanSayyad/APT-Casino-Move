@@ -7,30 +7,6 @@ const GameCategoriesGrid = () => {
   const categories = [
     { 
       id: 1, 
-      name: 'Slots', 
-      description: 'Classic and modern slot games with exciting themes', 
-      icon: '/images/games/slots-icon.png', 
-      background: '/images/games/slots-bg.jpg',
-      gameCount: 48
-    },
-    { 
-      id: 2, 
-      name: 'Table Games', 
-      description: 'Traditional casino tables and card games', 
-      icon: '/images/games/table-icon.png', 
-      background: '/images/games/table-bg.jpg',
-      gameCount: 32
-    },
-    { 
-      id: 3, 
-      name: 'Poker', 
-      description: 'Various poker variants with different stake levels', 
-      icon: '/images/games/poker-icon.png', 
-      background: '/images/games/poker-bg.jpg',
-      gameCount: 15
-    },
-    { 
-      id: 4, 
       name: 'Roulette', 
       description: 'European, American and special roulette types', 
       icon: '/images/games/roulette-icon.png', 
@@ -38,35 +14,27 @@ const GameCategoriesGrid = () => {
       gameCount: 8
     },
     { 
-      id: 5, 
-      name: 'Dice', 
-      description: 'Various dice games with different odds and payouts', 
-      icon: '/images/games/dice-icon.png', 
-      background: '/images/games/dice-bg.jpg',
-      gameCount: 12
+      id: 2, 
+      name: 'Mines', 
+      description: 'Navigate through the minefield and collect gems', 
+      icon: '/images/games/mines.png', 
+      background: '/images/games/mines.png',
+      gameCount: 5
     },
     { 
-      id: 6, 
-      name: 'Crash Games', 
-      description: 'Fast-paced multiplier crash games for quick wins', 
-      icon: '/images/games/crash-icon.png', 
-      background: '/images/games/crash-bg.jpg',
-      gameCount: 6
-    },
-    { 
-      id: 7, 
-      name: 'Spin the Wheel', 
-      description: 'Fast-paced multiplier crash games for quick wins', 
+      id: 3, 
+      name: 'Spin Wheel', 
+      description: 'Spin the wheel of fortune for amazing prizes', 
       icon: '/images/games/spin_the_wheel.png', 
-      background: '/images/games/crash-bg.jpg',
+      background: '/images/games/spin_the_wheel.png',
       gameCount: 6
     },
     { 
-      id: 8, 
+      id: 4, 
       name: 'Plinko', 
       description: 'Drop the ball and watch it bounce to fortune', 
       icon: '/images/games/plinko.png', 
-      background: '/images/games/crash-bg.jpg',
+      background: '/images/games/plinko.png',
       gameCount: 3
     },
   ];
@@ -81,7 +49,7 @@ const GameCategoriesGrid = () => {
           <h2 className="text-2xl font-display font-bold text-white">Game Categories</h2>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {categories.map((category) => (
             <Link href={`/game/${category.name.toLowerCase().replace(/\s+/g, '-')}`} key={category.id}>
               <div 

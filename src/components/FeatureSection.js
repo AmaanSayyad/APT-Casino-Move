@@ -10,8 +10,8 @@ export default function FeatureSection() {
   const features = [
     {
       id: 1,
-      title: "Transparent & Provably Fair",
-      description: "All games use verifiable on-chain randomness through our VRF module, ensuring complete transparency and fairness in every outcome.",
+      title: "100% Transparent & Provably Fair",
+      description: "All games use aptos verifiable on-chain randomness through our VRF module, ensuring complete transparency and fairness in every outcome.",
       icon: "🎲"
     },
     {

@@ -19,8 +19,9 @@ import { UserBalanceSystem, parseAptAmount, aptosClient, CASINO_MODULE_ADDRESS }
 const MOCK_SEARCH_RESULTS = {
   games: [
     { id: 'game1', name: 'Roulette', path: '/game/roulette', type: 'Featured' },
-    { id: 'game2', name: 'Blackjack', path: '/game/blackjack', type: 'Popular' },
-    { id: 'game3', name: 'Poker', path: '/game/poker', type: 'New' },
+    { id: 'game2', name: 'Mines', path: '/game/mines', type: 'Popular' },
+    { id: 'game3', name: 'Spin Wheel', path: '/game/wheel', type: 'Featured' },
+    { id: 'game4', name: 'Plinko', path: '/game/plinko', type: 'Popular' },
   ],
   tournaments: [
     { id: 'tournament1', name: 'High Roller Tournament', path: '/tournaments/high-roller', prize: '10,000 APTC' },
