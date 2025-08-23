@@ -3145,21 +3145,7 @@ export default function GameRoulette() {
           {/* Video and Description Section */}
           <Grid container spacing={4} sx={{ mb: 7 }}>
             {/* Video on left */}
-            <Grid xs={12} md={6}>
-              <Typography 
-                variant="h5" 
-                color="white" 
-                sx={{ 
-                  mb: 2, 
-                  textAlign: 'center',
-                  background: 'linear-gradient(45deg, #d82633, #681DDB)',
-                  backgroundClip: 'text',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  fontWeight: 'bold'
-                }}
-              >
-              </Typography>
+            
               <Box
                 sx={{
                   position: 'relative',
