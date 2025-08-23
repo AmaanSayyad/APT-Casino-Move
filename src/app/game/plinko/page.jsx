@@ -293,21 +293,7 @@ export default function Plinko() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           {/* Video on left */}
           <div>
-            <Typography 
-              variant="h5" 
-              color="white" 
-              sx={{ 
-                mb: 2, 
-                textAlign: 'center',
-                background: 'linear-gradient(45deg, #d82633, #681DDB)',
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                fontWeight: 'bold'
-              }}
-            >
-              🎥 Watch & Learn: {gameData.title} Tutorial
-            </Typography>
+            
             <div className="relative w-full aspect-video rounded-xl overflow-hidden shadow-2xl border-2 border-purple-600/40 transition-all duration-300 hover:scale-[1.02] hover:border-purple-500/60"
               style={{
                 background: 'linear-gradient(135deg, rgba(104, 29, 219, 0.1), rgba(216, 38, 51, 0.05))',
