@@ -30,19 +30,19 @@ const HowItWorksSection = () => {
     {
       id: 2,
       title: 'Get APTC Tokens',
-      description: 'Power your gameplay with APT tokens – our exclusive in-game currency built on Aptos Network. Easily swap from any token or other cryptocurrencies.',
+      description: 'Power your gameplay with APT tokens built on Aptos Network. Easily swap from any token or other cryptocurrencies.',
       emoji: '💰'
     },
     {
       id: 3,
       title: 'Start Playing',
-      description: 'Dive into our expanding library of provably fair games including Roulette, Blackjack, and Poker. Every game provides real-time stats and detailed history.',
+      description: 'Dive into our expanding library of provably fair games including Roulette, Plinko, Mines and Spin Wheel. Every game provides real-time stats and detailed history.',
       emoji: '🎮'
     },
     {
       id: 4,
       title: 'Earn Rewards',
-      description: 'Win APTC tokens and unlock exclusive perks through our multi-tiered loyalty program. Earn cashback on losses and gain access to tournaments.',
+      description: 'Win APT tokens and unlock exclusive perks through our multi-tiered loyalty program. Earn cashback on losses and gain access to tournaments.',
       emoji: '🏆'
     },
   ];
