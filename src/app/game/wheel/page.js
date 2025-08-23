@@ -364,7 +364,7 @@ export default function Home() {
     };
     
     return (
-      <div className="relative text-white px-4 md:px-8 lg:px-20 mb-8 pt-20 md:pt-24 mt-4">
+      <div className="relative text-white px-4 md:px-8 lg:px-20 mb-8 pt-28 md:pt-32 mt-4">
         {/* Background Elements */}
         <div className="absolute top-5 -right-32 w-64 h-64 bg-red-500/10 rounded-full blur-3xl"></div>
         <div className="absolute top-28 left-1/3 w-32 h-32 bg-green-500/10 rounded-full blur-2xl"></div>
