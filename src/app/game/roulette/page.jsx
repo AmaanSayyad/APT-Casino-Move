@@ -3145,7 +3145,8 @@ export default function GameRoulette() {
           {/* Video and Description Section */}
           <Grid container spacing={4} sx={{ mb: 7 }}>
             {/* Video on left */}
-            
+            <Grid xs={12} md={6}>
+              
               <Box
                 sx={{
                   position: 'relative',
