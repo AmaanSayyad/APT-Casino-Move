@@ -3159,7 +3159,6 @@ export default function GameRoulette() {
                   fontWeight: 'bold'
                 }}
               >
-                🎥 Watch & Learn: European Roulette Tutorial
               </Typography>
               <Box
                 sx={{
