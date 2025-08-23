@@ -24,7 +24,7 @@ const HowItWorksSection = () => {
     {
       id: 1,
       title: 'Connect Your Wallet',
-      description: 'Link your Web3 wallet in seconds to unlock the full APT Casino experience. We support MetaMask, WalletConnect, and all major Web3 wallets.',
+      description: 'Link your Web3 wallet in seconds to unlock the full APT Casino experience. We support Keyless login Walets, Petra, MetaMask, NNS and all major Web3 wallets.',
       emoji: '👛'
     },
     {

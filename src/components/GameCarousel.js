@@ -309,7 +309,7 @@ const GameCarousel = () => {
       
       {/* View all games button */}
       <div className="text-center mt-10">
-        <Link href="/games">
+        <Link href="/game">
           <GradientBorderButton className="px-8">
             View All Games
           </GradientBorderButton>
