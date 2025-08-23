@@ -52,7 +52,7 @@ export default function Plinko() {
       maxWin: '120,000 APTC'
     };
     return (
-      <div className="relative text-white px-4 md:px-8 lg:px-20 mb-8 pt-28 md:pt-32 lg:pt-36 mt-6">
+      <div className="relative text-white px-4 md:px-8 lg:px-20 mb-8 pt-20 md:pt-24 lg:pt-28 mt-2">
         <div className="absolute top-6 -right-24 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl"></div>
         <div className="absolute top-24 left-1/3 w-32 h-32 bg-pink-500/10 rounded-full blur-2xl"></div>
         <div className="absolute -bottom-20 left-1/4 w-48 h-48 bg-violet-500/5 rounded-full blur-3xl"></div>
