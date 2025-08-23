@@ -3146,6 +3146,21 @@ export default function GameRoulette() {
           <Grid container spacing={4} sx={{ mb: 7 }}>
             {/* Video on left */}
             <Grid xs={12} md={6}>
+              <Typography 
+                variant="h5" 
+                color="white" 
+                sx={{ 
+                  mb: 2, 
+                  textAlign: 'center',
+                  background: 'linear-gradient(45deg, #d82633, #681DDB)',
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  fontWeight: 'bold'
+                }}
+              >
+                🎥 Watch & Learn: European Roulette Tutorial
+              </Typography>
               <Box
                 sx={{
                   position: 'relative',
@@ -3198,29 +3213,22 @@ export default function GameRoulette() {
                   }}
                 >
                 </Box>
-                <Box
-                  sx={{
+                <iframe
+                  src="https://www.youtube.com/embed/6nKBlWaRI8w?si=6I4djHSzzaN9NLJF"
+                  title="European Roulette Tutorial"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  style={{
                     position: 'absolute',
                     top: 0,
                     left: 0,
                     width: '100%',
                     height: '100%',
                     borderRadius: '12px',
-                    background: 'linear-gradient(135deg, rgba(220, 38, 38, 0.1), rgba(239, 68, 68, 0.05))',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: '1px solid rgba(220, 38, 38, 0.2)',
                     zIndex: 1
                   }}
-                >
-                  <Typography variant="h6" color="white" textAlign="center">
-                    🎰 Roulette Tutorial<br />
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                      Learn the basics of European Roulette and master your betting strategy
-                    </Typography>
-                  </Typography>
-                </Box>
+                />
               </Box>
             </Grid>
 
