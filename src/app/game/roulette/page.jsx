@@ -3143,6 +3143,21 @@ export default function GameRoulette() {
           </Typography>
 
           {/* Video and Description Section */}
+          <Typography 
+            variant="h4" 
+            color="white" 
+            sx={{ 
+              mb: 6, 
+              textAlign: 'center',
+              background: 'linear-gradient(45deg, #d82633, #681DDB)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              fontWeight: 'bold'
+            }}
+          >
+            Master {gameData.title}
+          </Typography>
           <Grid container spacing={4} sx={{ mb: 7 }}>
             {/* Video on left */}
             <Grid xs={12} md={6}>
@@ -3213,8 +3228,8 @@ export default function GameRoulette() {
                 >
                 </Box>
                 <iframe
-                  src="https://www.youtube.com/embed/6nKBlWaRI8w?si=6I4djHSzzaN9NLJF"
-                  title="European Roulette Tutorial"
+                  src={`https://www.youtube.com/embed/${gameData.youtube}?si=${gameData.youtube}`}
+                  title={`${gameData.title} Tutorial`}
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen

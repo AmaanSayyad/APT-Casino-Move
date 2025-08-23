@@ -2,7 +2,7 @@ export const gameData = {
   title: "European Roulette",
   label: "CLASSIC CASINO GAME",
   image: "/images/games/roulette.png",
-  youtube: "https://youtu.be/6nKBlWaRI8w?si=6I4djHSzzaN9NLJF", // European Roulette Tutorial
+  youtube: "6nKBlWaRI8w", // European Roulette Tutorial Video ID
   paragraphs: [
     "Step into the world of European Roulette, where fortune favors the bold and every spin could change your fate. Our provably fair, blockchain-powered roulette game combines classic casino elegance with cutting-edge cryptocurrency technology.",
     

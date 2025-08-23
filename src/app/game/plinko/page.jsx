@@ -7,8 +7,10 @@ import PlinkoStrategyGuide from "./components/PlinkoStrategyGuide";
 import PlinkoWinProbabilities from "./components/PlinkoWinProbabilities";
 import PlinkoPayouts from "./components/PlinkoPayouts";
 import PlinkoLeaderboard from "./components/PlinkoLeaderboard";
+import { gameData, bettingTableData } from "./config/gameDetail";
 import { useSelector } from 'react-redux';
 import { motion } from "framer-motion";
+import { Typography } from "@mui/material";
 import { GiRollingDices, GiCardRandom, GiPokerHand } from "react-icons/gi";
 import { FaPercentage, FaBalanceScale, FaChartLine, FaCoins, FaTrophy, FaPlay, FaExternalLinkAlt } from "react-icons/fa";
 
@@ -273,55 +275,64 @@ export default function Plinko() {
 
       {/* Game Description with Video */}
       <div className="px-4 md:px-8 lg:px-20 pb-12">
+        <Typography 
+          variant="h4" 
+          color="white" 
+          sx={{ 
+            mb: 6, 
+            textAlign: 'center',
+            background: 'linear-gradient(45deg, #d82633, #681DDB)',
+            backgroundClip: 'text',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            fontWeight: 'bold'
+          }}
+        >
+          Master {gameData.title}
+        </Typography>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-          {(() => {
-            const videoId = 'DMZmbPkS1dE';
-            const [thumbSrc, setThumbSrc] = useState(`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`);
-            const [triedFallback, setTriedFallback] = useState(false);
-            const onThumbError = () => {
-              if (!triedFallback) {
-                setTriedFallback(true);
-                setThumbSrc(`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`);
-              }
-            };
-            const openYoutube = () => {
-              if (typeof window !== 'undefined') {
-                window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank', 'noopener,noreferrer');
-              }
-            };
-            return (
-              <button onClick={openYoutube} className="group w-full aspect-video relative rounded-xl border border-[#333947] overflow-hidden bg-black/40 text-left">
-                {/* Thumbnail */}
-                <img src={thumbSrc} onError={onThumbError} alt="Plinko video cover" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
-                {/* Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-                {/* Play and label */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                  <div className="w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                    <FaPlay className="text-white" />
-                  </div>
-                  <div className="text-white font-medium">Watch on YouTube</div>
-                  <div className="text-xs text-amber-300 flex items-center gap-1">
-                    <FaExternalLinkAlt /> Age-restricted content
-                  </div>
-                </div>
-              </button>
-            );
-          })()}
+          {/* Video on left */}
+          <div>
+            <Typography 
+              variant="h5" 
+              color="white" 
+              sx={{ 
+                mb: 2, 
+                textAlign: 'center',
+                background: 'linear-gradient(45deg, #d82633, #681DDB)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                fontWeight: 'bold'
+              }}
+            >
+              🎥 Watch & Learn: {gameData.title} Tutorial
+            </Typography>
+            <div className="relative w-full aspect-video rounded-xl overflow-hidden shadow-2xl border-2 border-purple-600/40 transition-all duration-300 hover:scale-[1.02] hover:border-purple-500/60"
+              style={{
+                background: 'linear-gradient(135deg, rgba(104, 29, 219, 0.1), rgba(216, 38, 51, 0.05))',
+                border: '2px solid rgba(104, 29, 219, 0.4)'
+              }}
+            >
+              <iframe
+                src={`https://www.youtube.com/embed/${gameData.youtube}?si=${gameData.youtube}`}
+                title={`${gameData.title} Tutorial`}
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full"
+              />
+            </div>
+          </div>
+          
+          {/* Description on right */}
           <div className="bg-[#1A0015] rounded-xl border border-[#333947] p-6 text-gray-300">
-            <h3 className="text-lg font-semibold text-white mb-4">How to Play Plinko</h3>
-            <p className="mb-4">
-              Plinko is a game of chance where you drop a ball from the top of a triangular board filled with pegs. The ball bounces off the pegs as it falls, eventually landing in one of the multiplier slots at the bottom.
-            </p>
-            <p className="mb-4">
-              Choose your bet amount, risk level, and number of rows (8–16). Higher risk levels offer greater potential rewards but also higher chances of losing your bet. More rows create more complex gameplay with additional pin interactions.
-            </p>
-            <p className="mb-4">
-              Payout is calculated as: Bet Amount × Multiplier.
-            </p>
-            <p>
-              <strong>Row Configuration:</strong> Adjust rows from 8 to 16. Default is 16 for the richest peg interactions.
-            </p>
+            <h3 className="text-lg font-semibold text-white mb-4">How to Play {gameData.title}</h3>
+            {gameData.paragraphs.map((paragraph, index) => (
+              <p key={index} className="mb-4">
+                {paragraph}
+              </p>
+            ))}
           </div>
         </div>
       </div>
