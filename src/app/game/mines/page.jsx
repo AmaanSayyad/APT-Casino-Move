@@ -199,7 +199,8 @@ export default function Mines() {
       outcome: result.won ? 'win' : 'loss',
       payout: result.won ? `${result.payout || 0} APT` : '0 APT',
       multiplier: result.won ? `${result.multiplier || 0}x` : '0x',
-      time: 'Just now'
+      time: 'Just now',
+      txHash: null
     };
     setGameHistory(prev => [newHistoryItem, ...prev].slice(0, 50));
     
@@ -212,6 +213,15 @@ export default function Mines() {
         betAmount: result.betAmount,
         result: gameResult,
         payout: result.payout || 0,
+      }).then(res => {
+        if (res?.success) {
+          setGameHistory(prev => {
+            if (prev.length === 0) return prev;
+            const [first, ...rest] = prev;
+            const updatedFirst = { ...first, txHash: res.transactionHash || null };
+            return [updatedFirst, ...rest];
+          });
+        }
       }).catch(error => {
         console.error('Failed to log mines game:', error);
       });

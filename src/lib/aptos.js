@@ -53,6 +53,9 @@ console.log("Network enum:", NETWORK_ENUM_MAP[DEFAULT_NETWORK]);
 export const CASINO_MODULE_ADDRESS = process.env.NEXT_PUBLIC_CASINO_MODULE_ADDRESS || 
   "0x421055ba162a1f697532e79ea9a6852422d311f0993eb880c75110218d7f52c0";
 
+// Treasury receive address (can be same as module or a separate EOA)
+export const TREASURY_ADDRESS = process.env.NEXT_PUBLIC_TREASURY_ADDRESS || CASINO_MODULE_ADDRESS;
+
 // Token module address (APT token)
 export const APT_TOKEN_MODULE = "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>";
 

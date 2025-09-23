@@ -513,7 +513,9 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
           betAmount: latestBetAmount.toFixed(2),
           multiplier: multipliers[binIndex],
           payout: reward.toFixed(2),
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          txHash: null,
+          explorerUrl: null
         };
         setBetHistory(prev => {
           const updated = [newBetResult, ...prev.slice(0, 99)]; // Keep last 100
@@ -534,9 +536,19 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
             betAmount: latestBetAmount,
             result: gameResult,
             payout: reward,
-          }).then(success => {
-            if (success) {
+          }).then(res => {
+            if (res?.success) {
               console.log('Game successfully logged to blockchain');
+              // attach tx hash to latest history entry
+              setBetHistory(prev => {
+                if (prev.length === 0) return prev;
+                const [first, ...rest] = prev;
+                const updatedFirst = { ...first, txHash: res.transactionHash || null, explorerUrl: res.explorerUrl || null };
+                return [updatedFirst, ...rest];
+              });
+              if (onBetHistoryChange) {
+                onBetHistoryChange({ ...newBetResult, txHash: res.transactionHash || null, explorerUrl: res.explorerUrl || null });
+              }
             }
           }).catch(error => {
             console.error('Failed to log game to blockchain:', error);

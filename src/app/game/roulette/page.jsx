@@ -1957,6 +1957,7 @@ export default function GameRoulette() {
           multiplier: netResult > 0 ? (netResult / totalBetAmount).toFixed(2) : 0,
           totalBets: allBets.length, // Add totalBets field
           winningBets: winningBets.length, // Add winningBets field
+          txHash: null,
           details: {
             winningBets: winningBets.map(bet => `${bet.name}: ${bet.amount} × ${bet.multiplier}x`),
             losingBets: losingBets.map(bet => `${bet.name}: -${bet.amount}`)
@@ -1982,6 +1983,15 @@ export default function GameRoulette() {
             betAmount: totalBetAmount,
             result: gameResult,
             payout: netResult > 0 ? (netResult - totalBetAmount) : 0,
+          }).then(res => {
+            if (res?.success) {
+              setBettingHistory(prev => {
+                if (prev.length === 0) return prev;
+                const [first, ...rest] = prev;
+                const updatedFirst = { ...first, txHash: res.transactionHash || null };
+                return [updatedFirst, ...rest];
+              });
+            }
           }).catch(error => {
             console.error('Failed to log roulette game:', error);
           });
@@ -2972,7 +2982,7 @@ export default function GameRoulette() {
 
               {/* Quick Bet Buttons */}
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 2 }}>
-                {[1, 5, 10, 25, 50, 100].map(amount => (
+                {[0.01, 0.05, 0.1, 0.2, 0.3, 0.5].map(amount => (
                   <Button
                     key={amount}
                     onClick={() => setBet(amount)}

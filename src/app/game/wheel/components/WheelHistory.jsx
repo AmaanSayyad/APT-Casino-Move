@@ -142,6 +142,7 @@ const WheelHistory = ({ gameHistory = [] }) => {
                     <th className="py-3 px-4 text-left">Multiplier</th>
                     <th className="py-3 px-4 text-left">Payout</th>
                     <th className="py-3 px-4 text-left">Result</th>
+                    <th className="py-3 px-4 text-left">TX</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -164,6 +165,20 @@ const WheelHistory = ({ gameHistory = [] }) => {
                       </td>
                       <td className={`py-3 px-4 font-medium ${item.payout > 0 ? 'text-green-400' : 'text-red-400'}`}>
                         {item.payout > 0 ? `+${item.payout}` : '0'}
+                      </td>
+                      <td className="py-3 px-4">
+                        {item.txHash ? (
+                          <a
+                            href={`https://explorer.aptoslabs.com/txn/${item.txHash}?network=testnet`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-400 hover:text-blue-300 underline text-sm"
+                          >
+                            {item.txHash.slice(0, 6)}...{item.txHash.slice(-4)}
+                          </a>
+                        ) : (
+                          <span className="text-xs text-gray-500">pending</span>
+                        )}
                       </td>
                     </tr>
                   ))}

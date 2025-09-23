@@ -13,7 +13,7 @@ import WithdrawModal from "./WithdrawModal";
 
 
 import { useNotification } from './NotificationSystem';
-import { UserBalanceSystem, parseAptAmount, aptosClient, CASINO_MODULE_ADDRESS } from '@/lib/aptos';
+import { UserBalanceSystem, parseAptAmount, aptosClient, TREASURY_ADDRESS } from '@/lib/aptos';
 import { useBackendDeposit } from '@/hooks/useBackendDeposit';
 
 // Mock search results for demo purposes
@@ -288,7 +288,7 @@ export default function Navbar() {
       console.log('└── signAndSubmitTransaction:', !!signAndSubmitTransaction);
       
       // Step 1: Send APT directly to treasury using wallet's native method
-      const treasuryAddress = CASINO_MODULE_ADDRESS;
+      const treasuryAddress = TREASURY_ADDRESS;
       const amountOctas = Math.floor(amount * 100000000);
       
       console.log('📤 Sending APT to treasury:', { treasuryAddress, amountOctas });
@@ -383,13 +383,40 @@ export default function Navbar() {
       // Step 2: Call backend to process deposit
       console.log('🏦 Processing deposit via backend...');
       
+      // Derive a normalized user address string (0x + 64 hex) for backend
+      const normalizeAddr = (input) => {
+        try {
+          let addr = '';
+          if (typeof input === 'string') addr = input;
+          else if (input && typeof input === 'object') {
+            if ('address' in input) addr = String(input.address);
+            else if (typeof input.toString === 'function') addr = input.toString();
+          }
+          addr = (addr || '').trim().toLowerCase();
+          let hex = addr.startsWith('0x') ? addr.slice(2) : addr;
+          if (!/^[0-9a-f]+$/.test(hex)) return '';
+          if (hex.length > 64) return '';
+          hex = hex.padStart(64, '0');
+          return `0x${hex}`;
+        } catch { return ''; }
+      };
+      let userAddrForBackend = '';
+      try {
+        const accInfo = await window.aptos?.account?.();
+        userAddrForBackend = normalizeAddr(accInfo?.address);
+      } catch {}
+      if (!userAddrForBackend) {
+        userAddrForBackend = normalizeAddr(account?.address);
+      }
+      console.log('🧭 Backend userAddress:', userAddrForBackend);
+
       const response = await fetch('/api/deposit', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userAddress: account.address,
+          userAddress: userAddrForBackend,
           amount: amount,
           transactionHash: transferHash
         })
@@ -411,12 +438,7 @@ export default function Navbar() {
       notification.success(`Successfully deposited ${amount} APT! TX: ${transferHash.slice(0, 8)}...`);
       setDepositAmount("");
       
-      // Refresh balance after delay to confirm
-      setTimeout(() => {
-        if (address) {
-          loadUserBalance();
-        }
-      }, 3000);
+      // Do not refresh from chain here; backend temp mode does not update on-chain balance
       
     } catch (error) {
       console.error('❌ Deposit failed:', error);

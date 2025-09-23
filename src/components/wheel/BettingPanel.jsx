@@ -21,7 +21,7 @@ const BettingPanel = ({
   isSpinning
 }) => {
   
-  const [inputValue, setInputValue] = useState('0');
+  const [inputValue, setInputValue] = useState('0.1');
 
   const handleInputChange = (e) => {
     const value = e.target.value;
@@ -82,6 +82,7 @@ const BettingPanel = ({
           <div className="bg-[#120521] rounded-l-sm flex-1 flex items-center p-1 py-2 ">
             <input
               type="number"
+              step="0.01"
               value={inputValue}
               onChange={handleInputChange}
               className="bg-transparent border-none outline-none w-full text-white p-1"

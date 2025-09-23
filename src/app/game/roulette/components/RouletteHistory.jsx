@@ -340,6 +340,7 @@ const RouletteHistory = ({ bettingHistory = [] }) => {
                       <TableCell align="center">Amount</TableCell>
                       <TableCell align="center">Result</TableCell>
                       <TableCell align="right">Payout</TableCell>
+                      <TableCell align="center">TX</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -480,6 +481,20 @@ const RouletteHistory = ({ bettingHistory = [] }) => {
                               </>
                             ) : '-'}
                           </Typography>
+                        </TableCell>
+                        <TableCell align="center">
+                          {bet.txHash ? (
+                            <a
+                              href={`https://explorer.aptoslabs.com/txn/${bet.txHash}?network=testnet`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ color: '#60a5fa', textDecoration: 'underline', fontSize: '0.75rem' }}
+                            >
+                              {bet.txHash.slice(0, 6)}...{bet.txHash.slice(-4)}
+                            </a>
+                          ) : (
+                            <Typography variant="caption" color="rgba(255,255,255,0.5)">pending</Typography>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}

@@ -40,6 +40,9 @@ export default function GameHistory({ history }) {
               <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">
                 Payout
               </th>
+              <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">
+                TX
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -70,6 +73,20 @@ export default function GameHistory({ history }) {
                     <div className="w-4 h-4 bg-yellow-500 rounded-full"></div>
                     <span className="text-white text-sm">{game.payout}</span>
                   </div>
+                </td>
+                <td className="py-3 px-4">
+                  {game.txHash ? (
+                    <a
+                      href={`https://explorer.aptoslabs.com/txn/${game.txHash}?network=testnet`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-400 hover:text-blue-300 text-xs underline"
+                    >
+                      {game.txHash.slice(0, 6)}...{game.txHash.slice(-4)}
+                    </a>
+                  ) : (
+                    <span className="text-gray-500 text-xs">pending</span>
+                  )}
                 </td>
               </tr>
             ))}

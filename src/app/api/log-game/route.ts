@@ -33,8 +33,38 @@ export async function POST(request: NextRequest) {
     }
 
     // Create treasury account from private key
-    const privateKey = new Ed25519PrivateKey(process.env.TREASURY_PRIVATE_KEY!);
+    const rawPk = process.env.TREASURY_PRIVATE_KEY;
+    if (!rawPk) {
+      return NextResponse.json({ error: 'TREASURY_PRIVATE_KEY missing' }, { status: 500 });
+    }
+    const privateKey = new Ed25519PrivateKey(rawPk.startsWith('0x') ? rawPk : `0x${rawPk}`);
     const treasuryAccount = Account.fromPrivateKey({ privateKey });
+
+    // Ensure GameLog resource exists for treasury; if not, initialize
+    const moduleAddr = process.env.NEXT_PUBLIC_CASINO_MODULE_ADDRESS!;
+    try {
+      await aptos.getAccountResource({
+        accountAddress: String(treasuryAccount.accountAddress),
+        resourceType: `${moduleAddr}::game_logger::GameLog`,
+      });
+    } catch {
+      // Initialize logger
+      const initTx = await aptos.transaction.build.simple({
+        sender: treasuryAccount.accountAddress,
+        data: {
+          function: `${moduleAddr}::game_logger::initialize`,
+          functionArguments: [],
+        },
+        options: { maxGasAmount: 200000, gasUnitPrice: 100 },
+      });
+      await aptos.signAndSubmitTransaction({ signer: treasuryAccount, transaction: initTx });
+    }
+
+    // Normalize amounts to octas (u64) and player address to string
+    const toOctas = (n: number) => Math.floor(Number(n) * 100000000);
+    const betAmountOctas = toOctas(betAmount);
+    const payoutOctas = toOctas(payout);
+    const playerStr = String(playerAddress);
 
     // Build transaction
     const transaction = await aptos.transaction.build.simple({
@@ -43,14 +73,14 @@ export async function POST(request: NextRequest) {
         function: `${process.env.NEXT_PUBLIC_CASINO_MODULE_ADDRESS}::game_logger::log_game`,
         functionArguments: [
           GAME_TYPES[gameType as keyof typeof GAME_TYPES], // game_type
-          playerAddress, // player_address
-          betAmount, // bet_amount
+          playerStr, // player_address
+          betAmountOctas, // bet_amount
           result, // result
-          payout, // payout
+          payoutOctas, // payout
         ],
       },
       options: {
-        maxGasAmount: 10000,
+        maxGasAmount: 200000,
         gasUnitPrice: 100,
       },
     });
@@ -92,10 +122,10 @@ export async function POST(request: NextRequest) {
       explorerUrl: `https://explorer.aptoslabs.com/txn/${committedTxn.hash}?network=testnet`,
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error logging game:', error);
     return NextResponse.json(
-      { error: 'Failed to log game to blockchain' },
+      { error: `Failed to log game to blockchain: ${error?.message || 'Unknown error'}` },
       { status: 500 }
     );
   }

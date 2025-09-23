@@ -26,7 +26,7 @@ import WheelPayouts from "./components/WheelPayouts";
 import WheelHistory from "./components/WheelHistory";
 
 export default function Home() {
-  const [betAmount, setBetAmount] = useState(10);
+  const [betAmount, setBetAmount] = useState(0.1);
   const [risk, setRisk] = useState("medium");
   const [noOfSegments, setSegments] = useState(10);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -151,7 +151,8 @@ export default function Home() {
             multiplier: `${actualMultiplier.toFixed(2)}x`,
             payout: winAmount,
             result: 0,
-            color: detectedColor
+            color: detectedColor,
+            txHash: null
           };
           setGameHistory(prev => [newHistoryItem, ...prev]);
           
@@ -164,6 +165,15 @@ export default function Home() {
               betAmount: betAmount,
               result: gameResult,
               payout: winAmount,
+            }).then(res => {
+              if (res?.success) {
+                setGameHistory(prev => {
+                  if (prev.length === 0) return prev;
+                  const [first, ...rest] = prev;
+                  const updatedFirst = { ...first, txHash: res.transactionHash || null };
+                  return [updatedFirst, ...rest];
+                });
+              }
             }).catch(error => {
               console.error('Failed to log wheel game:', error);
             });

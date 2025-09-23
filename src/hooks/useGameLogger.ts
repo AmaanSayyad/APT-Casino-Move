@@ -24,7 +24,7 @@ export const useGameLogger = () => {
   const [isLogging, setIsLogging] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
-  const logGame = async (params: LogGameParams): Promise<boolean> => {
+  const logGame = async (params: LogGameParams): Promise<{ success: boolean; transactionHash?: string; explorerUrl?: string; error?: string }> => {
     setIsLogging(true);
     try {
       const response = await fetch('/api/log-game', {
@@ -46,16 +46,16 @@ export const useGameLogger = () => {
         console.log('├── Bet Amount:', params.betAmount, 'APT');
         console.log('├── Result:', params.result);
         console.log('└── Payout:', params.payout, 'APT');
-        return true;
+        return { success: true, transactionHash: data.transactionHash, explorerUrl: data.explorerUrl };
       } else {
         console.error('❌ FAILED TO LOG GAME:', data.error);
         toast.error('Failed to log game to blockchain');
-        return false;
+        return { success: false, error: data.error };
       }
     } catch (error) {
       console.error('Error logging game:', error);
       toast.error('Network error while logging game');
-      return false;
+      return { success: false, error: 'Network error' };
     } finally {
       setIsLogging(false);
     }
