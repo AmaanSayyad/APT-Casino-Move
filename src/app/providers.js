@@ -25,9 +25,20 @@ export default function Providers({ children }) {
   return (
     <Provider store={store}>
       <AptosWalletAdapterProvider
+        plugins={[]}
         autoConnect={true}
         onError={(error) => {
-          console.error("Aptos wallet error:", error ? (error.message || error) : "Unknown error");
+          try {
+            const message =
+              typeof error === 'string'
+                ? error
+                : error && typeof error === 'object' && 'message' in error
+                ? error.message
+                : JSON.stringify(error);
+            console.error("Aptos wallet error:", message || "Unknown error");
+          } catch (e) {
+            console.error("Aptos wallet error: Unknown error");
+          }
         }}
       >
         <QueryClientProvider client={queryClient}>

@@ -14,6 +14,8 @@ import { HiOutlineTrendingUp, HiOutlineChartBar } from "react-icons/hi";
 import { useSelector, useDispatch } from 'react-redux';
 import { setBalance, setLoading, loadBalanceFromStorage } from '@/store/balanceSlice';
 import { useNotification } from '@/components/NotificationSystem';
+import { useGameLogger } from '@/hooks/useGameLogger';
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
 
 // Import new components
 import WheelVideo from "./components/WheelVideo";
@@ -45,6 +47,8 @@ export default function Home() {
   const dispatch = useDispatch();
   const { userBalance, isLoading: isLoadingBalance } = useSelector((state) => state.balance);
   const notification = useNotification();
+  const { logGame } = useGameLogger();
+  const { account } = useWallet();
   
   // Use ref to prevent infinite loop in useEffect
   const isInitialized = useRef(false);
@@ -150,6 +154,20 @@ export default function Home() {
             color: detectedColor
           };
           setGameHistory(prev => [newHistoryItem, ...prev]);
+          
+          // Log game to blockchain
+          if (account?.address) {
+            const gameResult = `${risk}_${noOfSegments}segments_${actualMultiplier.toFixed(2)}x_${detectedColor}`;
+            logGame({
+              gameType: 'wheel',
+              playerAddress: account.address,
+              betAmount: betAmount,
+              result: gameResult,
+              payout: winAmount,
+            }).catch(error => {
+              console.error('Failed to log wheel game:', error);
+            });
+          }
           
           setIsSpinning(false);
           setHasSpun(true);

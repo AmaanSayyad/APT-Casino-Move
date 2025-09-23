@@ -1,7 +1,11 @@
-import { Aptos, AptosConfig, NetworkToNetworkName, Account } from "@aptos-labs/ts-sdk";
+import { Aptos, AptosConfig, NetworkToNetworkName, Account, Ed25519PrivateKey } from "@aptos-labs/ts-sdk";
 import path from "path";
 import fs from "fs";
 import dotenv from "dotenv";
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load environment variables from a .env at project root if present
 try {
@@ -37,7 +41,8 @@ async function main() {
   const config = new AptosConfig({ network: resolvedNetwork });
   const aptos = new Aptos(config);
 
-  const deployer = Account.fromPrivateKey({ privateKeyHex: privateKeyHex });
+  const privateKey = new Ed25519PrivateKey(privateKeyHex);
+  const deployer = Account.fromPrivateKey({ privateKey });
 
   // Determine package directory. Default to move-contracts root. Allow override via --dir=<path>
   let packageDir = path.resolve(__dirname, "..");
@@ -55,12 +60,17 @@ async function main() {
     packageDir = resolved;
   }
 
-  const tx = await aptos.publishPackage({
-    account: deployer,
+  const tx = await aptos.publishPackageTransaction({
+    account: deployer.accountAddress,
     packageDirectoryPath: packageDir,
   });
 
-  console.log(`Published to ${networkName}. Transaction:`, tx);
+  const committedTxn = await aptos.signAndSubmitTransaction({
+    signer: deployer,
+    transaction: tx,
+  });
+
+  console.log(`Published to ${networkName}. Transaction:`, committedTxn.hash);
 }
 
 main().catch((e) => {

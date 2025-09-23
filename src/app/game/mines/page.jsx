@@ -19,6 +19,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "next-themes";
 import useWalletStatus from '@/hooks/useWalletStatus';
 import AptosConnectWalletButton from '@/components/AptosConnectWalletButton';
+import { useGameLogger } from '@/hooks/useGameLogger';
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import Image from "next/image";
 import "./mines.css";
 import GameDetail from "@/components/GameDetail";
@@ -34,6 +36,10 @@ export default function Mines() {
   const [isStatsExpanded, setIsStatsExpanded] = useState(false);
   const [gameStatus, setGameStatus] = useState({ isPlaying: false, hasPlacedBet: false });
   const [gameHistory, setGameHistory] = useState([]);
+  
+  // Game logging hooks
+  const { logGame } = useGameLogger();
+  const { account } = useWallet();
   
   // AI Auto Betting State
   const [isAIActive, setIsAIActive] = useState(false);
@@ -196,6 +202,20 @@ export default function Mines() {
       time: 'Just now'
     };
     setGameHistory(prev => [newHistoryItem, ...prev].slice(0, 50));
+    
+    // Log game to blockchain
+    if (account?.address && result.betAmount > 0) {
+      const gameResult = `${result.mines}mines_${result.won ? 'win' : 'loss'}_${result.multiplier || 0}x`;
+      logGame({
+        gameType: 'mines',
+        playerAddress: account.address,
+        betAmount: result.betAmount,
+        result: gameResult,
+        payout: result.payout || 0,
+      }).catch(error => {
+        console.error('Failed to log mines game:', error);
+      });
+    }
   };
 
   // Handle tab change

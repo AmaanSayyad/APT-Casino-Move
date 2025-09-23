@@ -45,6 +45,23 @@ module apt_casino::user_balance {
         // Note: Actual transfer will be handled by admin later
     }
 
+    // Admin function to update user balance after verifying external transfer
+    public entry fun admin_deposit(admin: &signer, user_addr: address, amount: u64) acquires House, UserBalance {
+        // Verify admin
+        let house = borrow_global<House>(@apt_casino);
+        assert!(signer::address_of(admin) == house.admin, E_NOT_ADMIN);
+        
+        // Update user balance
+        if (exists<UserBalance>(user_addr)) {
+            let user_balance = borrow_global_mut<UserBalance>(user_addr);
+            user_balance.balance = user_balance.balance + amount;
+        } else {
+            // Note: Cannot create UserBalance for another user from admin account
+            // User must call deposit first to create their UserBalance resource
+            assert!(false, E_INSUFFICIENT_BALANCE); // User must have existing balance
+        }
+    }
+
     // Get user balance
     public fun get_balance(user_addr: address): u64 acquires UserBalance {
         if (exists<UserBalance>(user_addr)) {

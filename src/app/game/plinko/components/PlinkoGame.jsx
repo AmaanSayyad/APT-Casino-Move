@@ -3,10 +3,14 @@ import { useState, forwardRef, useImperativeHandle, useCallback, useEffect, useR
 import Matter from 'matter-js';
 import { useSelector, useDispatch } from 'react-redux';
 import { setBalance, addToBalance } from '@/store/balanceSlice';
+import { useGameLogger } from '@/hooks/useGameLogger';
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
 
 const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChange, betAmount = 0, onBetHistoryChange }, ref) => {
   const dispatch = useDispatch();
   const userBalance = useSelector((state) => state.balance.userBalance);
+  const { logGame } = useGameLogger();
+  const { account } = useWallet();
   
   const [isDropping, setIsDropping] = useState(false);
   const [ballPosition, setBallPosition] = useState(null);
@@ -519,6 +523,24 @@ const PlinkoGame = forwardRef(({ rowCount = 16, riskLevel = "Medium", onRowChang
         // Notify parent component about bet history change
         if (onBetHistoryChange) {
           onBetHistoryChange(newBetResult);
+        }
+        
+        // Log game to blockchain
+        if (account?.address && latestBetAmount > 0) {
+          const gameResult = `${rows}rows_${riskLevel}_bin${binIndex}_${multiplier}`;
+          logGame({
+            gameType: 'plinko',
+            playerAddress: account.address,
+            betAmount: latestBetAmount,
+            result: gameResult,
+            payout: reward,
+          }).then(success => {
+            if (success) {
+              console.log('Game successfully logged to blockchain');
+            }
+          }).catch(error => {
+            console.error('Failed to log game to blockchain:', error);
+          });
         }
         
         setTimeout(() => {

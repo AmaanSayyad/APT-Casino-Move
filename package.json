@@ -12,7 +12,8 @@
     "lint": "next lint",
     "fund-treasury": "node scripts/fund-treasury.js",
     "deploy:move": "node move-contracts/scripts/deploy.js --network=testnet",
-    "deploy:plinko": "node move-contracts/scripts/deploy.js --network=testnet --dir=move-contracts/plinko-only"
+    "deploy:plinko": "node move-contracts/scripts/deploy.js --network=testnet --dir=move-contracts/plinko-only",
+    "deploy:game-logger": "node scripts/deploy-game-logger.js"
   },
   "dependencies": {
     "@aptos-labs/ts-sdk": "^3.1.3",

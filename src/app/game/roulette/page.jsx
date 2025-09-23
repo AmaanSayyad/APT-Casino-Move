@@ -21,6 +21,8 @@ import { gameData, bettingTableData } from "./config/gameDetail";
 import { useToken } from "@/hooks/useToken";
 
 import useWalletStatus from '@/hooks/useWalletStatus';
+import { useGameLogger } from '@/hooks/useGameLogger';
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
 
 import { FaVolumeMute, FaVolumeUp, FaChartLine, FaCoins, FaTrophy, FaDice, FaBalanceScale, FaRandom, FaPercentage, FaPlayCircle } from "react-icons/fa";
 import { GiCardRandom, GiDiceTarget, GiRollingDices, GiPokerHand } from "react-icons/gi";
@@ -30,7 +32,6 @@ import StrategyGuide from './components/StrategyGuide';
 import RoulettePayout from './components/RoulettePayout';
 import WinProbabilities from './components/WinProbabilities';
 import RouletteHistory from './components/RouletteHistory';
-import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { setBalance, setLoading, loadBalanceFromStorage } from '@/store/balanceSlice';
 import { aptosClient, CASINO_MODULE_ADDRESS, parseAptAmount, CasinoGames } from '@/lib/aptos';
@@ -1168,6 +1169,7 @@ export default function GameRoulette() {
   const isWalletReady = isConnected && account && signAndSubmitTransaction && wallet;
   const [realBalance, setRealBalance] = useState('0');
   const { balance } = useToken(address); // Keep for compatibility
+  const { logGame } = useGameLogger();
   const HOUSE_ADDR = CASINO_MODULE_ADDRESS;
 
   // Function to fetch real APT balance
@@ -1970,6 +1972,20 @@ export default function GameRoulette() {
         });
 
         setBettingHistory(prev => [newBet, ...prev].slice(0, 50)); // Keep last 50 bets
+
+        // Log game to blockchain
+        if (account?.address && totalBetAmount > 0) {
+          const gameResult = `number${winningNumber}_${netResult > 0 ? 'win' : 'loss'}_${winningBets.length}bets`;
+          logGame({
+            gameType: 'roulette',
+            playerAddress: account.address,
+            betAmount: totalBetAmount,
+            result: gameResult,
+            payout: netResult > 0 ? (netResult - totalBetAmount) : 0,
+          }).catch(error => {
+            console.error('Failed to log roulette game:', error);
+          });
+        }
 
         console.log("New bet added to history:", newBet); // Debug log
         console.log("Updated bettingHistory:", [newBet, ...bettingHistory].slice(0, 50)); // Debug log

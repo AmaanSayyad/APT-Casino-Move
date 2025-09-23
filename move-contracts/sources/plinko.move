@@ -27,7 +27,7 @@ module apt_casino::plinko {
     }
 
     /// Game session tracking
-    struct GameSession has key {
+    struct GameSession has key, copy, drop {
         player: address,
         bet_amount: u64,
         risk_level: u8,
@@ -147,16 +147,16 @@ module apt_casino::plinko {
         };
     }
 
-    public entry fun withdraw(user: &signer, amount: u64) acquires Balance {
-        let addr = signer::address_of(user);
-        assert!(exists<Balance>(addr), error::not_found(E_INSUFFICIENT_ESCROW));
-        let b = borrow_global_mut<Balance>(addr);
+    public entry fun withdraw(admin: &signer, user_addr: address, amount: u64) acquires House, Balance {
+        assert!(signer::address_of(admin) == get_admin_addr(), error::permission_denied(E_NOT_ADMIN));
+        assert!(exists<Balance>(user_addr), error::not_found(E_INSUFFICIENT_ESCROW));
+        let b = borrow_global_mut<Balance>(user_addr);
         assert!(b.amount >= amount, error::invalid_argument(E_INSUFFICIENT_ESCROW));
         
         b.amount = b.amount - amount;
         b.last_activity = timestamp::now_seconds();
         
-        coin::transfer<AptosCoin>(&get_admin_signer(), addr, amount);
+        coin::transfer<AptosCoin>(admin, user_addr, amount);
     }
 
     public entry fun admin_payout(admin: &signer, to: address, amount: u64) acquires House {
@@ -171,7 +171,7 @@ module apt_casino::plinko {
         amount: u64, 
         risk_level: u8, 
         rows: u8
-    ) acquires House, Balance {
+    ) acquires House, Balance, GameSession {
         assert!(signer::address_of(admin) == get_admin_addr(), error::permission_denied(E_NOT_ADMIN));
         play_internal(admin, player, amount, risk_level, rows);
     }
@@ -182,7 +182,7 @@ module apt_casino::plinko {
         amount: u64, 
         risk_level: u8, 
         rows: u8
-    ) acquires Balance, House {
+    ) acquires Balance, House, GameSession {
         let user_addr = signer::address_of(user);
         
         // Validate bet amount
@@ -211,7 +211,7 @@ module apt_casino::plinko {
         amount: u64, 
         risk_level: u8, 
         rows: u8
-    ) acquires Balance, House {
+    ) acquires Balance, House, GameSession {
         assert!(amount > 0, error::invalid_argument(E_INVALID_BET));
         assert!(risk_level >= MIN_RISK_LEVEL && risk_level <= MAX_RISK_LEVEL, error::invalid_argument(E_INVALID_RISK_LEVEL));
         assert!(rows >= MIN_ROWS && rows <= MAX_ROWS, error::invalid_argument(E_INVALID_ROWS));
@@ -287,8 +287,8 @@ module apt_casino::plinko {
         let i = 0;
         while (i < rows) {
             // Use timestamp-based randomness for better distribution
-            let seed = timestamp::now_microseconds() + i;
-            let random_value = randomness::u64_range(0, 1000, seed);
+            let seed = timestamp::now_microseconds() + (i as u64);
+            let random_value = randomness::u64_range(0, 1000);
             
             // Slight bias towards center for more realistic physics
             let direction = if (random_value < 480) { 0 } else { 1 };
@@ -324,7 +324,7 @@ module apt_casino::plinko {
         risk_level: u8, 
         final_position: u8, 
         rows: u8
-    ): (bool, u64) {
+    ): (bool, u64) acquires House {
         let house = borrow_global<House>(@apt_casino);
         let multiplier = get_multiplier_improved(risk_level, final_position, rows);
         
@@ -411,7 +411,5 @@ module apt_casino::plinko {
         borrow_global<House>(@apt_casino).treasury
     }
 
-    fun get_admin_signer(): signer {
-        signer::create_signer(@apt_casino)
-    }
+    // Note: create_signer is deprecated, use resource account pattern instead
 }

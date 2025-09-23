@@ -6,6 +6,7 @@ module apt_casino::mines {
     use aptos_framework::coin;
     use aptos_framework::randomness;
 
+
     /// Admin/House state
     struct House has key { admin: address }
 
