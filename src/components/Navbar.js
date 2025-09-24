@@ -10,6 +10,8 @@ import { useSelector, useDispatch } from 'react-redux';
 import { setBalance, setLoading, loadBalanceFromStorage } from '@/store/balanceSlice';
 import AptosConnectWalletButton from "./AptosConnectWalletButton";
 import WithdrawModal from "./WithdrawModal";
+import dynamic from 'next/dynamic';
+const LiveChat = dynamic(() => import('./LiveChat'), { ssr: false });
 
 
 import { useNotification } from './NotificationSystem';
@@ -61,6 +63,7 @@ export default function Navbar() {
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [depositAmount, setDepositAmount] = useState("");
   const [isDepositing, setIsDepositing] = useState(false);
+  const [chatOpen, setChatOpen] = useState(true);
 
   // Wallet connection
   const { connected: isConnected, account, signAndSubmitTransaction, wallet } = useWallet();
@@ -752,6 +755,15 @@ export default function Navbar() {
             )}
           </div>
         
+          {/* Live Chat Toggle */}
+          <button 
+            onClick={() => setChatOpen(true)}
+            className="p-2 text-white/70 hover:text-white transition-colors hidden md:block rounded-full hover:bg-purple-500/20"
+            aria-label="Open live chat"
+          >
+            💬
+          </button>
+
           {/* Theme Toggle */}
           <button 
             onClick={toggleDarkMode}
@@ -869,6 +881,9 @@ export default function Navbar() {
   
         </div>
       </div>
+      {chatOpen && (
+        <LiveChat open={chatOpen} onClose={() => setChatOpen(false)} />
+      )}
       
       {/* Mobile Navigation Menu */}
       {showMobileMenu && (
