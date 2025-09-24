@@ -487,6 +487,11 @@ export default function Navbar() {
       path: "/bank",
       classes: "text-hover-gradient-bank",
     },
+    {
+      name: "Live",
+      path: "/live",
+      classes: "text-hover-gradient-live",
+    },
   ];
 
   const handleProfileClick = () => {
@@ -592,7 +597,7 @@ export default function Navbar() {
           {navLinks.map(({ name, path, classes }, index) => (
             <div key={index} className="relative group">
             <Link
-                className={`${path === pathname ? "text-transparent bg-clip-text bg-gradient-to-r from-red-magic to-blue-magic font-semibold" : classes} flex items-center gap-1 text-lg font-medium transition-all duration-200 hover:scale-105`}
+                className={`${path === pathname ? "text-transparent bg-clip-text bg-gradient-to-r from-red-magic to-blue-magic font-semibold" : classes} flex items-center gap-1 text-lg font-medium transition-all duration-200 hover:scale-105 whitespace-nowrap shrink-0`}
               href={path}
             >
               {name}
