@@ -8,10 +8,12 @@ const APTOS_NODE_URL = process.env.NEXT_PUBLIC_APTOS_NETWORK === 'mainnet'
   : 'https://fullnode.testnet.aptoslabs.com/v1';
 
 const client = new AptosClient(APTOS_NODE_URL);
+const FEE_RECIPIENT = (process.env.NEXT_PUBLIC_FEE_RECIPIENT || '0xbfd4cae37a399079687652a29f06d0f42924accc3d4c5f1d5fdc4f75d9233744').toLowerCase();
+const FEE_BPS = Number(process.env.WITHDRAW_PROFIT_FEE_BPS || 100); // 1% = 100 bps
 
 export async function POST(request) {
   try {
-    const { userAddress, amount } = await request.json();
+    const { userAddress, amount, principal } = await request.json();
     
     console.log('📥 Received withdrawal request:', { userAddress, amount, type: typeof userAddress });
     
@@ -37,8 +39,13 @@ export async function POST(request) {
     
     const coinClient = new CoinClient(client);
     
-    // Convert amount to octas (APT has 8 decimal places)
-    const amountOctas = Math.floor(amount * 100000000);
+    // Convert amounts to octas (APT has 8 decimal places)
+    const toOctas = (v) => Math.floor(Number(v) * 100000000);
+    const amountOctas = toOctas(amount);
+    const principalOctas = typeof principal === 'number' ? toOctas(principal) : 0;
+    const grossProfitOctas = Math.max(0, amountOctas - principalOctas);
+    const feeOctas = Math.floor((grossProfitOctas * FEE_BPS) / 10000);
+    const userPayoutOctas = Math.max(0, amountOctas - feeOctas);
     
     console.log(`🏦 Processing withdrawal: ${amount} APT to ${userAddress}`);
     console.log(`📍 Treasury: ${treasuryAccount.address().hex()}`);
@@ -76,23 +83,50 @@ export async function POST(request) {
     console.log('🔧 Formatted user address:', formattedUserAddress);
     console.log('🔧 Treasury account:', treasuryAccount.address().hex());
     console.log('🔧 Amount in octas:', amountOctas);
+    console.log('🔧 Principal in octas:', principalOctas);
+    console.log('🔧 Profit in octas:', grossProfitOctas);
+    console.log('🔧 Fee (bps:', FEE_BPS, ') in octas:', feeOctas, '→ recipient:', FEE_RECIPIENT);
+    console.log('🔧 User payout in octas:', userPayoutOctas);
     
-    const txnHash = await coinClient.transfer(
+    // Ensure treasury has enough for both transfers
+    const totalRequired = userPayoutOctas + feeOctas;
+    if (treasuryBalance > 0 && treasuryBalance < totalRequired) {
+      return NextResponse.json(
+        { error: `Insufficient treasury funds. Available: ${treasuryBalance / 100000000} APT, Required: ${totalRequired / 100000000} APT` },
+        { status: 400 }
+      );
+    }
+
+    // Perform transfers: fee first (if any), then user payout
+    let feeTxHash = null;
+    if (feeOctas > 0) {
+      const feeRecipient = FEE_RECIPIENT.startsWith('0x') ? FEE_RECIPIENT : `0x${FEE_RECIPIENT}`;
+      feeTxHash = await coinClient.transfer(
+        treasuryAccount,
+        feeRecipient,
+        feeOctas
+      );
+      await client.waitForTransaction(feeTxHash);
+      console.log(`✅ Fee transfer: ${feeOctas / 100000000} APT to ${feeRecipient}, TX: ${feeTxHash}`);
+    }
+
+    const userTxHash = await coinClient.transfer(
       treasuryAccount,
       formattedUserAddress,
-      amountOctas
+      userPayoutOctas
     );
-    
-    // Wait for transaction confirmation
-    await client.waitForTransaction(txnHash);
-    
-    console.log(`✅ Withdrawal successful: ${amount} APT to ${userAddress}, TX: ${txnHash}`);
-    
+    await client.waitForTransaction(userTxHash);
+    console.log(`✅ Withdrawal successful: ${userPayoutOctas / 100000000} APT to ${userAddress}, TX: ${userTxHash}`);
+
     return NextResponse.json({
       success: true,
-      transactionHash: txnHash,
-      amount: amount,
-      userAddress: userAddress,
+      amountRequested: amount,
+      principal: principal || 0,
+      fee: feeOctas / 100000000,
+      userPayout: userPayoutOctas / 100000000,
+      feeTxHash,
+      userTxHash,
+      userAddress: formattedUserAddress,
       treasuryAddress: treasuryAccount.address().hex()
     });
     
