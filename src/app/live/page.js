@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import * as Player from "@livepeer/react/player";
 import { PauseIcon, PlayIcon } from "@livepeer/react/assets";
 import { getSrc } from "@livepeer/react/external";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function LivePage() {
   const [streams, setStreams] = useState([]);
@@ -51,6 +52,11 @@ export default function LivePage() {
         }
       }
       setStreams((prev) => [{ playbackId: id }, ...prev]);
+      try {
+        const source = isYouTube ? 'youtube' : (/^https?:\/\//i.test(id) ? 'hls' : 'livepeer');
+        const { error } = await supabase.from('streams').insert({ playback_id: id, source });
+        if (error) console.error('Supabase insert error:', error.message);
+      } catch {}
       setNewPlaybackId("");
     } catch {
       setErrorModal({ open: true, message: "Validation failed. Try again." });
@@ -106,41 +112,23 @@ export default function LivePage() {
     }
   }
 
-  // persist in localStorage
+  // Load from Supabase (public). Fallback to demo if empty.
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("live_streams");
-      if (raw) {
-        let parsed = JSON.parse(raw);
-        // cleanup: remove old demo URLs if present
-        const demoUrls = new Set([
-          "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
-          "https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8",
-        ]);
-        if (Array.isArray(parsed)) {
-          parsed = parsed.filter((s) => !demoUrls.has(s?.playbackId));
-        }
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setStreams(parsed);
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('streams')
+          .select('playback_id')
+          .order('created_at', { ascending: false })
+          .limit(60);
+        if (!error && Array.isArray(data) && data.length > 0) {
+          setStreams(data.map(d => ({ playbackId: d.playback_id })));
           return;
         }
-      }
-      // seed with a single demo if nothing saved
-      setStreams([
-        { playbackId: "f5eese9wwl88k4g8" }, // Livepeer docs example
-      ]);
-    } catch {
-      setStreams([
-        { playbackId: "f5eese9wwl88k4g8" },
-      ]);
-    }
+      } catch {}
+      setStreams([{ playbackId: "f5eese9wwl88k4g8" }]);
+    })();
   }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("live_streams", JSON.stringify(streams));
-    } catch {}
-  }, [streams]);
 
   // metrics polling state
   const [metrics, setMetrics] = useState({}); // { [playbackId]: { viewers, bitrate, resolution, latency } }
@@ -197,8 +185,8 @@ export default function LivePage() {
 
   return (
     <>
-    <div className="min-h-screen pt-28 pb-16 px-4 md:px-10 lg:px-24 xl:px-36">
-      <div className="bg-[#0e0010]/70 border border-purple-500/20 rounded-2xl p-4 md:p-6 shadow-lg mb-6">
+    <div className="min-h-screen pt-36 md:pt-44 pb-16 px-4 md:px-10 lg:px-24 xl:px-36 bg-[#070005]">
+      <div className="bg-[#070005]/90 border border-purple-500/20 rounded-2xl p-4 md:p-6 shadow-xl backdrop-blur mb-6">
         <div className="flex items-center justify-between mb-3">
           <h1 className="text-2xl md:text-3xl font-display font-semibold text-white">Live</h1>
           <button
@@ -231,8 +219,8 @@ export default function LivePage() {
           <div className="col-span-full text-white/60 text-sm">No streams yet. Add one with a Playback ID.</div>
         )}
 
-        {streams.map(({ playbackId }) => (
-          <div key={playbackId} className="bg-[#0e0010]/70 border border-purple-500/20 rounded-2xl p-3 shadow-lg">
+        {streams.map(({ playbackId }, idx) => (
+          <div key={playbackId} className={`bg-[#0e0010]/70 border border-purple-500/20 rounded-2xl p-3 shadow-lg transition-transform hover:-translate-y-0.5 hover:shadow-2xl fade-in-up`} style={{ animationDelay: `${idx * 80}ms` }}>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2 min-w-0">
                 <span className="relative flex h-2.5 w-2.5 mr-0.5">
@@ -246,12 +234,12 @@ export default function LivePage() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => navigator.clipboard.writeText(playbackId)}
-                  className="px-2 py-1 rounded bg-white/5 hover:bg-white/10 text-white/80 text-xs"
+                  className="px-2 py-1 rounded bg-white/5 hover:bg-white/10 text-white/80 text-xs border border-white/10"
                 >Copy</button>
               </div>
             </div>
 
-            <div className="rounded-xl overflow-hidden ring-1 ring-purple-500/20 bg-black">
+            <div className="relative rounded-xl overflow-hidden ring-1 ring-purple-500/30 bg-gradient-to-b from-black to-[#130013]">
               {(() => {
                 if (/^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//i.test(playbackId)) {
                   const embed = getYouTubeEmbedUrl(playbackId.startsWith("http") ? playbackId : `https://${playbackId}`);
@@ -274,7 +262,7 @@ export default function LivePage() {
                     <Player.Container className="w-full aspect-video">
                       <Player.Video title="Live stream" />
                       <Player.Controls className="absolute bottom-2 left-0 right-0 flex items-center justify-center gap-2">
-                        <Player.PlayPauseTrigger className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center backdrop-blur">
+                        <Player.PlayPauseTrigger className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center backdrop-blur border border-white/10">
                           <Player.PlayingIndicator asChild matcher={false}>
                             <PlayIcon />
                           </Player.PlayingIndicator>
@@ -296,7 +284,7 @@ export default function LivePage() {
                   : `https://livepeercdn.com/hls/${playbackId}/index.m3u8`}
                 target="_blank"
                 rel="noreferrer"
-                className="underline hover:no-underline"
+                className="underline hover:no-underline text-white/80 hover:text-white"
               >Open HLS</a>
               <div className="text-white/50">
                 {(() => {
