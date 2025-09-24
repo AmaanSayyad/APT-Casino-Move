@@ -12,20 +12,10 @@ const WheelHistory = ({ gameHistory = [] }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
 
-   // Open Arbiscan link for transaction hash
-   const openArbiscan = (hash) => {
+   // Open Aptos explorer link for transaction hash
+   const openAptosExplorer = (hash) => {
     if (hash && hash !== 'unknown') {
-      const network = process.env.NEXT_PUBLIC_NETWORK || 'arbitrum-sepolia';
-      let explorerUrl;
-      
-      if (network === 'arbitrum-sepolia') {
-        explorerUrl = `https://sepolia.arbiscan.io/tx/${hash}`;
-      } else if (network === 'arbitrum-one') {
-        explorerUrl = `https://arbiscan.io/tx/${hash}`;
-      } else {
-        explorerUrl = `https://sepolia.etherscan.io/tx/${hash}`;
-      }
-      
+      const explorerUrl = `https://explorer.aptoslabs.com/txn/${hash}?network=testnet`;
       window.open(explorerUrl, '_blank');
     }
   };
@@ -457,6 +447,16 @@ const WheelHistory = ({ gameHistory = [] }) => {
               >
                 Result
               </TableCell>
+              <TableCell 
+                sx={{ 
+                  backgroundColor: 'rgba(0,0,0,0.4)',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  borderBottom: '1px solid rgba(104, 29, 219, 0.2)'
+                }}
+              >
+                TX
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -556,6 +556,50 @@ const WheelHistory = ({ gameHistory = [] }) => {
                     }}
                   >
                         {item.payout > 0 ? `+${item.payout}` : '0'}
+                  </TableCell>
+                  <TableCell 
+                    sx={{ 
+                      borderBottom: '1px solid rgba(104, 29, 219, 0.1)'
+                    }}
+                  >
+                    {item.txHash ? (
+                      <Box 
+                        sx={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: 0.5,
+                          cursor: 'pointer',
+                          '&:hover': {
+                            opacity: 0.8
+                          }
+                        }}
+                        onClick={() => openAptosExplorer(item.txHash)}
+                      >
+                        <Typography 
+                          variant="body2" 
+                          color="#4A9EFF"
+                          sx={{ 
+                            fontFamily: 'monospace',
+                            fontSize: '0.75rem',
+                            maxWidth: '80px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {item.txHash.slice(0, 8)}...
+                        </Typography>
+                        <FaExternalLinkAlt size={10} color="#4A9EFF" />
+                      </Box>
+                    ) : (
+                      <Typography 
+                        variant="body2" 
+                        color="rgba(255,255,255,0.5)"
+                        sx={{ fontSize: '0.75rem' }}
+                      >
+                        Pending
+                      </Typography>
+                    )}
                   </TableCell>
                 </TableRow>
               </Fade>
