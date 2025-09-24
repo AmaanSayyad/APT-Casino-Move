@@ -1,72 +1,81 @@
 "use client";
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { FaPlay, FaExpand } from 'react-icons/fa';
+import { Box } from '@mui/material';
 
 const WheelVideo = () => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  
-  const handlePlay = () => {
-    setIsPlaying(true);
-  };
-
   return (
-    <div id="wheel-video" className="my-16 px-4 md:px-8 lg:px-20">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        viewport={{ once: true }}
-        className="relative"
+    <Box
+      sx={{
+        position: 'relative',
+        width: '100%',
+        paddingTop: { xs: '56.25%', md: '56.25%' },
+        borderRadius: '16px',
+        overflow: 'hidden',
+        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.6)',
+        border: '2px solid rgba(216, 38, 51, 0.4)',
+        transition: 'all 0.3s ease-in-out',
+        '&:hover': {
+          transform: 'scale(1.02)',
+          boxShadow: '0 25px 50px rgba(0, 0, 0, 0.7)',
+          border: '2px solid rgba(216, 38, 51, 0.5)',
+        },
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: '-3px',
+          left: '-3px',
+          right: '-3px',
+          bottom: '-3px',
+          borderRadius: '20px',
+          background: 'linear-gradient(45deg, #d82633, #681DDB, #14D854, #d82633)',
+          backgroundSize: '400% 400%',
+          zIndex: -1,
+          filter: 'blur(10px)',
+          opacity: 0.7,
+          animation: 'gradient 15s ease infinite',
+          '@keyframes gradient': {
+            '0%': { backgroundPosition: '0% 50%' },
+            '50%': { backgroundPosition: '100% 50%' },
+            '100%': { backgroundPosition: '0% 50%' }
+          }
+        }
+      }}
+    >
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          py: 1.5,
+          background: 'linear-gradient(to bottom, rgba(9, 0, 5, 0.8), rgba(9, 0, 5, 0))',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 2
+        }}
       >
-        <h2 className="text-2xl md:text-3xl font-bold font-display mb-4 bg-gradient-to-r from-red-300 to-amber-300 bg-clip-text text-transparent">
-          Fortune Wheel in Action
-        </h2>
-        
-        <div className="relative aspect-video rounded-xl overflow-hidden border border-red-800/20 shadow-lg shadow-red-900/10">
-          {!isPlaying ? (
-            <div className="absolute inset-0 bg-gradient-to-br from-red-900/40 to-red-700/10 flex flex-col items-center justify-center cursor-pointer" onClick={handlePlay}>
-              <div className="w-16 h-16 md:w-20 md:h-20 bg-red-600/80 rounded-full flex items-center justify-center animate-pulse">
-                <FaPlay className="text-white text-xl ml-1" />
-              </div>
-              <p className="text-white font-medium mt-4">Watch Gameplay Video</p>
-            </div>
-          ) : null}
-          
-          {isPlaying ? (
-            <iframe 
-              className="w-full h-full"
-              src="https://www.youtube.com/embed/M3EWcKHuzi8?autoplay=1"
-              title="Fortune Wheel Gameplay"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            ></iframe>
-          ) : (
-            <div className="w-full h-full bg-black/80">
-              <img 
-                src="https://img.youtube.com/vi/M3EWcKHuzi8/maxresdefault.jpg" 
-                alt="Fortune Wheel Gameplay Video Thumbnail" 
-                className="w-full h-full object-cover opacity-60"
-              />
-            </div>
-          )}
-          
-          {!isPlaying && (
-            <div className="absolute bottom-4 right-4 flex items-center gap-2 text-xs text-white/70">
-              <FaExpand />
-              <span>Click to play</span>
-            </div>
-          )}
-        </div>
-        
-        <div className="mt-4 text-white/70 text-sm">
-          <p>Watch our Fortune Wheel game in action! This video demonstrates how to place bets, select risk levels, and maximize your winnings.</p>
-        </div>
-      </motion.div>
-    </div>
+      </Box>
+      <Box
+        component="iframe"
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          border: 0,
+          borderRadius: '12px',
+          zIndex: 1
+        }}
+        src="https://www.youtube.com/embed/M3EWcKHuzi8"
+        title="Fortune Wheel Gameplay"
+        frameBorder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+      />
+    </Box>
   );
 };
 
-export default WheelVideo; 
+export default WheelVideo;

@@ -6,6 +6,8 @@
 @import "./fonts.css";
 @import "./shadows.css";
 @import "./components.css";
+@import "./navbar-fix.css";
+
 
 /* Base styles to prevent horizontal overflow */
 html,

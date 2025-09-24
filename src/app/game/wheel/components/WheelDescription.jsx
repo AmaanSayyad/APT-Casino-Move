@@ -1,136 +1,204 @@
 "use client";
 
-import { motion } from 'framer-motion';
-import { FaCheckCircle, FaInfoCircle, FaCoins, FaRandom } from 'react-icons/fa';
+import React from 'react';
+import { Box, Typography, Paper, Grid, Fade, Chip } from '@mui/material';
+import { FaCheckCircle, FaCoins, FaGem } from 'react-icons/fa';
 import { GiWheelbarrow, GiTrophyCup } from 'react-icons/gi';
 
 const WheelDescription = () => {
+  const features = [
+    { text: "Provably fair", icon: <FaCheckCircle color="#14D854" /> },
+    { text: "Multiple risk levels", icon: <FaCheckCircle color="#14D854" /> },
+    { text: "Win up to 50x", icon: <FaCheckCircle color="#14D854" /> },
+    { text: "Instant results", icon: <FaCheckCircle color="#14D854" /> }
+  ];
+
   return (
-    <div id="description" className="my-16 px-4 md:px-8 lg:px-20">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        viewport={{ once: true }}
+    <Paper
+      elevation={5}
+      sx={{
+        p: { xs: 2, md: 3 },
+        borderRadius: 3,
+        background: 'linear-gradient(135deg, rgba(9, 0, 5, 0.9) 0%, rgba(25, 5, 30, 0.85) 100%)',
+        backdropFilter: 'blur(15px)',
+        border: '1px solid rgba(104, 29, 219, 0.2)',
+        mb: 5,
+        position: 'relative',
+        overflow: 'hidden',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+        height: '100%',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '5px',
+          background: 'linear-gradient(90deg, #FFA500, #681DDB)',
+        }
+      }}
+    >
+      <Typography 
+        variant="h5" 
+        fontWeight="bold" 
+        gutterBottom
+        sx={{ 
+          borderBottom: '1px solid rgba(104, 29, 219, 0.3)',
+          pb: 1.5,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+          color: 'white',
+          textShadow: '0 2px 4px rgba(0,0,0,0.5)'
+        }}
       >
-        <h2 className="text-2xl md:text-3xl font-bold font-display mb-4 bg-gradient-to-r from-red-300 to-amber-300 bg-clip-text text-transparent">
+        <GiWheelbarrow color="#FFA500" size={22} />
+        <span style={{ background: 'linear-gradient(90deg, #FFFFFF, #FFA500)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
           About Fortune Wheel
-        </h2>
+        </span>
+      </Typography>
+
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="body1" color="rgba(255,255,255,0.8)" paragraph>
+          Fortune Wheel combines simplicity with thrilling unpredictable outcomes. Choose your risk level, place your bet, and win up to 50x your initial stake!
+        </Typography>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="text-white/70">
-            <p className="mb-4">
-              Fortune Wheel is an exciting casino game that combines simplicity with the thrill of unpredictable outcomes. 
-              Players place bets on where they think the wheel will land, with different risk levels offering various potential rewards.
-            </p>
-            
-            <p className="mb-4">
-              The game features a spinning wheel divided into segments, each representing a different multiplier. 
-              The higher the risk level you choose, the greater the potential rewards – but also the higher chance of losing your bet.
-            </p>
-            
-            <p>
-              With our provably fair system, you can verify that each spin result is completely random and not manipulated. 
-              Fortune Wheel offers an adrenaline-pumping experience with the chance to win up to 50x your initial bet!
-            </p>
-            
-            <div className="mt-6 grid grid-cols-2 gap-4">
-              <div className="flex items-center">
-                <FaCheckCircle className="text-green-500 mr-2" />
-                <span>Provably fair</span>
-              </div>
-              <div className="flex items-center">
-                <FaCheckCircle className="text-green-500 mr-2" />
-                <span>Multiple risk levels</span>
-              </div>
-              <div className="flex items-center">
-                <FaCheckCircle className="text-green-500 mr-2" />
-                <span>Win up to 50x</span>
-              </div>
-              <div className="flex items-center">
-                <FaCheckCircle className="text-green-500 mr-2" />
-                <span>Instant results</span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-gradient-to-br from-red-900/20 to-red-800/5 rounded-xl p-6 border border-red-800/20 shadow-lg shadow-red-900/10">
-            <h3 className="text-xl font-bold text-white mb-4">How to Play</h3>
-            
-            <ol className="list-decimal list-inside space-y-3 text-white/70">
-              <li className="flex items-start">
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-900/50 text-white mr-2 flex-shrink-0 mt-0.5">1</span>
-                <span>Choose your risk level (Low, Medium, or High). Higher risk means higher potential rewards but lower chances of winning.</span>
-              </li>
-              <li className="flex items-start">
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-900/50 text-white mr-2 flex-shrink-0 mt-0.5">2</span>
-                <span>Enter your bet amount. Make sure it\'s within your available balance.</span>
-              </li>
-              <li className="flex items-start">
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-900/50 text-white mr-2 flex-shrink-0 mt-0.5">3</span>
-                <span>Click the "Spin" button to start the wheel.</span>
-              </li>
-              <li className="flex items-start">
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-900/50 text-white mr-2 flex-shrink-0 mt-0.5">4</span>
-                <span>Wait for the wheel to stop spinning to see if you've won.</span>
-              </li>
-              <li className="flex items-start">
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-900/50 text-white mr-2 flex-shrink-0 mt-0.5">5</span>
-                <span>If the wheel lands on a winning segment, your bet will be multiplied by the corresponding value.</span>
-              </li>
-            </ol>
-            
-            <div className="mt-6 p-3 bg-black/30 rounded-lg border border-red-800/10">
-              <div className="flex items-center text-amber-400">
-                <FaInfoCircle className="mr-2" />
-                <h4 className="font-medium">Pro Tip</h4>
-              </div>
-              <p className="text-white/70 text-sm mt-1">
-                Start with the low risk level to get familiar with the game mechanics. Once comfortable, you can experiment with higher risk levels for bigger potential rewards.
-              </p>
-            </div>
-          </div>
-        </div>
+        <Typography variant="body1" color="rgba(255,255,255,0.8)" paragraph>
+          Our provably fair system ensures every spin is completely random and transparent, giving you an adrenaline-pumping gaming experience.
+        </Typography>
+      </Box>
+      
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
+        {features.map((feature, index) => (
+          <Fade 
+            in={true} 
+            key={index}
+            style={{ 
+              transformOrigin: '0 0 0',
+              transitionDelay: `${index * 100}ms`
+            }}
+          >
+            <Chip 
+              icon={feature.icon}
+              label={feature.text}
+              sx={{ 
+                bgcolor: 'rgba(0,0,0,0.3)', 
+                color: 'white',
+                border: '1px solid rgba(20, 216, 84, 0.3)',
+                '& .MuiChip-icon': {
+                  color: 'inherit'
+                }
+              }}
+            />
+          </Fade>
+        ))}
+      </Box>
+      
+      <Box>
+        <Typography 
+          variant="h6" 
+          sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 1, 
+            mb: 2,
+            color: 'white'
+          }}
+        >
+          <FaGem color="#FFA500" />
+          Key Features
+        </Typography>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
-          <div className="bg-gradient-to-br from-red-900/10 to-red-800/5 rounded-xl p-4 border border-red-800/10">
-            <div className="flex items-center mb-2">
-              <div className="w-8 h-8 rounded-full bg-red-900/30 flex items-center justify-center mr-2">
-                <GiWheelbarrow className="text-red-300" />
-              </div>
-              <h3 className="font-bold text-white">Risk Levels</h3>
-            </div>
-            <p className="text-white/70 text-sm">
-              Choose from Low, Medium, or High risk levels. Each affects the wheel's segment distribution and potential multipliers.
-            </p>
-          </div>
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={4}>
+            <Box 
+              sx={{ 
+                p: 2, 
+                borderRadius: 2, 
+                backgroundColor: 'rgba(216, 38, 51, 0.1)', 
+                border: '1px solid rgba(216, 38, 51, 0.2)',
+                height: '100%'
+              }}
+            >
+              <Typography 
+                variant="subtitle2" 
+                color="#d82633" 
+                sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 1, 
+                  mb: 1 
+                }}
+              >
+                <GiWheelbarrow />
+                Risk Levels
+              </Typography>
+              <Typography variant="body2" color="rgba(255,255,255,0.8)">
+                Choose from Low, Medium, or High risk levels. Each affects the wheel's segment distribution and potential multipliers.
+              </Typography>
+            </Box>
+          </Grid>
           
-          <div className="bg-gradient-to-br from-blue-900/10 to-blue-800/5 rounded-xl p-4 border border-blue-800/10">
-            <div className="flex items-center mb-2">
-              <div className="w-8 h-8 rounded-full bg-blue-900/30 flex items-center justify-center mr-2">
-                <FaCoins className="text-yellow-300" />
-              </div>
-              <h3 className="font-bold text-white">Multipliers</h3>
-            </div>
-            <p className="text-white/70 text-sm">
-              Win up to 50x your bet with the right spin! Different wheel segments offer various multiplier values.
-            </p>
-          </div>
+          <Grid item xs={12} sm={4}>
+            <Box 
+              sx={{ 
+                p: 2, 
+                borderRadius: 2, 
+                backgroundColor: 'rgba(104, 29, 219, 0.1)', 
+                border: '1px solid rgba(104, 29, 219, 0.2)',
+                height: '100%'
+              }}
+            >
+              <Typography 
+                variant="subtitle2" 
+                color="#681DDB" 
+                sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 1, 
+                  mb: 1 
+                }}
+              >
+                <FaCoins />
+                Multipliers
+              </Typography>
+              <Typography variant="body2" color="rgba(255,255,255,0.8)">
+                Win up to 50x your bet with the right spin! Different wheel segments offer various multiplier values.
+              </Typography>
+            </Box>
+          </Grid>
           
-          <div className="bg-gradient-to-br from-green-900/10 to-green-800/5 rounded-xl p-4 border border-green-800/10">
-            <div className="flex items-center mb-2">
-              <div className="w-8 h-8 rounded-full bg-green-900/30 flex items-center justify-center mr-2">
-                <GiTrophyCup className="text-green-300" />
-              </div>
-              <h3 className="font-bold text-white">Auto-Betting</h3>
-            </div>
-            <p className="text-white/70 text-sm">
-              Use our auto-betting feature to place multiple bets automatically with customizable settings.
-            </p>
-          </div>
-        </div>
-      </motion.div>
-    </div>
+          <Grid item xs={12} sm={4}>
+            <Box 
+              sx={{ 
+                p: 2, 
+                borderRadius: 2, 
+                backgroundColor: 'rgba(20, 216, 84, 0.1)', 
+                border: '1px solid rgba(20, 216, 84, 0.2)',
+                height: '100%'
+              }}
+            >
+              <Typography 
+                variant="subtitle2" 
+                color="#14D854" 
+                sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 1, 
+                  mb: 1 
+                }}
+              >
+                <GiTrophyCup />
+                Auto-Betting
+              </Typography>
+              <Typography variant="body2" color="rgba(255,255,255,0.8)">
+                Use our auto-betting feature to place multiple bets automatically with customizable settings.
+              </Typography>
+            </Box>
+          </Grid>
+        </Grid>
+      </Box>
+    </Paper>
   );
 };
 

@@ -73,7 +73,7 @@ const WheelStrategyGuide = () => {
       example: 'Start with Low Risk until you\'ve won 20% over your starting bankroll. Then switch to Medium Risk until you\'ve won another 20%. Finally, use High Risk with a portion of your profits.'
     }
   ];
-  
+
   return (
     <Paper
       elevation={5}
@@ -124,7 +124,7 @@ const WheelStrategyGuide = () => {
         color="rgba(255,255,255,0.7)"
         sx={{ mb: 3 }}
       >
-        Effective betting strategies to maximize your Fortune Wheel experience.
+        Popular betting strategies to enhance your Fortune Wheel experience. Remember that no strategy can overcome the house edge entirely.
       </Typography>
 
       {strategies.map((strategy, index) => (
@@ -254,7 +254,7 @@ const WheelStrategyGuide = () => {
             </AccordionSummary>
             <AccordionDetails>
               <Typography paragraph color="rgba(255,255,255,0.9)" sx={{ mb: 2 }}>
-                {strategy.description.length > 100 ? strategy.description.substring(0, 100) + '...' : strategy.description}
+                {strategy.description}
               </Typography>
               
               <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, mb: 2 }}>
@@ -320,7 +320,7 @@ const WheelStrategyGuide = () => {
                     Example:
                   </Typography>
                   <Typography variant="body2" color="rgba(255,255,255,0.8)">
-                    {strategy.example.length > 80 ? strategy.example.substring(0, 80) + '...' : strategy.example}
+                    {strategy.example}
                   </Typography>
                 </Box>
               </Box>
@@ -351,4 +351,4 @@ const WheelStrategyGuide = () => {
   );
 };
 
-export default WheelStrategyGuide; 
+export default WheelStrategyGuide;

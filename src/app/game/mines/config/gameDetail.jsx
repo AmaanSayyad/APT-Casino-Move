@@ -19,41 +19,41 @@ export const bettingTableData = {
     {
       mines: 1,
       tiles: [
-        { revealed: 1, multiplier: "1.05x" },
-        { revealed: 5, multiplier: "1.27x" },
-        { revealed: 10, multiplier: "1.69x" },
-        { revealed: 15, multiplier: "2.53x" },
-        { revealed: 20, multiplier: "5.06x" }
+        { revealed: 1, multiplier: "1.04x" },
+        { revealed: 5, multiplier: "1.26x" },
+        { revealed: 10, multiplier: "1.67x" },
+        { revealed: 15, multiplier: "2.50x" },
+        { revealed: 20, multiplier: "5.00x" }
       ]
     },
     {
       mines: 3,
       tiles: [
-        { revealed: 1, multiplier: "1.17x" },
-        { revealed: 5, multiplier: "2.10x" },
-        { revealed: 10, multiplier: "4.44x" },
-        { revealed: 15, multiplier: "13.31x" },
-        { revealed: 20, multiplier: "105.01x" }
+        { revealed: 1, multiplier: "1.16x" },
+        { revealed: 5, multiplier: "2.06x" },
+        { revealed: 10, multiplier: "4.40x" },
+        { revealed: 15, multiplier: "13.20x" },
+        { revealed: 20, multiplier: "100.00x" }
       ]
     },
     {
       mines: 5,
       tiles: [
-        { revealed: 1, multiplier: "1.32x" },
-        { revealed: 5, multiplier: "3.30x" },
-        { revealed: 10, multiplier: "10.94x" },
-        { revealed: 15, multiplier: "54.73x" },
-        { revealed: 18, multiplier: "219.01x" }
+        { revealed: 1, multiplier: "1.31x" },
+        { revealed: 5, multiplier: "3.28x" },
+        { revealed: 10, multiplier: "10.90x" },
+        { revealed: 15, multiplier: "54.50x" },
+        { revealed: 18, multiplier: "220.00x" }
       ]
     },
     {
       mines: 10,
       tiles: [
-        { revealed: 1, multiplier: "1.79x" },
-        { revealed: 5, multiplier: "8.91x" },
-        { revealed: 10, multiplier: "71.33x" },
-        { revealed: 12, multiplier: "213.98x" },
-        { revealed: 14, multiplier: "1,068.95x" }
+        { revealed: 1, multiplier: "1.80x" },
+        { revealed: 5, multiplier: "9.00x" },
+        { revealed: 10, multiplier: "70.00x" },
+        { revealed: 12, multiplier: "210.00x" },
+        { revealed: 14, multiplier: "1,000.00x" }
       ]
     }
   ]
@@ -61,17 +61,17 @@ export const bettingTableData = {
 
 export const gameStatistics = {
   totalBets: '956,421',
-      totalVolume: '4.7M APT',
-    avgBetSize: '1.85 APT',
-    maxWin: '1,217.50 APT'
+      totalVolume: '4.7M APTC',
+    avgBetSize: '1.85 APTC',
+    maxWin: '1,217.50 APTC'
 };
 
 export const recentBigWins = [
-      { player: "CryptoMiner", amount: "1,217.50 APT", time: "3m ago", config: "10 mines" },
-    { player: "DiamondHands", amount: "892.50 APT", time: "10m ago", config: "5 mines" },
-    { player: "GemHunter", amount: "653.00 APT", time: "22m ago", config: "3 mines" },
-    { player: "RiskTaker", amount: "437.00 APT", time: "45m ago", config: "3 mines" },
-    { player: "TreasureSeeker", amount: "381.50 APT", time: "1h ago", config: "1 mine" }
+      { player: "CryptoMiner", amount: "1,217.50 APTC", time: "3m ago", config: "10 mines" },
+    { player: "DiamondHands", amount: "892.50 APTC", time: "10m ago", config: "5 mines" },
+    { player: "GemHunter", amount: "653.00 APTC", time: "22m ago", config: "3 mines" },
+    { player: "RiskTaker", amount: "437.00 APTC", time: "45m ago", config: "3 mines" },
+    { player: "TreasureSeeker", amount: "381.50 APTC", time: "1h ago", config: "1 mine" }
 ];
 
 export const winProbabilities = [

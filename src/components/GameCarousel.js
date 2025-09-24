@@ -159,9 +159,18 @@ const GameCarousel = () => {
           )}
           
           <div className="space-y-3 mt-3">
-            <h3 className="text-2xl md:text-3xl font-display font-bold text-white group-hover:text-gradient transition-all">
-              {game.title}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-2xl md:text-3xl font-display font-bold text-white group-hover:text-gradient transition-all">
+                {game.title}
+              </h3>
+              {/* Live indicator for specific games */}
+              {(game.id === 'roulette' || game.id === 'plinko' || game.id === 'mines' || game.id === 'wheel') && (
+                <div className="flex items-center gap-1 bg-green-900/30 border border-green-500/30 px-2 py-0.5 rounded-full">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                  <span className="text-green-400 text-xs font-medium">LIVE</span>
+                </div>
+              )}
+            </div>
             <p className="text-xs md:text-sm text-white/80">{game.description}</p>
             
             {/* Live player count */}

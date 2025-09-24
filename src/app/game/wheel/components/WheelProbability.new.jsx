@@ -7,135 +7,101 @@ import Grid from "@mui/material/Unstable_Grid2";
 
 const WheelProbability = () => {
   const [sortBy, setSortBy] = useState('probability'); // or 'multiplier'
-  const [selectedSegments, setSelectedSegments] = useState(50); // Default to 50 segments
   
-  // Probability data based on Stake.com's wheel
-  const probabilityData = {
-    lowRisk: [
-      {
-        type: 'Low Risk - 0x',
-        probability: 25.0,
-        multiplier: '0.0x',
-        color: '#e74c3c',
-        segments: [10, 20, 30, 40, 50]
-      },
-      {
-        type: 'Low Risk - 1.2x',
-        probability: 50.0,
-        multiplier: '1.2x',
-        color: '#27ae60',
-        segments: [10, 20, 30, 40, 50]
-      },
-      {
-        type: 'Low Risk - 1.5x',
-        probability: 25.0,
-        multiplier: '1.5x',
-        color: '#2980b9',
-        segments: [10, 20, 30, 40, 50]
-      }
-    ],
-    mediumRisk: [
-      {
-        type: 'Medium Risk - 0x',
-        probability: 50.0,
-        multiplier: '0.0x',
-        color: '#e74c3c',
-        segments: [10, 20, 30, 40, 50]
-      },
-      {
-        type: 'Medium Risk - 1.5x',
-        probability: 20.0,
-        multiplier: '1.5x',
-        color: '#27ae60',
-        segments: [10, 20, 30, 40, 50]
-      },
-      {
-        type: 'Medium Risk - 2.0x',
-        probability: 15.0,
-        multiplier: '2.0x',
-        color: '#2980b9',
-        segments: [10, 20, 30, 40, 50]
-      },
-      {
-        type: 'Medium Risk - 3.0x',
-        probability: 10.0,
-        multiplier: '3.0x',
-        color: '#f39c12',
-        segments: [10, 20]
-      },
-      {
-        type: 'Medium Risk - 4.0x',
-        probability: 5.0,
-        multiplier: '4.0x',
-        color: '#9b59b6',
-        segments: [30]
-      },
-      {
-        type: 'Medium Risk - 5.0x',
-        probability: 5.0,
-        multiplier: '5.0x',
-        color: '#8e44ad',
-        segments: [50]
-      }
-    ],
-    highRisk: [
-      {
-        type: 'High Risk - 0x',
-        probability: 90.0,
-        multiplier: '0.0x',
-        color: '#e74c3c',
-        segments: [10, 20, 30, 40, 50]
-      },
-      {
-        type: 'High Risk - 9.9x',
-        probability: 10.0,
-        multiplier: '9.9x',
-        color: '#27ae60',
-        segments: [10]
-      },
-      {
-        type: 'High Risk - 19.8x',
-        probability: 10.0,
-        multiplier: '19.8x',
-        color: '#2980b9',
-        segments: [20]
-      },
-      {
-        type: 'High Risk - 29.7x',
-        probability: 10.0,
-        multiplier: '29.7x',
-        color: '#f39c12',
-        segments: [30]
-      },
-      {
-        type: 'High Risk - 39.6x',
-        probability: 10.0,
-        multiplier: '39.6x',
-        color: '#9b59b6',
-        segments: [40]
-      },
-      {
-        type: 'High Risk - 49.5x',
-        probability: 10.0,
-        multiplier: '49.5x',
-        color: '#8e44ad',
-        segments: [50]
-      }
-    ]
-  };
+  const probabilityData = [
+    {
+      type: 'Low Risk - 0x',
+      probability: 20.0,
+      multiplier: '0.0x',
+      color: '#e74c3c'
+    },
+    {
+      type: 'Low Risk - 1.2x',
+      probability: 40.0,
+      multiplier: '1.2x',
+      color: '#27ae60'
+    },
+    {
+      type: 'Low Risk - 1.5x',
+      probability: 20.0,
+      multiplier: '1.5x',
+      color: '#2980b9'
+    },
+    {
+      type: 'Low Risk - 2x',
+      probability: 10.0,
+      multiplier: '2.0x',
+      color: '#f39c12'
+    },
+    {
+      type: 'Low Risk - 3x',
+      probability: 10.0,
+      multiplier: '3.0x',
+      color: '#9b59b6'
+    },
+    {
+      type: 'Medium Risk - 0x',
+      probability: 40.0,
+      multiplier: '0.0x',
+      color: '#e74c3c'
+    },
+    {
+      type: 'Medium Risk - 1.5x',
+      probability: 20.0,
+      multiplier: '1.5x',
+      color: '#27ae60'
+    },
+    {
+      type: 'Medium Risk - 2x',
+      probability: 20.0,
+      multiplier: '2.0x',
+      color: '#2980b9'
+    },
+    {
+      type: 'Medium Risk - 5x',
+      probability: 10.0,
+      multiplier: '5.0x',
+      color: '#f39c12'
+    },
+    {
+      type: 'Medium Risk - 10x',
+      probability: 10.0,
+      multiplier: '10.0x',
+      color: '#9b59b6'
+    },
+    {
+      type: 'High Risk - 0x',
+      probability: 70.0,
+      multiplier: '0.0x',
+      color: '#e74c3c'
+    },
+    {
+      type: 'High Risk - 3x',
+      probability: 10.0,
+      multiplier: '3.0x',
+      color: '#27ae60'
+    },
+    {
+      type: 'High Risk - 5x',
+      probability: 10.0,
+      multiplier: '5.0x',
+      color: '#2980b9'
+    },
+    {
+      type: 'High Risk - 20x',
+      probability: 5.0,
+      multiplier: '20.0x',
+      color: '#f39c12'
+    },
+    {
+      type: 'High Risk - 50x',
+      probability: 5.0,
+      multiplier: '50.0x',
+      color: '#9b59b6'
+    }
+  ];
 
-  // Combine all risk levels and filter by selected segment count
-  const getAllProbabilityData = () => {
-    const allData = [
-      ...probabilityData.lowRisk.filter(item => item.segments.includes(selectedSegments)),
-      ...probabilityData.mediumRisk.filter(item => item.segments.includes(selectedSegments)),
-      ...probabilityData.highRisk.filter(item => item.segments.includes(selectedSegments))
-    ];
-    
-    return allData;
-  };
-
-  const sortedData = [...getAllProbabilityData()].sort((a, b) => {
+  const sortedData = [...probabilityData].sort((a, b) => {
     if (sortBy === 'probability') {
       return b.probability - a.probability;
     } else {
@@ -145,7 +111,7 @@ const WheelProbability = () => {
       return multB - multA;
     }
   });
-
+  
   return (
     <Paper
       elevation={5}
@@ -154,7 +120,7 @@ const WheelProbability = () => {
         borderRadius: 3,
         background: 'linear-gradient(135deg, rgba(9, 0, 5, 0.9) 0%, rgba(25, 5, 30, 0.85) 100%)',
         backdropFilter: 'blur(15px)',
-        border: '1px solid rgba(216, 38, 51, 0.2)',
+        border: '1px solid rgba(104, 29, 219, 0.2)',
         mb: 5,
         position: 'relative',
         overflow: 'hidden',
@@ -167,7 +133,7 @@ const WheelProbability = () => {
           left: 0,
           width: '100%',
           height: '5px',
-          background: 'linear-gradient(90deg, #D82633, #14D854)',
+          background: 'linear-gradient(90deg, #681DDB, #14D854)',
         }
       }}
     >
@@ -176,7 +142,7 @@ const WheelProbability = () => {
         fontWeight="bold" 
         gutterBottom
         sx={{ 
-          borderBottom: '1px solid rgba(216, 38, 51, 0.3)',
+          borderBottom: '1px solid rgba(104, 29, 219, 0.3)',
           pb: 1.5,
           display: 'flex',
           alignItems: 'center',
@@ -185,8 +151,8 @@ const WheelProbability = () => {
           textShadow: '0 2px 4px rgba(0,0,0,0.5)'
         }}
       >
-        <FaChartPie color="#D82633" size={22} />
-        <span style={{ background: 'linear-gradient(90deg, #FFFFFF, #D82633)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+        <FaChartPie color="#681DDB" size={22} />
+        <span style={{ background: 'linear-gradient(90deg, #FFFFFF, #14D854)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
           Win Probabilities
         </span>
       </Typography>
@@ -196,7 +162,7 @@ const WheelProbability = () => {
           variant="body2" 
           color="rgba(255,255,255,0.7)"
         >
-          Win chances across different risk levels with {selectedSegments} segments
+          Visual guide to win chances in Fortune Wheel across different risk levels
         </Typography>
         
         <Stack 
@@ -206,7 +172,7 @@ const WheelProbability = () => {
             backgroundColor: 'rgba(0,0,0,0.2)',
             borderRadius: '20px',
             padding: '2px',
-            border: '1px solid rgba(216, 38, 51, 0.2)'
+            border: '1px solid rgba(104, 29, 219, 0.2)'
           }}
         >
           <Button 
@@ -215,14 +181,14 @@ const WheelProbability = () => {
             sx={{ 
               fontSize: '0.75rem', 
               color: sortBy === 'probability' ? 'white' : 'rgba(255,255,255,0.6)',
-              backgroundColor: sortBy === 'probability' ? 'rgba(216, 38, 51, 0.3)' : 'transparent',
+              backgroundColor: sortBy === 'probability' ? 'rgba(104, 29, 219, 0.3)' : 'transparent',
               borderRadius: '18px',
               minWidth: 'auto',
               p: 0.5,
               px: 1.5,
               transition: 'all 0.2s ease',
               '&:hover': {
-                backgroundColor: sortBy === 'probability' ? 'rgba(216, 38, 51, 0.4)' : 'rgba(216, 38, 51, 0.1)',
+                backgroundColor: sortBy === 'probability' ? 'rgba(104, 29, 219, 0.4)' : 'rgba(104, 29, 219, 0.1)',
               }
             }}
           >
@@ -234,62 +200,19 @@ const WheelProbability = () => {
             sx={{ 
               fontSize: '0.75rem', 
               color: sortBy === 'multiplier' ? 'white' : 'rgba(255,255,255,0.6)',
-              backgroundColor: sortBy === 'multiplier' ? 'rgba(216, 38, 51, 0.3)' : 'transparent',
+              backgroundColor: sortBy === 'multiplier' ? 'rgba(104, 29, 219, 0.3)' : 'transparent',
               borderRadius: '18px',
               minWidth: 'auto',
               p: 0.5,
               px: 1.5,
               transition: 'all 0.2s ease',
               '&:hover': {
-                backgroundColor: sortBy === 'multiplier' ? 'rgba(216, 38, 51, 0.4)' : 'rgba(216, 38, 51, 0.1)',
+                backgroundColor: sortBy === 'multiplier' ? 'rgba(104, 29, 219, 0.4)' : 'rgba(104, 29, 219, 0.1)',
               }
             }}
           >
             By Multiplier
           </Button>
-        </Stack>
-      </Box>
-      
-      {/* Segment selector */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="body2" color="rgba(255,255,255,0.7)" sx={{ mb: 1 }}>
-          Select number of segments:
-        </Typography>
-        <Stack 
-          direction="row" 
-          spacing={1}
-          sx={{
-            backgroundColor: 'rgba(0,0,0,0.2)',
-            borderRadius: '20px',
-            padding: '2px',
-            border: '1px solid rgba(216, 38, 51, 0.2)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap'
-          }}
-        >
-          {[10, 20, 30, 40, 50].map(segments => (
-            <Button 
-              key={segments}
-              size="small" 
-              onClick={() => setSelectedSegments(segments)}
-              sx={{ 
-                fontSize: '0.75rem', 
-                color: selectedSegments === segments ? 'white' : 'rgba(255,255,255,0.6)',
-                backgroundColor: selectedSegments === segments ? 'rgba(216, 38, 51, 0.3)' : 'transparent',
-                borderRadius: '18px',
-                minWidth: 'auto',
-                p: 0.5,
-                px: 1.5,
-                transition: 'all 0.2s ease',
-                '&:hover': {
-                  backgroundColor: selectedSegments === segments ? 'rgba(216, 38, 51, 0.4)' : 'rgba(216, 38, 51, 0.1)',
-                }
-              }}
-            >
-              {segments}
-            </Button>
-          ))}
         </Stack>
       </Box>
       
@@ -362,9 +285,9 @@ const WheelProbability = () => {
                     title={
                       <Box>
                         <Typography variant="body2">
-                          {item.type.includes('Low Risk') && 'Lower risk offers more frequent but smaller wins with max 1.5x multiplier.'}
-                          {item.type.includes('Medium Risk') && 'Medium risk balances win frequency with payout size up to 5.0x multiplier.'}
-                          {item.type.includes('High Risk') && `High risk has less frequent wins but larger potential payouts up to ${selectedSegments === 50 ? '49.5x' : selectedSegments === 40 ? '39.6x' : selectedSegments === 30 ? '29.7x' : selectedSegments === 20 ? '19.8x' : '9.9x'} multiplier.`}
+                          {item.type.includes('Low Risk') && 'Lower risk offers more frequent but smaller wins.'}
+                          {item.type.includes('Medium Risk') && 'Medium risk balances win frequency with payout size.'}
+                          {item.type.includes('High Risk') && 'High risk has less frequent wins but larger potential payouts.'}
                         </Typography>
                       </Box>
                     }
@@ -382,7 +305,7 @@ const WheelProbability = () => {
                       backgroundColor: 'rgba(0,0,0,0.2)',
                       transition: 'all 0.2s ease',
                       '&:hover': {
-                        backgroundColor: 'rgba(216, 38, 51, 0.2)',
+                        backgroundColor: 'rgba(104, 29, 219, 0.2)',
                       }
                     }}>
                       <FaInfoCircle color="rgba(255,255,255,0.6)" size={14} />
@@ -469,7 +392,7 @@ const WheelProbability = () => {
                       className="hover-arrow" 
                       color="rgba(255,255,255,0.4)" 
                       size={14} 
-                            style={{ 
+                      style={{ 
                         opacity: 0, 
                         transform: 'translateX(-10px)',
                         transition: 'all 0.3s ease'
@@ -491,18 +414,18 @@ const WheelProbability = () => {
           mt: 3, 
           p: 2, 
           borderRadius: 2,
-          background: 'linear-gradient(135deg, rgba(216, 38, 51, 0.05) 0%, rgba(216, 38, 51, 0.15) 100%)',
-          border: '1px solid rgba(216, 38, 51, 0.15)',
+          background: 'linear-gradient(135deg, rgba(104, 29, 219, 0.05) 0%, rgba(104, 29, 219, 0.15) 100%)',
+          border: '1px solid rgba(104, 29, 219, 0.15)',
           boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.2)'
         }}
       >
-        <FaInfoCircle color="#D82633" style={{ flexShrink: 0 }} />
+        <FaInfoCircle color="#681DDB" style={{ flexShrink: 0 }} />
         <Typography variant="body2" color="rgba(255,255,255,0.8)">
-          More segments = higher potential multipliers. High risk with 50 segments offers up to 49.5x multiplier!
+          Higher risk levels offer larger potential multipliers but lower probability of winning. Choose your risk level based on your betting strategy and risk tolerance.
         </Typography>
       </Box>
     </Paper>
   );
 };
 
-export default WheelProbability; 
+export default WheelProbability;

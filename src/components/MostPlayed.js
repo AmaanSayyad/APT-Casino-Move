@@ -220,9 +220,18 @@ const MostPlayed = () => {
                 </div>
                 
                 <div className="md:w-2/3 text-center md:text-left">
-                  <h3 className="font-display text-2xl md:text-3xl font-bold text-white mb-3">
-                    {currentFeaturedGame.name}
-                  </h3>
+                  <div className="flex items-center justify-center md:justify-start gap-3 mb-3">
+                    <h3 className="font-display text-2xl md:text-3xl font-bold text-white">
+                      {currentFeaturedGame.name}
+                    </h3>
+                    {/* Live indicator for specific games */}
+                    {(currentFeaturedGame.name === 'Roulette' || currentFeaturedGame.name === 'Plinko' || currentFeaturedGame.name === 'Mines' || currentFeaturedGame.name === 'Spin Wheel') && (
+                      <div className="flex items-center gap-1.5 bg-green-900/30 border border-green-500/30 px-2 py-0.5 rounded-full">
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                        <span className="text-green-400 text-xs font-medium">LIVE</span>
+                      </div>
+                    )}
+                  </div>
                   
                   <div className="flex flex-wrap justify-center md:justify-start gap-4 mb-4">
                     <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-full text-sm">
@@ -316,9 +325,18 @@ const MostPlayed = () => {
                 </MagicBorder>
                 
                 <div className="mt-3 flex flex-col items-center">
-                  <h3 className="font-display text-sm md:text-base font-semibold tracking-wide text-white text-center">
-                    {game.name}
-                  </h3>
+                  <div className="flex items-center gap-2 justify-center">
+                    <h3 className="font-display text-sm md:text-base font-semibold tracking-wide text-white text-center">
+                      {game.name}
+                    </h3>
+                    {/* Live indicator for specific games */}
+                    {(game.name === 'Roulette' || game.name === 'Plinko' || game.name === 'Mines' || game.name === 'Spin Wheel') && (
+                      <div className="flex items-center gap-1 bg-green-900/30 border border-green-500/30 px-1.5 py-0.5 rounded-full">
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                        <span className="text-green-400 text-[10px] font-medium">LIVE</span>
+                      </div>
+                    )}
+                  </div>
                   <div className="mt-1 flex items-center">
                     {[...Array(5)].map((_, i) => (
                       <FaStar key={i} className="text-yellow-400 text-[10px]" />
