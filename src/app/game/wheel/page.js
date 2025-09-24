@@ -58,12 +58,12 @@ export default function Home() {
     if (isInitialized.current) return; // Prevent multiple executions
     
     const savedBalance = loadBalanceFromStorage();
-    if (savedBalance && savedBalance !== "0") {
+    if (savedBalance) {
       console.log('Loading saved balance from localStorage:', savedBalance);
       dispatch(setBalance(savedBalance));
     } else {
-      // Set initial balance to 0 if no saved balance
-      console.log('No saved balance, setting to 0');
+      // Initialize with zero balance
+      console.log('No saved balance, initializing with zero');
       dispatch(setBalance("0"));
     }
     
@@ -82,14 +82,15 @@ export default function Home() {
   const manulBet = async () => {
     if (betAmount <= 0 || isSpinning) return;
 
-    // Check if wallet is connected first
-    if (!window.aptos || !window.aptos.account) {
+     // Check if wallet is connected first
+     if (!window.aptos || !window.aptos.account) {
       alert('Please connect your Aptos wallet first');
       return;
     }
 
-    // Check Redux balance
+   
     const currentBalance = parseFloat(userBalance || '0') / 100000000; // Convert from octas to APT
+
     
     if (currentBalance < betAmount) {
       alert(`Insufficient balance. You have ${currentBalance.toFixed(8)} APT but need ${betAmount} APT`);
@@ -147,13 +148,16 @@ export default function Home() {
             id: Date.now(),
             game: 'Wheel',
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            betAmount: betAmount,
+            betAmount: betAmount.toFixed(5),
             multiplier: `${actualMultiplier.toFixed(2)}x`,
-            payout: winAmount,
+            payout: winAmount.toFixed(5),
             result: 0,
             color: detectedColor,
             txHash: null
           };
+
+         
+
           setGameHistory(prev => [newHistoryItem, ...prev]);
           
           // Log game to blockchain
@@ -178,7 +182,7 @@ export default function Home() {
               console.error('Failed to log wheel game:', error);
             });
           }
-          
+
           setIsSpinning(false);
           setHasSpun(true);
           
@@ -233,6 +237,8 @@ export default function Home() {
       return;
     }
     
+   
+    
     if (isSpinning) return; // Prevent overlapping spins
 
     let currentBet = initialBetAmount;
@@ -241,6 +247,7 @@ export default function Home() {
     for (let i = 0; i < numberOfBets; i++) {
       // Check Redux balance before each bet
       const currentBalance = parseFloat(userBalance || '0') / 100000000; // Convert from octas to APT
+
       
       if (currentBalance < currentBet) {
         alert(`Insufficient balance for bet ${i + 1}. Need ${currentBet} APT but have ${currentBalance.toFixed(8)} APT`);
@@ -254,6 +261,7 @@ export default function Home() {
       const betAmountInOctas = currentBet * 100000000; // Convert to octas
       const newBalance = (parseFloat(userBalance || '0') - betAmountInOctas).toString();
       dispatch(setBalance(newBalance));
+
 
       // Calculate result position
       const resultPosition = Math.floor(Math.random() * noOfSegments);
@@ -332,6 +340,13 @@ export default function Home() {
         const currentBalance = parseFloat(userBalance || '0') / 100000000; // Convert from octas to APT
         const newBalanceWithWin = currentBalance + winAmount;
         const newBalanceWithWinOctas = Math.floor(newBalanceWithWin * 100000000); // Convert back to octas
+        
+        console.log('💰 Auto bet winnings:', {
+          currentBalance: currentBalance.toFixed(5),
+          winAmount: winAmount.toFixed(5),
+          newBalance: newBalanceWithWin.toFixed(5)
+        });
+        
         dispatch(setBalance(newBalanceWithWinOctas.toString()));
       }
 
@@ -356,6 +371,8 @@ export default function Home() {
         color: wheelSegmentData.color
       };
 
+     
+
       setGameHistory(prev => [newHistoryItem, ...prev]);
 
       // Adjust bet for next round based on win/loss increase
@@ -366,7 +383,11 @@ export default function Home() {
       }
 
       // Clamp bet to balance
-      // if (currentBet > balance) currentBet = balance; // This line is no longer needed
+      currentBalance = parseFloat(userBalance || '0');
+      if (currentBet > currentBalance) {
+        console.log(`💰 Bet amount ${currentBet.toFixed(5)} exceeds balance ${currentBalance.toFixed(5)}, clamping to balance`);
+        currentBet = currentBalance;
+      }
       if (currentBet <= 0) currentBet = initialBetAmount;
 
       // Stop conditions
@@ -534,7 +555,7 @@ export default function Home() {
 
 
   return (
-    <div className="min-h-screen bg-[#070005] text-white pb-20">
+    <div className="min-h-screen bg-[#070005] text-white pb-20 game-page-container">
       {/* Header */}
       {renderHeader()}
 
@@ -578,26 +599,39 @@ export default function Home() {
         </div>
       </div>
       
-      {/* Video Section */}
-      <WheelVideo />
+      {/* Video and Description Section */}
+      <div className="px-4 md:px-8 lg:px-20 my-12">
+        <div className="flex flex-col lg:flex-row gap-8">
+          <div className="w-full lg:w-1/2">
+            <WheelVideo />
+          </div>
+          <div className="w-full lg:w-1/2">
+            <WheelDescription />
+          </div>
+        </div>
+      </div>
       
-      {/* Game Description */}
-      <WheelDescription />
+      {/* Strategy Guide and Probabilities Section */}
+      <div className="px-4 md:px-8 lg:px-20 my-12">
+        <div className="flex flex-col lg:flex-row gap-8">
+          <div className="w-full lg:w-1/2">
+            <WheelStrategyGuide />
+          </div>
+          <div className="w-full lg:w-1/2">
+            <WheelProbability />
+          </div>
+        </div>
+      </div>
       
-      {/* Strategy Guide */}
-      <WheelStrategyGuide />
+      {/* Payouts and History Section */}
+      <div className="px-4 md:px-8 lg:px-20 my-12">
+        <div className="flex flex-col gap-12">
+          <WheelPayouts />
+          <WheelHistory gameHistory={gameHistory} />
+        </div>
+      </div>
+
       
-      {/* Win Probabilities */}
-      <WheelProbability />
-      
-      {/* Payouts */}
-      <WheelPayouts />
-      
-      {/* Game History */}
-      <WheelHistory gameHistory={gameHistory} />
     </div>
   );
 }
-
-
-
